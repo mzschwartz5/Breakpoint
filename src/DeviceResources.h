@@ -1,8 +1,5 @@
 ﻿#pragma once
 
-#include <winrt/Windows.UI.Xaml.h>
-#include <winrt/Windows.Graphics.h>
-
 namespace DX
 {
 	static const UINT c_frameCount = 3;		// Use triple buffering.

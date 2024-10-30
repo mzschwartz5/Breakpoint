@@ -9,7 +9,7 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
-# Enable C++11 for host code
+# Enable C++17 for host code
 set(CMAKE_CXX_STANDARD 17)
 
 # Set a default build type if none was specified
@@ -80,4 +80,11 @@ source_group("ImGui\\Sources" FILES ${imgui_sources})
 add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers})
 
 target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.h)
+
+target_link_libraries(${PROJECT_NAME} 
+    d3d12 
+    dxgi 
+    d3dcompiler 
+    ${D3D_LIBRARIES}
+)
 
