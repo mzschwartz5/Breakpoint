@@ -35,10 +35,17 @@ set(D3D12_LIBS d3d12 dxgi)
 
 set(headers
     src/main.h
+    src/pch.h
+    src/StepTimer.h
+    src/DirectXHelper.h
+#    src/DeviceResources.h
+    src/d3dx12.h
 )
 
 set(sources
     src/main.cpp
+    src/pch.cpp
+#    src/DeviceResources.cpp
 )
 
 set(imgui_headers
@@ -71,4 +78,6 @@ source_group("ImGui\\Sources" FILES ${imgui_sources})
 #add_subdirectory(src/ImGui)
 
 add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers})
+
+target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.h)
 
