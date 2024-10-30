@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(cis565_dxpbe LANGUAGES CUDA CXX)
+project(cis565_dxpbe LANGUAGES CXX)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -10,7 +10,7 @@ set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
 # Enable C++11 for host code
-set(CMAKE_CXX_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
 
 # Set a default build type if none was specified
 if(NOT CMAKE_BUILD_TYPE AND NOT CMAKE_CONFIGURATION_TYPES)
@@ -22,6 +22,16 @@ endif()
 set(GLM_ROOT_DIR "${CMAKE_SOURCE_DIR}/external")
 find_package(GLM REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
+
+# Add directories for Direct3D 12
+set(D3D12_INCLUDE_DIR "C:/Program Files (x86)/Windows Kits/10/Include/10.0.18362.0/um")
+set(D3D12_LIB_DIR "C:/Program Files (x86)/Windows Kits/10/Lib/10.0.18362.0/um/x64")
+
+include_directories(${D3D12_INCLUDE_DIR})
+link_directories(${D3D12_LIB_DIR})
+
+# Add D3D12 libraries
+set(D3D12_LIBS d3d12 dxgi)
 
 set(headers
     src/main.h
