@@ -23,9 +23,6 @@ set(GLM_ROOT_DIR "${CMAKE_SOURCE_DIR}/external")
 find_package(GLM REQUIRED)
 include_directories(${GLM_INCLUDE_DIRS})
 
-include_directories(oidn-2.3.0.x64.windows/include)
-link_directories(oidn-2.3.0.x64.windows/lib)
-
 set(headers
     src/main.h
 )
