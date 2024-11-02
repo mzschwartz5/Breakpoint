@@ -11,12 +11,23 @@ int main() {
     }
 
     while (!Window::get().getShouldClose()) {
+        //update window
         Window::get().update();
+        if (Window::get().getShouldResize()) {
+            //flush pending buffer operations in swapchain
+            context.flush(FRAME_COUNT);
+            Window::get().resize();
+        }
+
+        //begin draw
         auto* cmdList = context.initCommandList();
+
+        //finish draw, present
         context.executeCommandList();
         Window::get().present();
     }
 
+    //flush pending buffer operations in swapchain
     context.flush(FRAME_COUNT);
     Window::get().shutdown();
 }

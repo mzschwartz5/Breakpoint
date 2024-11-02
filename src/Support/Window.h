@@ -16,19 +16,28 @@ public:
 		return instance;
 	}
 
+	inline bool getShouldResize() const {
+		return shouldResize;
+	}
+
 	inline bool getShouldClose() const {
 		return shouldClose;
 	}
 
 	bool init(DXContext* context, int w, int h);
 	void update();
+
 	void present();
+	void resize();
+
 	void shutdown();
 
 private:
 	Window() = default;
 
-	int width{ 1920 }, height{ 1080 };
+	UINT width, height;
+
+	bool shouldResize = false;
 
 	bool shouldClose = false;
 

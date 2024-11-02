@@ -73,6 +73,8 @@ bool Window::init(DXContext* contextPtr, int w, int h) {
     if (!swapChain1.QueryInterface(swapChain)) {
         return false;
     }
+
+    return true;
 }
 
 void Window::update() {
@@ -85,6 +87,18 @@ void Window::update() {
 
 void Window::present() {
     swapChain->Present(1, 0);
+}
+
+void Window::resize() {
+    RECT rect;
+    if (GetClientRect(window, &rect)) {
+        width = rect.right - rect.left;
+        height = rect.bottom - rect.top;
+
+        //unknown keeps old format
+        swapChain->ResizeBuffers(FRAME_COUNT, width, height, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING);
+        shouldResize = false;
+    }
 }
 
 void Window::shutdown() {
@@ -101,9 +115,15 @@ void Window::shutdown() {
 
 LRESULT Window::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) {
     switch (msg) {
-    case WM_CLOSE:
-        get().shouldClose = true;
-        return 0;
+        case WM_SIZE:
+            //only resize if size is not 0 and size has been changed from expected size
+            if (lParam && (LOWORD(lParam) != get().width || HIWORD(lParam) != get().height)) {
+                get().shouldResize = true;
+            }
+            break;
+        case WM_CLOSE:
+            get().shouldClose = true;
+            return 0;
     }
     return DefWindowProc(wnd, msg, wParam, lParam);
 }
