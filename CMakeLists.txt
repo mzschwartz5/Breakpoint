@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.18)
-project(cis565_dxpbe LANGUAGES CXX)
+project(breakpoint LANGUAGES CXX)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
@@ -35,25 +35,10 @@ set(D3D12_LIBS d3d12 dxgi d3dcompiler)
 
 set(headers
     src/main.h
-    src/pch.h
-    src/StepTimer.h
-    src/DirectXHelper.h
-#    src/DeviceResources.h
-    src/d3dx12.h
-    src/Support/WinInclude.h
-    src/Support/ComPointer.h
-    src/Support/Window.h
-    src/DebugLayer/DebugLayer.h
-    src/D3D/DXContext.h
 )
 
 set(sources
     src/main.cpp
-    src/pch.cpp
-    src/DebugLayer/DebugLayer.cpp
-    src/D3D/DXContext.cpp
-#    src/DeviceResources.cpp
-    src/Support/Window.cpp
 )
 
 set(imgui_headers
@@ -73,21 +58,69 @@ set(imgui_sources
     src/ImGui/imgui_widgets.cpp
 )
 
+set (support_headers     
+     src/Support/WinInclude.h
+     src/Support/ComPointer.h
+     src/Support/Window.h
+     src/Support/pch.h
+)
+
+set (support_sources     
+     src/Support/Window.cpp
+     src/Support/pch.cpp
+)
+
+set (debuglayer_headers
+     src/DebugLayer/DebugLayer.h
+)
+
+set (debuglayer_sources
+     src/DebugLayer/DebugLayer.cpp
+)
+
+set (d3d_sources
+     src/D3D/DXContext.cpp
+)
+
+set (d3d_headers
+     src/D3D/StepTimer.h
+     src/D3D/DirectXHelper.h
+     src/D3D/d3dx12.h
+     src/D3D/DXContext.h
+)
+
 list(SORT headers)
 list(SORT sources)
 list(SORT imgui_headers)
 list(SORT imgui_sources)
+
+list(SORT support_sources)
+list(SORT support_headers)
+list(SORT debuglayer_sources)
+list(SORT debuglayer_headers)
+list(SORT d3d_headers)
+list(SORT d3d_sources)
 
 source_group("Headers" FILES ${headers})
 source_group("Sources" FILES ${sources})
 source_group("ImGui\\Headers" FILES ${imgui_headers})
 source_group("ImGui\\Sources" FILES ${imgui_sources})
 
+source_group("Support\\Headers" FILES ${support_headers})
+source_group("Support\\Sources" FILES ${support_sources})
+source_group("DebugLayer\\Headers" FILES ${debuglayer_headers})
+source_group("DebugLayer\\Sources" FILES ${debuglayer_sources})
+source_group("D3D\\Headers" FILES ${d3d_headers})
+source_group("D3D\\Sources" FILES ${d3d_sources})
+
 #add_subdirectory(src/ImGui)
+#add_subdirectory(src/Support)
+#add_subdirectory(src/DebugLayer)
+#add_subdirectory(src/D3D)
 
-add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers})
+add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers} ${support_sources} ${support_headers} ${debuglayer_sources} ${debuglayer_headers} ${d3d_sources} ${d3d_headers})
 
-target_precompile_headers(${PROJECT_NAME} PRIVATE src/pch.h)
+target_precompile_headers(${PROJECT_NAME} PRIVATE src/Support/pch.h)
 
 target_link_libraries(${PROJECT_NAME} 
     d3d12 

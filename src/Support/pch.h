@@ -4,7 +4,7 @@
 #include <wrl/client.h>
 #include <dxgi1_4.h>
 #include <d3d12.h>
-#include "d3dx12.h"
+#include "../D3D/d3dx12.h"
 #include <pix.h>
 #include <DirectXColors.h>
 #include <DirectXMath.h>
