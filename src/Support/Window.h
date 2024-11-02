@@ -30,6 +30,9 @@ public:
 	void present();
 	void resize();
 
+	void beginFrame(ID3D12GraphicsCommandList5* cmdList);
+	void endFrame(ID3D12GraphicsCommandList5* cmdList);
+
 	void shutdown();
 
 private:
@@ -49,6 +52,7 @@ private:
 
 	ComPointer<IDXGISwapChain4> swapChain;
 	ComPointer<ID3D12Resource1> swapChainBuffers[FRAME_COUNT];
+	size_t currentSwapChainBufferIdx = 0;
 
 	bool getBuffers();
 	void releaseBuffers();

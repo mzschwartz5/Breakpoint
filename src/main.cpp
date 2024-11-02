@@ -22,6 +22,13 @@ int main() {
         //begin draw
         auto* cmdList = context.initCommandList();
 
+        //draw to window
+        Window::get().beginFrame(cmdList);
+
+        //draw
+
+        Window::get().endFrame(cmdList);
+
         //finish draw, present
         context.executeCommandList();
         Window::get().present();
