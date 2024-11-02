@@ -4,6 +4,8 @@ int main() {
     DebugLayer debugLayer = DebugLayer();
     DXContext context = DXContext();
     if (!Window::get().init()) {
+        //handle could not initialize window
+        std::cout << "could not initialize window\n";
         return false;
     }
 
