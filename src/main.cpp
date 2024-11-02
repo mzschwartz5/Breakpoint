@@ -1,30 +1,24 @@
 #include <iostream>
-#include <d3d12.h>
-#include <Windows.h>
-#include <dxgi1_4.h>
-#include <wrl.h>
 
-using Microsoft::WRL::ComPtr;
+#include "Support/WinInclude.h"
+#include "Support/ComPointer.h"
+#include "Support/Window.h"
+#include "Debug/DebugLayer.h"
+#include "D3D/DXContext.h"
 
 int main() {
-    // Initialize the COM library
-    CoInitialize(nullptr);
+    DebugLayer::Get().Init();
 
-    // Create a Direct3D 12 device
-    ComPtr<ID3D12Device> device;
-    HRESULT hr = D3D12CreateDevice(
-        nullptr, // Default adapter
-        D3D_FEATURE_LEVEL_12_0,
-        IID_PPV_ARGS(&device)
-    );
+    if (DXContext::Get().Init() && Window::Get().Init()) {
 
-    // Check for successful device creation
-    if (SUCCEEDED(hr)) {
-        // D3D12 device created successfully
-        std::cout << "hi";
+        while (!Window::Get().ShouldClose()) {
+            Window::Get().Update();
+            auto* cmdList = DXContext::Get().InitCommandList();
+            DXContext::Get().ExecuteCommandList();
+        }
+        Window::Get().Shutdown();
+        DXContext::Get().Shutdown();
     }
 
-    // Clean up
-    CoUninitialize();
-    return 0;
+    DebugLayer::Get().Shutdown();
 }

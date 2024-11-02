@@ -31,7 +31,7 @@ include_directories(${D3D12_INCLUDE_DIR})
 link_directories(${D3D12_LIB_DIR})
 
 # Add D3D12 libraries
-set(D3D12_LIBS d3d12 dxgi)
+set(D3D12_LIBS d3d12 dxgi d3dcompiler)
 
 set(headers
     src/main.h
@@ -40,12 +40,20 @@ set(headers
     src/DirectXHelper.h
 #    src/DeviceResources.h
     src/d3dx12.h
+    src/Support/WinInclude.h
+    src/Support/ComPointer.h
+    src/Support/Window.h
+    src/Debug/DebugLayer.h
+    src/D3D/DXContext.h
 )
 
 set(sources
     src/main.cpp
     src/pch.cpp
+    src/Debug/DebugLayer.cpp
+    src/D3D/DXContext.cpp
 #    src/DeviceResources.cpp
+    src/Support/Window.cpp
 )
 
 set(imgui_headers
