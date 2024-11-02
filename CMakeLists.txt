@@ -62,12 +62,10 @@ set (support_headers
      src/Support/WinInclude.h
      src/Support/ComPointer.h
      src/Support/Window.h
-     src/Support/pch.h
 )
 
 set (support_sources     
      src/Support/Window.cpp
-     src/Support/pch.cpp
 )
 
 set (debuglayer_headers
@@ -83,9 +81,6 @@ set (d3d_sources
 )
 
 set (d3d_headers
-     src/D3D/StepTimer.h
-     src/D3D/DirectXHelper.h
-     src/D3D/d3dx12.h
      src/D3D/DXContext.h
 )
 
@@ -119,8 +114,6 @@ source_group("D3D\\Sources" FILES ${d3d_sources})
 #add_subdirectory(src/D3D)
 
 add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers} ${support_sources} ${support_headers} ${debuglayer_sources} ${debuglayer_headers} ${d3d_sources} ${d3d_headers})
-
-target_precompile_headers(${PROJECT_NAME} PRIVATE src/Support/pch.h)
 
 target_link_libraries(${PROJECT_NAME} 
     d3d12 
