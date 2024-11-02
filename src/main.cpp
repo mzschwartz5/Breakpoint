@@ -3,7 +3,7 @@
 #include "Support/WinInclude.h"
 #include "Support/ComPointer.h"
 #include "Support/Window.h"
-#include "Debug/DebugLayer.h"
+#include "DebugLayer/DebugLayer.h"
 #include "D3D/DXContext.h"
 
 int main() {

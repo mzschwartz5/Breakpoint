@@ -43,14 +43,14 @@ set(headers
     src/Support/WinInclude.h
     src/Support/ComPointer.h
     src/Support/Window.h
-    src/Debug/DebugLayer.h
+    src/DebugLayer/DebugLayer.h
     src/D3D/DXContext.h
 )
 
 set(sources
     src/main.cpp
     src/pch.cpp
-    src/Debug/DebugLayer.cpp
+    src/DebugLayer/DebugLayer.cpp
     src/D3D/DXContext.cpp
 #    src/DeviceResources.cpp
     src/Support/Window.cpp
