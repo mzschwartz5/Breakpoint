@@ -1,9 +1,15 @@
 #include "DXContext.h"
 
 DXContext::DXContext() {
-    if (FAILED(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device))))
-    {
+
+    if (FAILED(CreateDXGIFactory2(0, IID_PPV_ARGS(&dxgiFactory)))) {
+        //handle could not create dxgi factory
+        throw std::runtime_error("Could not create dxgi factory");
+    }
+
+    if (FAILED(D3D12CreateDevice(nullptr, D3D_FEATURE_LEVEL_11_0, IID_PPV_ARGS(&device)))) {
         //handle could not create device
+        throw std::runtime_error("Could not create device");
     }
 
     D3D12_COMMAND_QUEUE_DESC cmdQueueDesc{};
@@ -11,33 +17,28 @@ DXContext::DXContext() {
     cmdQueueDesc.Priority = D3D12_COMMAND_QUEUE_PRIORITY_HIGH;
     cmdQueueDesc.NodeMask = 0;
     cmdQueueDesc.Flags = D3D12_COMMAND_QUEUE_FLAG_NONE;
-    if (FAILED(device->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(&cmdQueue))))
-    {
+    if (FAILED(device->CreateCommandQueue(&cmdQueueDesc, IID_PPV_ARGS(&cmdQueue)))) {
         //handle could not create command queue
         throw std::runtime_error("Could not create command queue");
     }
 
-    if (FAILED(device->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence))))
-    {
+    if (FAILED(device->CreateFence(fenceValue, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence)))) {
         //handle could not create fence
         throw std::runtime_error("Could not create fence");
     }
 
     fenceEvent = CreateEvent(nullptr, false, false, nullptr);
-    if (!fenceEvent)
-    {
+    if (!fenceEvent) {
         //handle could not create fence event
         throw std::runtime_error("Could not create fence event");
     }
 
-    if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAllocator))))
-    {
+    if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAllocator)))) {
         //handle cannot create cmd allocator
         throw std::runtime_error("Could not create command allocator");
     }
 
-    if (FAILED(device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList))))
-    {
+    if (FAILED(device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList)))) {
         //handle could n ot create cmd list
         throw std::runtime_error("Could not create command list");
     }
@@ -50,8 +51,10 @@ DXContext::~DXContext() {
     {
         CloseHandle(fenceEvent);
     }
+    fence.Release();
     cmdQueue.Release();
     device.Release();
+    dxgiFactory.Release();
 }
 
 void DXContext::signalAndWait() {
@@ -78,6 +81,16 @@ void DXContext::executeCommandList() {
         cmdQueue->ExecuteCommandLists(1, lists);
         signalAndWait();
     }
+}
+
+void DXContext::flush(size_t count) {
+    for (size_t i = 0; i < count; i++) {
+        signalAndWait();
+    }
+}
+
+ComPointer<IDXGIFactory7>& DXContext::getFactory() {
+    return dxgiFactory;
 }
 
 ComPointer<ID3D12Device6>& DXContext::getDevice() {

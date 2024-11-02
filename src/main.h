@@ -6,4 +6,7 @@
 #include "DebugLayer/DebugLayer.h"
 #include "D3D/DXContext.h"
 
+#define SCREEN_WIDTH 1280
+#define SCREEN_HEIGHT 720
+
 

@@ -1,8 +1,11 @@
 #include "Window.h"
 
-bool Window::init() {
+bool Window::init(DXContext* contextPtr, int w, int h) {
 
-	WNDCLASSEXW wcex{};
+    width = w;
+    height = h;
+
+    WNDCLASSEXW wcex{};
     wcex.cbSize = sizeof(wcex);
     wcex.style = CS_OWNDC;
     wcex.lpfnWndProc = &Window::OnWindowMessage;
@@ -27,21 +30,49 @@ bool Window::init() {
     monitorInfo.cbSize = sizeof(monitorInfo);
     GetMonitorInfoW(monitor, &monitorInfo);
 
-    window = CreateWindowExW(WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW, 
-                             (LPCWSTR)wndClass, 
-                             (LPCWSTR)("Breakpoint"),
-                             WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
-                             monitorInfo.rcWork.left + 0, 
-                             monitorInfo.rcWork.top + 0, 
-                             1920, 
-                             1080, 
-                             nullptr, 
-                             nullptr, 
-                             wcex.hInstance, 
-                             nullptr);
+    window = CreateWindowExW(WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW,
+        (LPCWSTR)wndClass,
+        (LPCWSTR)("Breakpoint"),
+        WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+        monitorInfo.rcWork.left + 0,
+        monitorInfo.rcWork.top + 0,
+        width,
+        height,
+        nullptr,
+        nullptr,
+        wcex.hInstance,
+        nullptr);
 
-	return window != nullptr;
+    if (!window) {
+        return false;
+    }
 
+    //describe swap chain
+    DXGI_SWAP_CHAIN_DESC1 swapChainDesc{};
+    swapChainDesc.Width = width;
+    swapChainDesc.Height = height;
+    swapChainDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    swapChainDesc.Stereo = false; //3d
+    swapChainDesc.SampleDesc.Count = 1;
+    swapChainDesc.SampleDesc.Quality = 0; //no MSAA
+    swapChainDesc.BufferUsage = DXGI_USAGE_BACK_BUFFER | DXGI_USAGE_RENDER_TARGET_OUTPUT;
+    swapChainDesc.BufferCount = FRAME_COUNT;
+    swapChainDesc.Scaling = DXGI_SCALING_STRETCH;
+    swapChainDesc.SwapEffect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+    swapChainDesc.AlphaMode = DXGI_ALPHA_MODE_IGNORE;
+    swapChainDesc.Flags = DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+
+    DXGI_SWAP_CHAIN_FULLSCREEN_DESC swapChainFullScreenDesc{};
+    swapChainFullScreenDesc.Windowed = true;
+
+    //swap chain creation
+    dxContext = contextPtr;
+    auto& factory = dxContext->getFactory();
+    ComPointer<IDXGISwapChain1> swapChain1;
+    factory->CreateSwapChainForHwnd(dxContext->getCommandQueue(), window, &swapChainDesc, &swapChainFullScreenDesc, nullptr, &swapChain1);
+    if (!swapChain1.QueryInterface(swapChain)) {
+        return false;
+    }
 }
 
 void Window::update() {
@@ -52,7 +83,13 @@ void Window::update() {
     }
 }
 
+void Window::present() {
+    swapChain->Present(1, 0);
+}
+
 void Window::shutdown() {
+    swapChain.Release();
+
     if (window) {
         DestroyWindow(window);
     }
