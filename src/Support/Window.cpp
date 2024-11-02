@@ -13,7 +13,7 @@ bool Window::init() {
     //wcex.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     wcex.hbrBackground = nullptr;
     wcex.lpszMenuName = nullptr;
-    wcex.lpszClassName = L"BreakpointWndCls";
+    wcex.lpszClassName = (LPCWSTR)("BreakpointWndCls");
     //wcex.hIconSm = LoadIconW(nullptr, IDI_APPLICATION);
     wndClass = RegisterClassExW(&wcex);
     if (wndClass == 0) {
@@ -29,7 +29,7 @@ bool Window::init() {
 
     window = CreateWindowExW(WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW, 
                              (LPCWSTR)wndClass, 
-                             L"Breakpoint", 
+                             (LPCWSTR)("Breakpoint"),
                              WS_OVERLAPPEDWINDOW | WS_VISIBLE, 
                              monitorInfo.rcWork.left + 0, 
                              monitorInfo.rcWork.top + 0, 
