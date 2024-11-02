@@ -35,6 +35,8 @@ public:
 private:
 	Window() = default;
 
+	DXContext* dxContext;
+
 	UINT width, height;
 
 	bool shouldResize = false;
@@ -46,8 +48,10 @@ private:
 	HWND window = nullptr;
 
 	ComPointer<IDXGISwapChain4> swapChain;
+	ComPointer<ID3D12Resource1> swapChainBuffers[FRAME_COUNT];
 
-	DXContext* dxContext;
+	bool getBuffers();
+	void releaseBuffers();
 
 #ifdef _DEBUG
 	ComPointer<ID3D12Debug3> d3d12Debug;

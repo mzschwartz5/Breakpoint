@@ -74,6 +74,11 @@ bool Window::init(DXContext* contextPtr, int w, int h) {
         return false;
     }
 
+    //get buffers
+    if (!getBuffers()) {
+        return false;
+    }
+
     return true;
 }
 
@@ -90,6 +95,8 @@ void Window::present() {
 }
 
 void Window::resize() {
+    releaseBuffers();
+
     RECT rect;
     if (GetClientRect(window, &rect)) {
         width = rect.right - rect.left;
@@ -99,9 +106,13 @@ void Window::resize() {
         swapChain->ResizeBuffers(FRAME_COUNT, width, height, DXGI_FORMAT_UNKNOWN, DXGI_SWAP_CHAIN_FLAG_ALLOW_MODE_SWITCH | DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING);
         shouldResize = false;
     }
+
+    getBuffers();
 }
 
 void Window::shutdown() {
+    releaseBuffers();
+
     swapChain.Release();
 
     if (window) {
@@ -110,6 +121,21 @@ void Window::shutdown() {
 
     if (wndClass) {
         UnregisterClassW((LPCWSTR)wndClass, GetModuleHandleW(nullptr));
+    }
+}
+
+bool Window::getBuffers() {
+    for (size_t i = 0; i < FRAME_COUNT; i++) {
+        if (FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&swapChainBuffers[i])))) {
+            return false;
+        }
+    }
+    return true;
+}
+
+void Window::releaseBuffers() {
+    for (size_t i = 0; i < FRAME_COUNT; i++) {
+        swapChainBuffers[i].Release();
     }
 }
 
