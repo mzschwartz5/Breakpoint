@@ -8,30 +8,30 @@ public:
 	Window(const Window&) = delete;
 	Window& operator=(const Window&) = delete;
 
-	inline static Window& Get() {
+	inline static Window& get() {
 		static Window instance;
 		return instance;
 	}
 
-	inline bool ShouldClose() const {
-		return m_shouldClose;
+	inline bool getShouldClose() const {
+		return shouldClose;
 	}
 
-	bool Init();
-	void Update();
-	void Shutdown();
-
-	bool m_shouldClose = false;
+	bool init();
+	void update();
+	void shutdown();
 
 private:
 	Window() = default;
 
+	bool shouldClose = false;
+
 	static LRESULT CALLBACK OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam);
-	ATOM m_wndClass = 0;
-	HWND m_window = nullptr;
+	ATOM wndClass = 0;
+	HWND window = nullptr;
 
 #ifdef _DEBUG
-	ComPointer<ID3D12Debug3> m_d3d12Debug;
-	ComPointer<IDXGIDebug1> m_dxgiDebug;
+	ComPointer<ID3D12Debug3> d3d12Debug;
+	ComPointer<IDXGIDebug1> dxgiDebug;
 #endif
 };

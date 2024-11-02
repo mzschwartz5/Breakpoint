@@ -5,36 +5,23 @@
 class DXContext
 {
 public:
-    bool Init();
-    void Shutdown();
-    void SignalAndWait();
-    ID3D12GraphicsCommandList5* InitCommandList();
-    void ExecuteCommandList();
-    inline ComPointer<ID3D12Device6>& GetDevice()
-    {
-        return m_device;
-    }
-    inline ComPointer<ID3D12CommandQueue>& GetCommandQueue()
-    {
-        return m_cmdQueue;
-    }
+    DXContext();
+    ~DXContext();
+
+    void signalAndWait();
+    ID3D12GraphicsCommandList5* initCommandList();
+    void executeCommandList();
+
+    ComPointer<ID3D12Device6>& getDevice();
+    ComPointer<ID3D12CommandQueue>& getCommandQueue();
+
 private:
-    ComPointer<ID3D12Device6> m_device;
-    ComPointer<ID3D12CommandQueue> m_cmdQueue;
-    ComPointer<ID3D12CommandAllocator> m_cmdAllocator;
-    ComPointer<ID3D12GraphicsCommandList5> m_cmdList;
-    ComPointer<ID3D12Fence1> m_fence;
-    UINT64 m_fenceValue = 0;
-    HANDLE m_fenceEvent = nullptr;
-    // singleton
-public:
-    DXContext(const DXContext&) = delete;
-    DXContext& operator=(const DXContext&) = delete;
-    inline static DXContext& Get()
-    {
-        static DXContext instance;
-        return instance;
-    }
-private:
-    DXContext() = default;
+    ComPointer<ID3D12Device6> device;
+    ComPointer<ID3D12CommandQueue> cmdQueue;
+    ComPointer<ID3D12CommandAllocator> cmdAllocator;
+    ComPointer<ID3D12GraphicsCommandList5> cmdList;
+    ComPointer<ID3D12Fence1> fence;
+    UINT64 fenceValue = 0;
+    HANDLE fenceEvent = nullptr;
+
 };

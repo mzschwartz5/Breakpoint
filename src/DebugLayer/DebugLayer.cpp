@@ -1,7 +1,6 @@
 #include "DebugLayer.h"
 
-bool DebugLayer::Init()
-{
+DebugLayer::DebugLayer() {
 #ifdef _DEBUG
     // Init D3D12 Debug layer
     if (SUCCEEDED(D3D12GetDebugInterface(IID_PPV_ARGS(&m_d3d12Debug))))
@@ -12,16 +11,15 @@ bool DebugLayer::Init()
         if (SUCCEEDED(DXGIGetDebugInterface1(0, IID_PPV_ARGS(&m_dxgiDebug))))
         {
             m_dxgiDebug->EnableLeakTrackingForThread();
-            return true;
+            initialized = true;
         }
     }
 #endif
 
-    return false;
+    initialized = false;
 }
 
-void DebugLayer::Shutdown()
-{
+DebugLayer::~DebugLayer() {
 #ifdef _DEBUG
     if (m_dxgiDebug)
     {
@@ -35,4 +33,8 @@ void DebugLayer::Shutdown()
     m_dxgiDebug.Release();
     m_d3d12Debug.Release();
 #endif
+}
+
+bool DebugLayer::isInitialized() {
+    return initialized;
 }
