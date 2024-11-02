@@ -10,8 +10,8 @@ public:
 	~DebugLayer();
 
 #ifdef _DEBUG
-	ComPointer<ID3D12Debug3> m_d3d12Debug;
-	ComPointer<IDXGIDebug1> m_dxgiDebug;
+	ComPointer<ID3D12Debug3> d3d12Debug;
+	ComPointer<IDXGIDebug1> dxgiDebug;
 #endif
 
 	bool isInitialized();

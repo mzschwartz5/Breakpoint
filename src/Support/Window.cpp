@@ -13,7 +13,7 @@ bool Window::init() {
     //wcex.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     wcex.hbrBackground = nullptr;
     wcex.lpszMenuName = nullptr;
-    wcex.lpszClassName = L"D3D12ExWndCls";
+    wcex.lpszClassName = L"BreakpointWndCls";
     //wcex.hIconSm = LoadIconW(nullptr, IDI_APPLICATION);
     wndClass = RegisterClassExW(&wcex);
     if (wndClass == 0) {
