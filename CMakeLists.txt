@@ -137,6 +137,23 @@ function(compile_shader SHADER_FILE SHADER_TYPE ENTRY_POINT)
     set(COMPILED_SHADERS ${COMPILED_SHADERS} PARENT_SCOPE)
 endfunction()
 
+# Function to compile root signature HLSL shader using fxc
+function(compile_root_signature SHADER_FILE)
+    get_filename_component(FILE_NAME ${SHADER_FILE} NAME_WE)
+    set(OUTPUT_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${FILE_NAME}.cso")
+    add_custom_command(
+        OUTPUT ${OUTPUT_FILE}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} fxc /T rootsig_1_1 /E ROOTSIG /Fo ${OUTPUT_FILE} ${CMAKE_SOURCE_DIR}/${SHADER_FILE}
+        DEPENDS ${SHADER_FILE}
+        COMMENT "Compiling ${SHADER_FILE}..."
+    )
+    # By setting the source file as generated, CMake will not try to compile it directly / avoid unnecessary builds.
+    set_source_files_properties(${OUTPUT_FILE} PROPERTIES GENERATED TRUE)
+    # Add the compiled shader to the list of compiled shaders, so we can add it to the executable outside of this function scope
+    list(APPEND COMPILED_SHADERS ${OUTPUT_FILE})
+    set(COMPILED_SHADERS ${COMPILED_SHADERS} PARENT_SCOPE)
+endfunction()
+
 # Compile shaders into .cso files
 foreach(SHADER_FILE IN LISTS shader_sources)
     get_filename_component(FILE_NAME ${SHADER_FILE} NAME_WE)
@@ -148,7 +165,7 @@ foreach(SHADER_FILE IN LISTS shader_sources)
         set(ENTRY_POINT "main")
     elseif(FILE_NAME MATCHES "root_signature")
         set(SHADER_TYPE "rootsig_1_0")
-        compile_shader(${SHADER_FILE} ${SHADER_TYPE})
+        compile_root_signature(${SHADER_FILE})
         continue()
     else()
         # TODO - will need support for mesh shaders later

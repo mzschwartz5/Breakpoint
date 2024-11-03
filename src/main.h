@@ -15,7 +15,7 @@ struct Vertex
 {
     float x, y;
 };
-Vertex verticies[] =
+Vertex vertices[] =
 {
     // T1
     { -1.f, -1.f },

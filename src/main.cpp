@@ -44,7 +44,7 @@ int main() {
     uploadRange.Begin = 0;
     uploadRange.End = 1023;
     uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress);
-    memcpy(uploadBufferAddress, verticies, sizeof(verticies));
+    memcpy(uploadBufferAddress, vertices, sizeof(vertices));
     uploadBuffer->Unmap(0, &uploadRange);
     // Copy CPU Resource --> GPU Resource
     auto* cmdList = context.initCommandList();
@@ -144,7 +144,7 @@ int main() {
     // === Vertex buffer view ===
     D3D12_VERTEX_BUFFER_VIEW vbv{};
     vbv.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
-    vbv.SizeInBytes = sizeof(Vertex) * _countof(verticies);
+    vbv.SizeInBytes = sizeof(Vertex) * _countof(vertices);
     vbv.StrideInBytes = sizeof(Vertex);
 
     while (!Window::get().getShouldClose()) {
@@ -170,7 +170,7 @@ int main() {
         cmdList->SetPipelineState(pso);
         cmdList->SetGraphicsRootSignature(rootSignature);
         // Draw
-        cmdList->DrawInstanced(_countof(verticies), 1, 0, 0);
+        cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);
 
         Window::get().endFrame(cmdList);
 
