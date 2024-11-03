@@ -125,12 +125,15 @@ function(compile_shader SHADER_FILE SHADER_TYPE ENTRY_POINT)
     set(OUTPUT_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${FILE_NAME}.cso")
     add_custom_command(
         OUTPUT ${OUTPUT_FILE}
-        COMMAND fxc /T ${SHADER_TYPE} /E ${ENTRY_POINT} /Fo ${OUTPUT_FILE} ${SHADER_FILE}
+        COMMAND ${CMAKE_COMMAND} -E chdir ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} fxc /T ${SHADER_TYPE} /E ${ENTRY_POINT} /Fo ${OUTPUT_FILE} ${CMAKE_SOURCE_DIR}/${SHADER_FILE}
         DEPENDS ${SHADER_FILE}
         COMMENT "Compiling ${SHADER_FILE}..."
     )
     # By setting the source file as generated, CMake will not try to compile it directly / avoid unnecessary builds.
     set_source_files_properties(${OUTPUT_FILE} PROPERTIES GENERATED TRUE)
+    # Add the compiled shader to the list of compiled shaders, so we can add it to the executable outside of this function scope
+    list(APPEND COMPILED_SHADERS ${OUTPUT_FILE})
+    set(COMPILED_SHADERS ${COMPILED_SHADERS} PARENT_SCOPE)
 endfunction()
 
 # Compile shaders into .cso files
@@ -155,7 +158,7 @@ endforeach()
 #add_subdirectory(src/DebugLayer)
 #add_subdirectory(src/D3D)
 
-add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers} ${support_sources} ${support_headers} ${debuglayer_sources} ${debuglayer_headers} ${d3d_sources} ${d3d_headers})
+add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers} ${support_sources} ${support_headers} ${debuglayer_sources} ${debuglayer_headers} ${d3d_sources} ${d3d_headers} ${COMPILED_SHADERS})
 
 target_link_libraries(${PROJECT_NAME} 
     d3d12 
