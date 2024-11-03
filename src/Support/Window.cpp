@@ -74,6 +74,24 @@ bool Window::init(DXContext* contextPtr, int w, int h) {
         return false;
     }
 
+    // Create RTV Heap
+    D3D12_DESCRIPTOR_HEAP_DESC descHeapDesc{};
+    descHeapDesc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_RTV;
+    descHeapDesc.NumDescriptors = FRAME_COUNT;
+    descHeapDesc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_NONE;
+    descHeapDesc.NodeMask = 0;
+    if (FAILED(dxContext->getDevice()->CreateDescriptorHeap(&descHeapDesc, IID_PPV_ARGS(&rtvDescHeap)))) {
+        return false;
+    }
+
+    // Create handles to view
+    auto firstHandle = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
+    auto handleIncrement = dxContext->getDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV);
+    for (size_t i = 0; i < FRAME_COUNT; i++) {
+        rtvHandles[i] = firstHandle;
+        rtvHandles[i].ptr += handleIncrement * i;
+    }
+
     //get buffers
     if (!getBuffers()) {
         return false;
@@ -122,6 +140,11 @@ void Window::beginFrame(ID3D12GraphicsCommandList5* cmdList) {
     barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_RENDER_TARGET;
 
     cmdList->ResourceBarrier(1, &barrier);
+
+    float clearColor[] = { .4f, .4f, .8f, 1.f };
+    cmdList->ClearRenderTargetView(rtvHandles[currentSwapChainBufferIdx], clearColor, 0, nullptr);
+
+    cmdList->OMSetRenderTargets(1, &rtvHandles[currentSwapChainBufferIdx], false, nullptr);
 }
 
 void Window::endFrame(ID3D12GraphicsCommandList5* cmdList) {
@@ -139,6 +162,8 @@ void Window::endFrame(ID3D12GraphicsCommandList5* cmdList) {
 void Window::shutdown() {
     releaseBuffers();
 
+    rtvDescHeap.Release();
+
     swapChain.Release();
 
     if (window) {
@@ -155,6 +180,13 @@ bool Window::getBuffers() {
         if (FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&swapChainBuffers[i])))) {
             return false;
         }
+
+        D3D12_RENDER_TARGET_VIEW_DESC rtv{};
+        rtv.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+        rtv.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
+        rtv.Texture2D.MipSlice = 0;
+        rtv.Texture2D.PlaneSlice = 0;
+        dxContext->getDevice()->CreateRenderTargetView(swapChainBuffers[i], &rtv, rtvHandles[i]);
     }
     return true;
 }

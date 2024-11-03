@@ -62,10 +62,12 @@ set (support_headers
      src/Support/WinInclude.h
      src/Support/ComPointer.h
      src/Support/Window.h
+     src/Support/Shader.h
 )
 
 set (support_sources     
      src/Support/Window.cpp
+     src/Support/Shader.cpp
 )
 
 set (debuglayer_headers
@@ -84,6 +86,11 @@ set (d3d_headers
      src/D3D/DXContext.h
 )
 
+set (shader_sources
+     src/Shaders/basic_2d_vert.hlsl
+     src/Shaders/basic_2d_frag.hlsl
+)
+
 list(SORT headers)
 list(SORT sources)
 list(SORT imgui_headers)
@@ -95,6 +102,8 @@ list(SORT debuglayer_sources)
 list(SORT debuglayer_headers)
 list(SORT d3d_headers)
 list(SORT d3d_sources)
+
+list (SORT shader_sources)
 
 source_group("Headers" FILES ${headers})
 source_group("Sources" FILES ${sources})
@@ -108,12 +117,14 @@ source_group("DebugLayer\\Sources" FILES ${debuglayer_sources})
 source_group("D3D\\Headers" FILES ${d3d_headers})
 source_group("D3D\\Sources" FILES ${d3d_sources})
 
+source_group ("Shaders\\Sources" FILES ${shader_sources})
+
 #add_subdirectory(src/ImGui)
 #add_subdirectory(src/Support)
 #add_subdirectory(src/DebugLayer)
 #add_subdirectory(src/D3D)
 
-add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers} ${support_sources} ${support_headers} ${debuglayer_sources} ${debuglayer_headers} ${d3d_sources} ${d3d_headers})
+add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers} ${support_sources} ${support_headers} ${debuglayer_sources} ${debuglayer_headers} ${d3d_sources} ${d3d_headers} ${shader_sources})
 
 target_link_libraries(${PROJECT_NAME} 
     d3d12 

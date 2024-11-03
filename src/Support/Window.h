@@ -54,6 +54,9 @@ private:
 	ComPointer<ID3D12Resource1> swapChainBuffers[FRAME_COUNT];
 	size_t currentSwapChainBufferIdx = 0;
 
+	ComPointer<ID3D12DescriptorHeap> rtvDescHeap;
+	D3D12_CPU_DESCRIPTOR_HANDLE rtvHandles[FRAME_COUNT];
+
 	bool getBuffers();
 	void releaseBuffers();
 
