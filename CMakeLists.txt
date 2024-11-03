@@ -132,6 +132,7 @@ function(compile_shader SHADER_FILE SHADER_TYPE ENTRY_POINT)
     )
     # By setting the source file as generated, CMake will not try to compile it directly / avoid unnecessary builds.
     set_source_files_properties(${OUTPUT_FILE} PROPERTIES GENERATED TRUE)
+    set_source_files_properties(${SHADER_FILE} PROPERTIES HEADER_FILE_ONLY TRUE) # Similarly, mark the original shader file as HEADER_FILE_ONLY to avoid compiling it
     # Add the compiled shader to the list of compiled shaders, so we can add it to the executable outside of this function scope
     list(APPEND COMPILED_SHADERS ${OUTPUT_FILE})
     set(COMPILED_SHADERS ${COMPILED_SHADERS} PARENT_SCOPE)
@@ -181,6 +182,10 @@ endforeach()
 #add_subdirectory(src/D3D)
 
 add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers} ${support_sources} ${support_headers} ${debuglayer_sources} ${debuglayer_headers} ${d3d_sources} ${d3d_headers} ${COMPILED_SHADERS})
+
+# Add shader sources to the project for visibility in Solution Explorer
+# But because they're marked as HEADER_FILE_ONLY, they won't be compiled by CMAKE (which is good, because we're compiling them manually with fxc)
+target_sources(${CMAKE_PROJECT_NAME} PRIVATE ${shader_sources})
 
 target_link_libraries(${PROJECT_NAME} 
     d3d12 
