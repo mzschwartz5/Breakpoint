@@ -36,7 +36,7 @@ int main() {
     rd.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     rd.Flags = D3D12_RESOURCE_FLAG_NONE;
     ComPointer<ID3D12Resource1> uploadBuffer, vertexBuffer;
-    context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&uploadBuffer));
+    context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ , nullptr, IID_PPV_ARGS(&uploadBuffer));
     context.getDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer));
     // Copy void* --> CPU Resource
     void* uploadBufferAddress;
@@ -134,9 +134,6 @@ int main() {
     gfxPsod.CachedPSO.pCachedBlob = nullptr;
     gfxPsod.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
  
-    gfxPsod.PS.BytecodeLength = vertexShader.getSize();
-    gfxPsod.PS.pShaderBytecode = vertexShader.getBuffer();
-
     //output merger
     ComPointer<ID3D12PipelineState> pso;
     context.getDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));

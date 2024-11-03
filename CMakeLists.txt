@@ -150,6 +150,7 @@ function(compile_root_signature SHADER_FILE)
     )
     # By setting the source file as generated, CMake will not try to compile it directly / avoid unnecessary builds.
     set_source_files_properties(${OUTPUT_FILE} PROPERTIES GENERATED TRUE)
+    set_source_files_properties(${SHADER_FILE} PROPERTIES HEADER_FILE_ONLY TRUE) # Similarly, mark the original shader file as HEADER_FILE_ONLY to avoid compiling it
     # Add the compiled shader to the list of compiled shaders, so we can add it to the executable outside of this function scope
     list(APPEND COMPILED_SHADERS ${OUTPUT_FILE})
     set(COMPILED_SHADERS ${COMPILED_SHADERS} PARENT_SCOPE)
