@@ -119,12 +119,43 @@ source_group("D3D\\Sources" FILES ${d3d_sources})
 
 source_group ("Shaders\\Sources" FILES ${shader_sources})
 
+# Function to compile HLSL shaders using fxc
+function(compile_shader SHADER_FILE SHADER_TYPE ENTRY_POINT)
+    get_filename_component(FILE_NAME ${SHADER_FILE} NAME_WE)
+    set(OUTPUT_FILE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/${FILE_NAME}.cso")
+    add_custom_command(
+        OUTPUT ${OUTPUT_FILE}
+        COMMAND fxc /T ${SHADER_TYPE} /E ${ENTRY_POINT} /Fo ${OUTPUT_FILE} ${SHADER_FILE}
+        DEPENDS ${SHADER_FILE}
+        COMMENT "Compiling ${SHADER_FILE}..."
+    )
+    # By setting the source file as generated, CMake will not try to compile it directly / avoid unnecessary builds.
+    set_source_files_properties(${OUTPUT_FILE} PROPERTIES GENERATED TRUE)
+endfunction()
+
+# Compile shaders into .cso files
+foreach(SHADER_FILE IN LISTS shader_sources)
+    get_filename_component(FILE_NAME ${SHADER_FILE} NAME_WE)
+    if(FILE_NAME MATCHES "_vert")
+        set(SHADER_TYPE "vs_5_0")
+        set(ENTRY_POINT "main")
+    elseif(FILE_NAME MATCHES "_frag")
+        set(SHADER_TYPE "ps_5_0")
+        set(ENTRY_POINT "main")
+    else()
+        # TODO - will need support for mesh shaders later
+        message(WARNING "Unknown shader type for file: ${SHADER_FILE}")
+        continue()
+    endif()
+    compile_shader(${SHADER_FILE} ${SHADER_TYPE} ${ENTRY_POINT})
+endforeach()
+
 #add_subdirectory(src/ImGui)
 #add_subdirectory(src/Support)
 #add_subdirectory(src/DebugLayer)
 #add_subdirectory(src/D3D)
 
-add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers} ${support_sources} ${support_headers} ${debuglayer_sources} ${debuglayer_headers} ${d3d_sources} ${d3d_headers} ${shader_sources})
+add_executable(${CMAKE_PROJECT_NAME} ${sources} ${headers} ${imgui_sources} ${imgui_headers} ${support_sources} ${support_headers} ${debuglayer_sources} ${debuglayer_headers} ${d3d_sources} ${d3d_headers})
 
 target_link_libraries(${PROJECT_NAME} 
     d3d12 
