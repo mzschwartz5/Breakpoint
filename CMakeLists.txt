@@ -89,6 +89,7 @@ set (d3d_headers
 set (shader_sources
      src/Shaders/basic_2d_vert.hlsl
      src/Shaders/basic_2d_frag.hlsl
+     src/Shaders/root_signature.hlsl
 )
 
 list(SORT headers)
@@ -117,7 +118,7 @@ source_group("DebugLayer\\Sources" FILES ${debuglayer_sources})
 source_group("D3D\\Headers" FILES ${d3d_headers})
 source_group("D3D\\Sources" FILES ${d3d_sources})
 
-source_group ("Shaders\\Sources" FILES ${shader_sources})
+source_group("Shaders\\Sources" FILES ${shader_sources})
 
 # Function to compile HLSL shaders using fxc
 function(compile_shader SHADER_FILE SHADER_TYPE ENTRY_POINT)
@@ -145,6 +146,10 @@ foreach(SHADER_FILE IN LISTS shader_sources)
     elseif(FILE_NAME MATCHES "_frag")
         set(SHADER_TYPE "ps_5_0")
         set(ENTRY_POINT "main")
+    elseif(FILE_NAME MATCHES "root_signature")
+        set(SHADER_TYPE "rootsig_1_0")
+        compile_shader(${SHADER_FILE} ${SHADER_TYPE})
+        continue()
     else()
         # TODO - will need support for mesh shaders later
         message(WARNING "Unknown shader type for file: ${SHADER_FILE}")

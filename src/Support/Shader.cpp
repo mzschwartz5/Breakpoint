@@ -10,7 +10,7 @@ Shader::Shader(std::string_view name) {
         shaderDir.remove_filename();
     }
 
-    std::ifstream shaderIn(shaderDir / name, std::ios::binary);
+    std::ifstream shaderIn(shaderDir / "..\\" / name, std::ios::binary);
 
     if (shaderIn.is_open()) {
         shaderIn.seekg(0, std::ios::end);
