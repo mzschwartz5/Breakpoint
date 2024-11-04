@@ -24,6 +24,14 @@ public:
 		return shouldClose;
 	}
 
+	inline UINT getWidth() const {
+		return width;
+	}
+
+	inline UINT getHeight() const {
+		return height;
+	}
+
 	bool init(DXContext* context, int w, int h);
 	void update();
 
