@@ -39,7 +39,7 @@ DXContext::DXContext() {
     }
 
     if (FAILED(device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList)))) {
-        //handle could n ot create cmd list
+        //handle could not create cmd list
         throw std::runtime_error("Could not create command list");
     }
 }
