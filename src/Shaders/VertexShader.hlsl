@@ -1,4 +1,4 @@
-#include "root_signature.hlsl"
+#include "RootSignature.hlsl"
 
 [RootSignature(ROOTSIG)]
 float4 main(float2 pos : Position) : SV_Position

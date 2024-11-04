@@ -24,10 +24,9 @@ DebugLayer::~DebugLayer() {
     if (dxgiDebug)
     {
         OutputDebugStringW(L"DXGI Reports living device objects:\n");
-        /*dxgiDebug->ReportLiveObjects(
+        dxgiDebug->ReportLiveObjects(
             DXGI_DEBUG_ALL, DXGI_DEBUG_RLO_FLAGS(DXGI_DEBUG_RLO_DETAIL | DXGI_DEBUG_RLO_IGNORE_INTERNAL)
-        );*/
-        OutputDebugStringW(L"this code is broken\n");
+        );
     }
 
     dxgiDebug.Release();

@@ -12,17 +12,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="D3D\DXContext.cpp" />
-    <ClCompile Include="Debug\DXDebugLayer.cpp" />
+    <ClCompile Include="Debug\DebugLayer.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Support\ImageLoader.cpp" />
     <ClCompile Include="Support\Shader.cpp" />
     <ClCompile Include="Support\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D\DXContext.h" />
-    <ClInclude Include="Debug\DXDebugLayer.h" />
+    <ClInclude Include="Debug\DebugLayer.h" />
     <ClInclude Include="Support\ComPointer.h" />
-    <ClInclude Include="Support\ImageLoader.h" />
     <ClInclude Include="Support\Shader.h" />
     <ClInclude Include="Support\Window.h" />
     <ClInclude Include="Support\WinInclude.h" />
