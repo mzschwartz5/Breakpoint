@@ -1,1 +1,1 @@
-Sources: https://github.com/Ohjurot/D3D12Ez
+sources: https://github.com/Ohjurot/D3D12Ez
