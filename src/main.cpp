@@ -31,7 +31,6 @@ int main() {
     //output merger
     ComPointer<ID3D12PipelineState> pso;
     context.getDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
-    
 
     while (!Window::get().getShouldClose()) {
         //update window
