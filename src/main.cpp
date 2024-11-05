@@ -15,23 +15,18 @@ int main() {
     ComPointer<ID3D12Resource1> uploadBuffer, vertexBuffer;
     D3D12_VERTEX_BUFFER_VIEW vbv = passVertexDataToGPU(context, cmdList, uploadBuffer, vertexBuffer);
 
-    // === Shaders ===
-    Shader rootSignatureShader("RootSignature.cso");
-    Shader vertexShader("VertexShader.cso");
-    Shader pixelShader("PixelShader.cso");
+    RenderPipeline basicPipeline( "VertexShader.cso" , "PixelShader.cso" , "RootSignature.cso" , Standard2D, context);
 
     // === Create root signature ===
-    ComPointer<ID3D12RootSignature> rootSignature;
-    context.getDevice()->CreateRootSignature(0, rootSignatureShader.getBuffer(), rootSignatureShader.getSize(), IID_PPV_ARGS(&rootSignature));
+    ComPointer<ID3D12RootSignature> rootSignature = basicPipeline.getRootSignature();
 
     // === Pipeline state ===
     D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod{};
-    createShaderPSOD(gfxPsod, vertexLayout, _countof(vertexLayout), rootSignature, vertexShader, pixelShader);
+    createShaderPSOD(gfxPsod, rootSignature, basicPipeline.getVertexShader(), basicPipeline.getFragmentShader());
     
     //output merger
     ComPointer<ID3D12PipelineState> pso;
     context.getDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
-    
 
     while (!Window::get().getShouldClose()) {
         //update window
