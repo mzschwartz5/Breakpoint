@@ -20,10 +20,15 @@ Vertex vertices[] =
     {  1.f, -1.f },
 };
 
-void createShaderPSOD(D3D12_GRAPHICS_PIPELINE_STATE_DESC& gfxPsod, D3D12_INPUT_ELEMENT_DESC* vertLayout, size_t vertLayoutSize, ComPointer<ID3D12RootSignature> rootSignature, Shader& vs, Shader& fs) {
+D3D12_INPUT_ELEMENT_DESC vertexLayout[] =
+{
+    { "Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+};
+
+void createShaderPSOD(D3D12_GRAPHICS_PIPELINE_STATE_DESC& gfxPsod, ComPointer<ID3D12RootSignature> rootSignature, Shader& vs, Shader& fs) {
     gfxPsod.pRootSignature = rootSignature;
-    gfxPsod.InputLayout.NumElements = vertLayoutSize;
-    gfxPsod.InputLayout.pInputElementDescs = vertLayout;
+    gfxPsod.InputLayout.NumElements = _countof(vertexLayout);
+    gfxPsod.InputLayout.pInputElementDescs = vertexLayout;
     gfxPsod.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 
     gfxPsod.VS.BytecodeLength = vs.getSize();
@@ -61,8 +66,8 @@ void createShaderPSOD(D3D12_GRAPHICS_PIPELINE_STATE_DESC& gfxPsod, D3D12_INPUT_E
     gfxPsod.BlendState.AlphaToCoverageEnable = FALSE;
     gfxPsod.BlendState.IndependentBlendEnable = FALSE;
     gfxPsod.BlendState.RenderTarget[0].LogicOpEnable = FALSE;
-    /*gfxPsod.BlendState.RenderTarget[0].BlendEnable = FALSE;
-    gfxPsod.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;*/
+    //gfxPsod.BlendState.RenderTarget[0].BlendEnable = FALSE;
+    //gfxPsod.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ZERO;
     gfxPsod.BlendState.RenderTarget[0].BlendEnable = TRUE;
     gfxPsod.BlendState.RenderTarget[0].SrcBlend = D3D12_BLEND_ONE;
 
