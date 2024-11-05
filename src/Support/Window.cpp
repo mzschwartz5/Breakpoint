@@ -32,7 +32,7 @@ bool Window::init(DXContext* contextPtr, int w, int h) {
 
     window = CreateWindowExW(WS_EX_OVERLAPPEDWINDOW | WS_EX_APPWINDOW,
         (LPCWSTR)wndClass,
-        (LPCWSTR)("Breakpoint"),
+        L"Breakpoint",
         WS_OVERLAPPEDWINDOW | WS_VISIBLE,
         monitorInfo.rcWork.left + 0,
         monitorInfo.rcWork.top + 0,
