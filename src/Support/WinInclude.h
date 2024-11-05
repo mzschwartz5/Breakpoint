@@ -8,6 +8,7 @@
 
 #include <d3d12.h>
 #include <dxgi1_6.h>
+#include <DirectXMath.h>
 
 #ifdef _DEBUG
 #include <d3d12sdklayers.h>
