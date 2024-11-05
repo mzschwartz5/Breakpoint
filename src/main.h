@@ -4,7 +4,7 @@
 #include "Support/ComPointer.h"
 #include "Support/Window.h"
 #include "Support/Shader.h"
-#include "DebugLayer/DebugLayer.h"
+#include "Debug/DebugLayer.h"
 #include "D3D/DXContext.h"
 
 #define SCREEN_WIDTH 1280

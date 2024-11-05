@@ -69,9 +69,9 @@ int main() {
     context.executeCommandList();
 
     // === Shaders ===
-    Shader rootSignatureShader("root_signature.cso");
-    Shader vertexShader("basic_2d_vert.cso");
-    Shader pixelShader("basic_2d_frag.cso");
+    Shader rootSignatureShader("RootSignature.cso");
+    Shader vertexShader("VertexShader.cso");
+    Shader pixelShader("PixelShader.cso");
 
     // === Create root signature ===
     ComPointer<ID3D12RootSignature> rootSignature;
