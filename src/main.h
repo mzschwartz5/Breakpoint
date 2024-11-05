@@ -6,25 +6,33 @@
 #include "Support/Shader.h"
 #include "Debug/DebugLayer.h"
 #include "D3D/DXContext.h"
+#include "D3D/RenderPipelineHelper.h"
 
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
-// === Vertex Data ===
-struct Vertex
-{
-    float x, y;
-};
-Vertex vertices[] =
-{
-    // T1
-    { -1.f, -1.f },
-    {  0.f,  1.f },
-    {  1.f, -1.f },
-};
 D3D12_INPUT_ELEMENT_DESC vertexLayout[] =
 {
     { "Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 };
+
+
+
+void emitColor(float* color)
+{
+    static int pukeState = 0;
+    color[pukeState] += 0.01f;
+    if (color[pukeState] > 1.0f)
+    {
+        pukeState++;
+        if (pukeState == 3)
+        {
+            color[0] = 0.0f;
+            color[1] = 0.0f;
+            color[2] = 0.0f;
+            pukeState = 0;
+        }
+    }
+}
 
 
