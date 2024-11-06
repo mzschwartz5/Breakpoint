@@ -12,8 +12,11 @@ int main() {
     }
 
     //pass memory to gpu, get vertex buffer view
-    ComPointer<ID3D12Resource1> uploadBuffer, vertexBuffer;
-    D3D12_VERTEX_BUFFER_VIEW vbv = passVertexDataToGPU(context, cmdList, uploadBuffer, vertexBuffer);
+    float vdata[] = {-1.f, -1.f,
+      0.f,  1.f ,
+      1.f, -1.f  };
+    VertexBuffer buffer = VertexBuffer(vdata, 24, 8);
+    auto vbv = buffer.passVertexDataToGPU(context, cmdList);
 
     RenderPipeline basicPipeline( "VertexShader.cso" , "PixelShader.cso" , "RootSignature.cso" , Standard2D, context);
 
@@ -59,7 +62,7 @@ int main() {
         cmdList->SetGraphicsRoot32BitConstants(0, 3, color, 0);
 
         // Draw
-        cmdList->DrawInstanced(_countof(vertices), 1, 0, 0);
+        cmdList->DrawInstanced(3, 1, 0, 0);
 
         Window::get().endFrame(cmdList);
 
@@ -69,8 +72,7 @@ int main() {
     }
 
     // Close
-    vertexBuffer.Release();
-    uploadBuffer.Release();
+    buffer.releaseResources();
 
     //flush pending buffer operations in swapchain
     context.flush(FRAME_COUNT);

@@ -5,21 +5,6 @@
 #include "../Support/ComPointer.h"
 #include "../Support/Window.h"
 
-
-// === Vertex Data ===
-struct Vertex
-{
-    float x, y;
-};
-
-Vertex vertices[] =
-{
-    // T1
-    { -1.f, -1.f },
-    {  0.f,  1.f },
-    {  1.f, -1.f },
-};
-
 D3D12_INPUT_ELEMENT_DESC vertexLayout[] =
 {
     { "Position", 0, DXGI_FORMAT_R32G32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
@@ -114,51 +99,4 @@ void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdLi
     scRect.right = Window::get().getWidth();
     scRect.bottom = Window::get().getHeight();
     cmdList->RSSetScissorRects(1, &scRect);
-}
-
-D3D12_VERTEX_BUFFER_VIEW passVertexDataToGPU(DXContext& context, ID3D12GraphicsCommandList5* cmdList, ComPointer<ID3D12Resource1>& uploadBuffer, ComPointer<ID3D12Resource1>& vertexBuffer) {
-    D3D12_HEAP_PROPERTIES hpUpload{};
-    hpUpload.Type = D3D12_HEAP_TYPE_UPLOAD;
-    hpUpload.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-    hpUpload.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    hpUpload.CreationNodeMask = 0;
-    hpUpload.VisibleNodeMask = 0;
-    D3D12_HEAP_PROPERTIES hpDefault{};
-    hpDefault.Type = D3D12_HEAP_TYPE_DEFAULT;
-    hpDefault.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
-    hpDefault.CPUPageProperty = D3D12_CPU_PAGE_PROPERTY_UNKNOWN;
-    hpDefault.CreationNodeMask = 0;
-    hpDefault.VisibleNodeMask = 0;
-    D3D12_RESOURCE_DESC rd{};
-    rd.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    rd.Alignment = D3D12_DEFAULT_RESOURCE_PLACEMENT_ALIGNMENT;
-    rd.Width = 1024;
-    rd.Height = 1;
-    rd.DepthOrArraySize = 1;
-    rd.MipLevels = 1;
-    rd.Format = DXGI_FORMAT_UNKNOWN;
-    rd.SampleDesc.Count = 1;
-    rd.SampleDesc.Quality = 0;
-    rd.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    rd.Flags = D3D12_RESOURCE_FLAG_NONE;
-    context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
-    context.getDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer));
-    // Copy void* --> CPU Resource
-    void* uploadBufferAddress;
-    D3D12_RANGE uploadRange;
-    uploadRange.Begin = 0;
-    uploadRange.End = 1023;
-    uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress);
-    memcpy(uploadBufferAddress, vertices, sizeof(vertices));
-    uploadBuffer->Unmap(0, &uploadRange);
-    // Copy CPU Resource --> GPU Resource
-    cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, 0, 1024);
-    context.executeCommandList();
-
-    // === Vertex buffer view ===
-    D3D12_VERTEX_BUFFER_VIEW vbv{};
-    vbv.BufferLocation = vertexBuffer->GetGPUVirtualAddress();
-    vbv.SizeInBytes = sizeof(Vertex) * _countof(vertices);
-    vbv.StrideInBytes = sizeof(Vertex);
-    return vbv;
 }
