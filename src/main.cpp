@@ -4,6 +4,8 @@ int main() {
     DebugLayer debugLayer = DebugLayer();
     DXContext context = DXContext();
     auto* cmdList = context.initCommandList();
+    Camera camera = Camera();
+
     if (!Window::get().init(&context, SCREEN_WIDTH, SCREEN_HEIGHT)) {
         //handle could not initialize window
         std::cout << "could not initialize window\n";
@@ -12,10 +14,16 @@ int main() {
     }
 
     //pass memory to gpu, get vertex buffer view
-    float vdata[] = {-1.f, -1.f,
-      0.f,  1.f ,
-      1.f, -1.f  };
-    VertexBuffer buffer = VertexBuffer(vdata, 24, 8);
+    float vdata[] = {
+        0.25, 0.25, 3.25,
+        0.25, 0.5, 3.25,
+        0.5, 0.5, 3.25,
+        0.25, -0.75, 6.25,
+        0.25, -0.5, 6.25,
+        0.5, -0.5, 6.25,
+    };
+    //number of bytes * number of vertices * number of floats per vertex
+    VertexBuffer buffer = VertexBuffer(vdata, 4 * 6 * 3, 12);
     auto vbv = buffer.passVertexDataToGPU(context, cmdList);
 
     RenderPipeline basicPipeline( "VertexShader.cso" , "PixelShader.cso" , "RootSignature.cso" , Standard2D, context);
@@ -57,12 +65,16 @@ int main() {
         cmdList->SetPipelineState(pso);
         cmdList->SetGraphicsRootSignature(rootSignature);
         // == ROOT ==
-        static float color[] = { 0.0f, 0.0f, 0.0f };
-        emitColor(color);
-        cmdList->SetGraphicsRoot32BitConstants(0, 3, color, 0);
+        camera.updateViewMat();
+        auto viewMat = camera.getViewMat();
+        auto projMat = camera.getProjMat();
+        //viewMat = XMMatrixIdentity();
+        //projMat = XMMatrixIdentity();
+        cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
+        cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 
         // Draw
-        cmdList->DrawInstanced(3, 1, 0, 0);
+        cmdList->DrawInstanced(3, 2, 0, 0);
 
         Window::get().endFrame(cmdList);
 
