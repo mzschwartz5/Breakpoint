@@ -22,9 +22,17 @@ int main() {
         0.25, -0.5, 6.25,
         0.5, -0.5, 6.25,
     };
+    unsigned int idxdata[] = {
+        0, 1, 2,
+        3, 4, 5
+    };
     //number of bytes * number of vertices * number of floats per vertex
-    VertexBuffer buffer = VertexBuffer(vdata, 4 * 6 * 3, 12);
-    auto vbv = buffer.passVertexDataToGPU(context, cmdList);
+    VertexBuffer vertBuffer = VertexBuffer(vdata, 4 * 6 * 3, 12);
+    auto vbv = vertBuffer.passVertexDataToGPU(context, cmdList);
+
+    IndexBuffer idxBuffer = IndexBuffer(idxdata, 4 * 6);
+    std::cout << sizeof(unsigned int);
+    auto ibv = idxBuffer.passIndexDataToGPU(context, cmdList);
 
     RenderPipeline basicPipeline( "VertexShader.cso" , "PixelShader.cso" , "RootSignature.cso" , Standard2D, context);
 
@@ -72,7 +80,8 @@ int main() {
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 
         // Draw
-        cmdList->DrawInstanced(3, 2, 0, 0);
+        //cmdList->DrawInstanced(3, 2, 0, 0);
+        cmdList->DrawIndexedInstanced(3, 2, 0, 0, 0);
 
         Window::get().endFrame(cmdList);
 
@@ -82,7 +91,8 @@ int main() {
     }
 
     // Close
-    buffer.releaseResources();
+    vertBuffer.releaseResources();
+    idxBuffer.releaseResources();
 
     //flush pending buffer operations in swapchain
     context.flush(FRAME_COUNT);
