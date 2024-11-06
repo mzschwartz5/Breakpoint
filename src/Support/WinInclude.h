@@ -10,6 +10,8 @@
 #include <dxgi1_6.h>
 #include <DirectXMath.h>
 
+#include <Keyboard.h>
+
 #ifdef _DEBUG
 #include <d3d12sdklayers.h>
 #include <dxgidebug.h>
