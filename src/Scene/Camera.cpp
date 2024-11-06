@@ -2,16 +2,15 @@
 
 Camera::Camera() {
 	setFOV(0.25f * XMVectorGetX(g_XMPi), 1.0f, 1.0f, 1000.0f);
-
 	XMMATRIX P = XMMatrixPerspectiveFovLH(FOVY, aspect, nearPlane, farPlane);
 	XMStoreFloat4x4(&projMat, P);
 }
 
-void Camera::setFOV(float FOVY, float aspect, float nearPlane, float farPlane) {
-	FOVY = FOVY;
-	aspect = aspect;
-	nearPlane = nearPlane;
-	farPlane = farPlane;
+void Camera::setFOV(float p_FOVY, float p_aspect, float p_nearPlane, float p_farPlane) {
+	FOVY = p_FOVY;
+	aspect = p_aspect;
+	nearPlane = p_nearPlane;
+	farPlane = p_farPlane;
 }
 
 void Camera::rotateY(float angle) {
@@ -68,10 +67,10 @@ void Camera::updateViewMat() {
 	viewMat(3, 3) = 1.0f;
 }
 
-XMFLOAT4X4 Camera::getViewMat() {
-	return viewMat;
+XMMATRIX Camera::getViewMat() {
+	return XMLoadFloat4x4(&viewMat);
 }
 
-XMFLOAT4X4 Camera::getProjMat() {
-	return projMat;
+XMMATRIX Camera::getProjMat() {
+	return XMLoadFloat4x4(&projMat);
 }

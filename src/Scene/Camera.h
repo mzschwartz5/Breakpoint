@@ -14,8 +14,8 @@ public:
 
 	void updateViewMat();
 
-	XMFLOAT4X4 getViewMat();
-	XMFLOAT4X4 getProjMat();
+	XMMATRIX getViewMat();
+	XMMATRIX getProjMat();
 
 private:
 	float FOVY;
