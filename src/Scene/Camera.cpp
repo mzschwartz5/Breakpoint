@@ -1,7 +1,7 @@
 #include "Camera.h"
 
 Camera::Camera() {
-	setFOV(0.25f * XMVectorGetX(g_XMPi), 1.0f, 0.1f, 1000.0f);
+	setFOV(0.25f * XM_PI, float(SCREEN_WIDTH)/SCREEN_HEIGHT, 0.1f, 1000.0f);
 	XMMATRIX P = XMMatrixPerspectiveFovLH(FOVY, aspect, nearPlane, farPlane);
 	XMStoreFloat4x4(&projMat, P);
 }

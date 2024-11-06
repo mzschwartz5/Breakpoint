@@ -11,7 +11,4 @@
 #include "D3D/VertexBuffer.h"
 #include "Scene/Camera.h"
 
-#define SCREEN_WIDTH 1280
-#define SCREEN_HEIGHT 720
-
 
