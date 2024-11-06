@@ -68,8 +68,6 @@ int main() {
         camera.updateViewMat();
         auto viewMat = camera.getViewMat();
         auto projMat = camera.getProjMat();
-        //viewMat = XMMatrixIdentity();
-        //projMat = XMMatrixIdentity();
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 
