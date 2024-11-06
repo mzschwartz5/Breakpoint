@@ -15,55 +15,15 @@ int main() {
 
     //pass memory to gpu, get vertex buffer view
     float vdata[] = {
-        // Front face (z = 1)
-        -1.f, -1.f,  1.f,
-         1.f, -1.f,  1.f,
-         1.f,  1.f,  1.f,
-        -1.f, -1.f,  1.f,
-         1.f,  1.f,  1.f,
-        -1.f,  1.f,  1.f,
-
-        // Back face (z = -1)
-        -1.f, -1.f, -1.f,
-        -1.f,  1.f, -1.f,
-         1.f, -1.f, -1.f,
-        -1.f,  1.f, -1.f,
-         1.f,  1.f, -1.f,
-         1.f, -1.f, -1.f,
-
-         // Left face (x = -1)
-         -1.f, -1.f, -1.f,
-         -1.f, -1.f,  1.f,
-         -1.f,  1.f,  1.f,
-         -1.f, -1.f, -1.f,
-         -1.f,  1.f,  1.f,
-         -1.f,  1.f, -1.f,
-
-         // Right face (x = 1)
-          1.f, -1.f, -1.f,
-          1.f,  1.f, -1.f,
-          1.f, -1.f,  1.f,
-          1.f,  1.f, -1.f,
-          1.f,  1.f,  1.f,
-          1.f, -1.f,  1.f,
-
-          // Top face (y = 1)
-          -1.f,  1.f, -1.f,
-           1.f,  1.f, -1.f,
-           1.f,  1.f,  1.f,
-          -1.f,  1.f, -1.f,
-           1.f,  1.f,  1.f,
-          -1.f,  1.f,  1.f,
-
-          // Bottom face (y = -1)
-          -1.f, -1.f, -1.f,
-           1.f, -1.f,  1.f,
-           1.f, -1.f, -1.f,
-          -1.f, -1.f, -1.f,
-          -1.f, -1.f,  1.f,
-           1.f, -1.f,  1.f
+        0.25, 0.25, 3.25,
+        0.25, 0.5, 3.25,
+        0.5, 0.5, 3.25,
+        0.25, -0.75, 6.25,
+        0.25, -0.5, 6.25,
+        0.5, -0.5, 6.25,
     };
-    VertexBuffer buffer = VertexBuffer(vdata, 4 * 36, 12);
+    //number of bytes * number of vertices * number of floats per vertex
+    VertexBuffer buffer = VertexBuffer(vdata, 4 * 6 * 3, 12);
     auto vbv = buffer.passVertexDataToGPU(context, cmdList);
 
     RenderPipeline basicPipeline( "VertexShader.cso" , "PixelShader.cso" , "RootSignature.cso" , Standard2D, context);
@@ -108,11 +68,13 @@ int main() {
         camera.updateViewMat();
         auto viewMat = camera.getViewMat();
         auto projMat = camera.getProjMat();
+        //viewMat = XMMatrixIdentity();
+        //projMat = XMMatrixIdentity();
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 
         // Draw
-        cmdList->DrawInstanced(3, 12, 0, 0);
+        cmdList->DrawInstanced(3, 2, 0, 0);
 
         Window::get().endFrame(cmdList);
 

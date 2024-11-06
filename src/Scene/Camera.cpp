@@ -1,7 +1,7 @@
 #include "Camera.h"
 
 Camera::Camera() {
-	setFOV(0.25f * XMVectorGetX(g_XMPi), 1.0f, 1.0f, 1000.0f);
+	setFOV(0.25f * XMVectorGetX(g_XMPi), 1.0f, 0.1f, 1000.0f);
 	XMMATRIX P = XMMatrixPerspectiveFovLH(FOVY, aspect, nearPlane, farPlane);
 	XMStoreFloat4x4(&projMat, P);
 }
@@ -49,17 +49,17 @@ void Camera::updateViewMat() {
 	viewMat(0, 0) = right.x;
 	viewMat(1, 0) = right.y;
 	viewMat(2, 0) = right.z;
-	viewMat(3, 0) = x;
+	viewMat(3, 0) = -position.x;
 
 	viewMat(0, 1) = up.x;
 	viewMat(1, 1) = up.y;
 	viewMat(2, 1) = up.z;
-	viewMat(3, 1) = y;
+	viewMat(3, 1) = -position.y;
 
 	viewMat(0, 2) = forward.x;
 	viewMat(1, 2) = forward.y;
 	viewMat(2, 2) = forward.z;
-	viewMat(3, 2) = z;
+	viewMat(3, 2) = -position.z;
 
 	viewMat(0, 3) = 0.0f;
 	viewMat(1, 3) = 0.0f;
