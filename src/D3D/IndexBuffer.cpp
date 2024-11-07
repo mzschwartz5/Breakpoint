@@ -29,19 +29,42 @@ D3D12_INDEX_BUFFER_VIEW IndexBuffer::passIndexDataToGPU(DXContext& context, ID3D
     rd.SampleDesc.Quality = 0;
     rd.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     rd.Flags = D3D12_RESOURCE_FLAG_NONE;
-    context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
-    context.getDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&indexBuffer));
+
+    HRESULT hr;
+
+    hr = context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
+	if (FAILED(hr)) {
+		throw std::runtime_error("Could not create committed resource for index buffer upload buffer");
+	}
+    
+    hr = context.getDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&indexBuffer));
+    if (FAILED(hr)) {
+		throw std::runtime_error("Could not create committed resource for index buffer");
+    }
+
     // Copy void* --> CPU Resource
     void* uploadBufferAddress;
     D3D12_RANGE uploadRange;
     uploadRange.Begin = 0;
     uploadRange.End = indexDataSize - 1;
-    uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress);
+    hr = uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress);
+    
+    if (FAILED(hr)) {
+		throw std::runtime_error("Could not map upload buffer");
+    }
+    
     memcpy(uploadBufferAddress, indexData, indexDataSize);
     uploadBuffer->Unmap(0, &uploadRange);
     // Copy CPU Resource --> GPU Resource
     cmdList->CopyBufferRegion(indexBuffer, 0, uploadBuffer, 0, indexDataSize);
-    context.executeCommandList();
+    
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = indexBuffer.Get();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    cmdList->ResourceBarrier(1, &barrier);
 
     // === Index buffer view ===
     D3D12_INDEX_BUFFER_VIEW ibv{};

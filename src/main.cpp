@@ -27,12 +27,15 @@ int main() {
         3, 4, 5
     };
     //number of bytes * number of vertices * number of floats per vertex
-    VertexBuffer vertBuffer = VertexBuffer(vdata, 4 * 6 * 3, 12);
+
+    IndexBuffer idxBuffer = IndexBuffer(idxdata, sizeof(idxdata));
+    auto ibv = idxBuffer.passIndexDataToGPU(context, cmdList);
+
+    VertexBuffer vertBuffer = VertexBuffer(vdata, sizeof(vdata), 3 * sizeof(float));
     auto vbv = vertBuffer.passVertexDataToGPU(context, cmdList);
 
-    IndexBuffer idxBuffer = IndexBuffer(idxdata, 4 * 6);
-    std::cout << sizeof(unsigned int);
-    auto ibv = idxBuffer.passIndexDataToGPU(context, cmdList);
+	// Execute command list
+	context.executeCommandList();
 
     RenderPipeline basicPipeline( "VertexShader.cso" , "PixelShader.cso" , "RootSignature.cso" , Standard2D, context);
 
@@ -65,6 +68,7 @@ int main() {
         //draw
         // == IA ==
         cmdList->IASetVertexBuffers(0, 1, &vbv);
+		cmdList->IASetIndexBuffer(&ibv);
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         // == RS ==
         D3D12_VIEWPORT vp;
@@ -81,7 +85,7 @@ int main() {
 
         // Draw
         //cmdList->DrawInstanced(3, 2, 0, 0);
-        cmdList->DrawIndexedInstanced(3, 2, 0, 0, 0);
+        cmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
         Window::get().endFrame(cmdList);
 
