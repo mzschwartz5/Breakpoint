@@ -1,9 +1,9 @@
 #include "Camera.h"
 
 Camera::Camera() {
-	setFOV(0.25f * XM_PI, float(SCREEN_WIDTH)/SCREEN_HEIGHT, 0.1f, 1000.0f);
-	XMMATRIX P = XMMatrixPerspectiveFovLH(FOVY, aspect, nearPlane, farPlane);
-	XMStoreFloat4x4(&projMat, P);
+	setFOV(0.25f * XM_PI, float(SCREEN_WIDTH) / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
+	updateProjMat();
+	updateViewMat();
 }
 
 void Camera::setFOV(float p_FOVY, float p_aspect, float p_nearPlane, float p_farPlane) {
@@ -11,6 +11,11 @@ void Camera::setFOV(float p_FOVY, float p_aspect, float p_nearPlane, float p_far
 	aspect = p_aspect;
 	nearPlane = p_nearPlane;
 	farPlane = p_farPlane;
+}
+
+void Camera::updateAspect(float p_aspect) {
+	aspect = p_aspect;
+	updateProjMat();
 }
 
 void Camera::rotateY(float angle) {
@@ -26,6 +31,12 @@ void Camera::rotateX(float angle) {
 
 	XMStoreFloat3(&up, XMVector3TransformNormal(XMLoadFloat3(&up), R));
 	XMStoreFloat3(&forward, XMVector3TransformNormal(XMLoadFloat3(&forward), R));
+}
+
+void Camera::translate(XMFLOAT3 distance) {
+	XMVECTOR P = XMLoadFloat3(&position);
+	XMVECTOR D = XMLoadFloat3(&distance);
+	XMStoreFloat3(&position, XMVectorAdd(P, D));
 }
 
 void Camera::updateViewMat() {
@@ -65,6 +76,11 @@ void Camera::updateViewMat() {
 	viewMat(1, 3) = 0.0f;
 	viewMat(2, 3) = 0.0f;
 	viewMat(3, 3) = 1.0f;
+}
+
+void Camera::updateProjMat() {
+	XMMATRIX P = XMMatrixPerspectiveFovLH(FOVY, aspect, nearPlane, farPlane);
+	XMStoreFloat4x4(&projMat, P);
 }
 
 XMMATRIX Camera::getViewMat() {

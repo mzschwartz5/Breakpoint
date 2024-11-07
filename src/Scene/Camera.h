@@ -12,8 +12,11 @@ public:
 	Camera();
 
 	void setFOV(float FOVY, float aspect, float nearPlane, float farPlane);
+	void updateAspect(float aspect);
+
 	void rotateY(float angle);
 	void rotateX(float angle);
+	void translate(XMFLOAT3 distance);
 
 	void updateViewMat();
 
@@ -33,4 +36,6 @@ private:
 
 	XMFLOAT4X4 viewMat;
 	XMFLOAT4X4 projMat;
+
+	void updateProjMat();
 };

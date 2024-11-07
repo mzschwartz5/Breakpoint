@@ -4,7 +4,8 @@ int main() {
     DebugLayer debugLayer = DebugLayer();
     DXContext context = DXContext();
     auto* cmdList = context.initCommandList();
-    Camera camera = Camera();
+    std::unique_ptr<Camera> camera = std::make_unique<Camera>();
+    std::unique_ptr<Keyboard> keyboard = std::make_unique<Keyboard>();
 
     if (!Window::get().init(&context, SCREEN_WIDTH, SCREEN_HEIGHT)) {
         //handle could not initialize window
@@ -13,7 +14,12 @@ int main() {
         return false;
     }
 
-    //pass memory to gpu, get vertex buffer view
+    //pass triangle data to gpu, get vertex buffer view
+    unsigned int idxdata[] = {
+        0, 1, 2,
+        3, 4, 5
+    };
+
     float vdata[] = {
         0.25, 0.0, 1.25,
         0.25, 0.25, 1.25,
@@ -22,11 +28,6 @@ int main() {
         0.25, -0.5, 6.25,
         0.5, -0.5, 6.25,
     };
-    unsigned int idxdata[] = {
-        0, 1, 2,
-        3, 4, 5
-    };
-    //number of bytes * number of vertices * number of floats per vertex
 
     IndexBuffer idxBuffer = IndexBuffer(idxdata, sizeof(idxdata));
     auto ibv = idxBuffer.passIndexDataToGPU(context, cmdList);
@@ -57,7 +58,11 @@ int main() {
             //flush pending buffer operations in swapchain
             context.flush(FRAME_COUNT);
             Window::get().resize();
+            camera->updateAspect((float)Window::get().getWidth() / (float)Window::get().getHeight());
         }
+
+        //update camera
+        camera->updateViewMat();
 
         //begin draw
         cmdList = context.initCommandList();
@@ -77,9 +82,8 @@ int main() {
         cmdList->SetPipelineState(pso);
         cmdList->SetGraphicsRootSignature(rootSignature);
         // == ROOT ==
-        camera.updateViewMat();
-        auto viewMat = camera.getViewMat();
-        auto projMat = camera.getProjMat();
+        auto viewMat = camera->getViewMat();
+        auto projMat = camera->getProjMat();
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 
