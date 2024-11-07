@@ -29,7 +29,7 @@ private:
 	float nearPlane;
 	float farPlane;
 
-	XMFLOAT3 position{ 0, 0, 0 };
+	XMFLOAT3 position{ 0, 0, -1 };
 	XMFLOAT3 up{ 0, 1, 0 };
 	XMFLOAT3 forward{ 0, 0, 1 };
 	XMFLOAT3 right{ 1, 0, 0 };

@@ -19,27 +19,50 @@ int main() {
 
     //pass triangle data to gpu, get vertex buffer view
     unsigned int idxdata[] = {
-        0, 1, 2,
-        3, 4, 5
+        0, 1, 2
     };
 
     float vdata[] = {
-        0.25, 0.0, 1.25,
-        0.25, 0.25, 1.25,
-        0.5, 0.25, 1.25,
-        0.25, -0.75, 6.25,
-        0.25, -0.5, 6.25,
-        0.5, -0.5, 6.25,
+        -0.25f, -0.25f, 0.0f,
+		0.0f, 0.183f, 0.0f,
+		0.25, -0.25f, 0.0f
     };
 
-    IndexBuffer idxBuffer = IndexBuffer(idxdata, sizeof(idxdata));
-    auto ibv = idxBuffer.passIndexDataToGPU(context, cmdList);
+    int instanceCount = 20;
+
+    // Create Test Model Matrices
+    std::vector<XMFLOAT4X4> modelMatrices;
+    // Populate modelMatrices with transformation matrices for each instance
+    for (int i = 0; i < instanceCount; ++i) {
+        XMFLOAT4X4 model;
+        XMStoreFloat4x4(&model, XMMatrixTranslation(i * 0.2f, i * 0.2f, i * 0.2f)); // Example transformation
+        modelMatrices.push_back(model);
+    }
 
     VertexBuffer vertBuffer = VertexBuffer(vdata, sizeof(vdata), 3 * sizeof(float));
     auto vbv = vertBuffer.passVertexDataToGPU(context, cmdList);
 
-	// Execute command list
-	context.executeCommandList();
+    IndexBuffer idxBuffer = IndexBuffer(idxdata, sizeof(idxdata));
+    auto ibv = idxBuffer.passIndexDataToGPU(context, cmdList);
+
+    //Transition both buffers to their usable states
+    D3D12_RESOURCE_BARRIER barriers[2] = {};
+
+    // Vertex buffer barrier
+    barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barriers[0].Transition.pResource = vertBuffer.getVertexBuffer().Get();
+    barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
+    barriers[0].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+    // Index buffer barrier
+    barriers[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barriers[1].Transition.pResource = idxBuffer.getIndexBuffer().Get();
+    barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
+    barriers[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+
+	cmdList->ResourceBarrier(2, barriers);
 
     RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context);
 
@@ -53,6 +76,9 @@ int main() {
     //output merger
     ComPointer<ID3D12PipelineState> pso;
     context.getDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
+
+    ModelMatrixBuffer modelBuffer = ModelMatrixBuffer(modelMatrices, instanceCount);
+	modelBuffer.passModelMatrixDataToGPU(context, basicPipeline, cmdList);
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -109,13 +135,18 @@ int main() {
         cmdList->SetPipelineState(pso);
         cmdList->SetGraphicsRootSignature(rootSignature);
         // == ROOT ==
+
+        ID3D12DescriptorHeap* descriptorHeaps[] = { basicPipeline.getSrvHeap().Get() };
+        cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+        cmdList->SetGraphicsRootDescriptorTable(1, basicPipeline.getSrvHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
+
         auto viewMat = camera->getViewMat();
         auto projMat = camera->getProjMat();
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 
         // Draw
-        cmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
+        cmdList->DrawIndexedInstanced(6, instanceCount, 0, 0, 0);
 
         Window::get().endFrame(cmdList);
 
@@ -127,6 +158,8 @@ int main() {
     // Close
     vertBuffer.releaseResources();
     idxBuffer.releaseResources();
+	modelBuffer.releaseResources();
+	basicPipeline.releaseResources();
 
     //flush pending buffer operations in swapchain
     context.flush(FRAME_COUNT);

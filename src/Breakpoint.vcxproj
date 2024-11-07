@@ -13,6 +13,7 @@
   <ItemGroup>
     <ClCompile Include="D3D\DXContext.cpp" />
     <ClCompile Include="D3D\IndexBuffer.cpp" />
+    <ClCompile Include="D3D\ModelMatrixBuffer.cpp" />
     <ClCompile Include="D3D\RenderPipeline.cpp" />
     <ClCompile Include="D3D\VertexBuffer.cpp" />
     <ClCompile Include="Debug\DebugLayer.cpp" />
@@ -30,6 +31,8 @@
     <ClInclude Include="Debug\DebugLayer.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Scene\Camera.h" />
+    <ClInclude Include="D3D\ModelMatrixBuffer.h" />
+    <ClInclude Include="Scene\Geometry.h" />
     <ClInclude Include="Support\ComPointer.h" />
     <ClInclude Include="Support\Shader.h" />
     <ClInclude Include="Support\Window.h" />

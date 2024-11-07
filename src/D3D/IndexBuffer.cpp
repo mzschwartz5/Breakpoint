@@ -52,14 +52,6 @@ D3D12_INDEX_BUFFER_VIEW IndexBuffer::passIndexDataToGPU(DXContext& context, ID3D
     uploadBuffer->Unmap(0, &uploadRange);
     // Copy CPU Resource --> GPU Resource
     cmdList->CopyBufferRegion(indexBuffer, 0, uploadBuffer, 0, indexDataSize);
-    
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = indexBuffer.Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    cmdList->ResourceBarrier(1, &barrier);
 
     // === Index buffer view ===
     D3D12_INDEX_BUFFER_VIEW ibv{};
