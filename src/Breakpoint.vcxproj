@@ -28,6 +28,7 @@
     <ClInclude Include="D3D\RenderPipelineHelper.h" />
     <ClInclude Include="D3D\VertexBuffer.h" />
     <ClInclude Include="Debug\DebugLayer.h" />
+    <ClInclude Include="main.h" />
     <ClInclude Include="Scene\Camera.h" />
     <ClInclude Include="Support\ComPointer.h" />
     <ClInclude Include="Support\Shader.h" />
