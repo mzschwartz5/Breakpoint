@@ -72,6 +72,21 @@ int main() {
         if (kState.W) {
             camera->translate({ 0, 0, 0.0005 });
         }
+        if (kState.A) {
+            camera->translate({ -0.0005, 0, 0 });
+        }
+        if (kState.S) {
+            camera->translate({ 0, 0, -0.0005 });
+        }
+        if (kState.D) {
+            camera->translate({ 0.0005, 0, 0 });
+        }
+        if (kState.Space) {
+            camera->translate({ 0, 0.0005, 0 });
+        }
+        if (kState.LeftControl) {
+            camera->translate({ 0, -0.0005, 0 });
+        }
 
         //check mouse state
         auto mState = mouse->GetState();
