@@ -30,15 +30,11 @@ D3D12_VERTEX_BUFFER_VIEW VertexBuffer::passVertexDataToGPU(DXContext& context, I
     rd.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     rd.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    HRESULT hr;
-
-    hr = context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
-	if (FAILED(hr)) {
+	if (FAILED(context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer)))) {
 		throw std::runtime_error("Could not create committed resource for vertex buffer upload buffer");
 	}
     
-    hr = context.getDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer));
-    if (FAILED(hr)) {
+    if (FAILED(context.getDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer)))) {
 		throw std::runtime_error("Could not create committed resource for vertex buffer");
     }
     
@@ -47,8 +43,7 @@ D3D12_VERTEX_BUFFER_VIEW VertexBuffer::passVertexDataToGPU(DXContext& context, I
     D3D12_RANGE uploadRange;
     uploadRange.Begin = 0;
     uploadRange.End = vertexDataSize - 1;
-    hr = uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress);
-    if (FAILED(hr)) {
+    if (FAILED(uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress))) {
 		throw std::runtime_error("Could not map upload buffer");
     }
 

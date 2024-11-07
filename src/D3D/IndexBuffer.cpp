@@ -30,15 +30,11 @@ D3D12_INDEX_BUFFER_VIEW IndexBuffer::passIndexDataToGPU(DXContext& context, ID3D
     rd.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     rd.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-    HRESULT hr;
-
-    hr = context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer));
-	if (FAILED(hr)) {
+	if (FAILED(context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer)))) {
 		throw std::runtime_error("Could not create committed resource for index buffer upload buffer");
 	}
     
-    hr = context.getDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&indexBuffer));
-    if (FAILED(hr)) {
+    if (FAILED(context.getDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COPY_DEST, nullptr, IID_PPV_ARGS(&indexBuffer)))) {
 		throw std::runtime_error("Could not create committed resource for index buffer");
     }
 
@@ -47,9 +43,8 @@ D3D12_INDEX_BUFFER_VIEW IndexBuffer::passIndexDataToGPU(DXContext& context, ID3D
     D3D12_RANGE uploadRange;
     uploadRange.Begin = 0;
     uploadRange.End = indexDataSize - 1;
-    hr = uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress);
     
-    if (FAILED(hr)) {
+    if (FAILED(uploadBuffer->Map(0, &uploadRange, &uploadBufferAddress))) {
 		throw std::runtime_error("Could not map upload buffer");
     }
     

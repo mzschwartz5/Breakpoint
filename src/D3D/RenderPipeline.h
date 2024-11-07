@@ -5,14 +5,10 @@
 #include "../Support/ComPointer.h"
 #include "../Support/Window.h"
 
-enum VertexLayoutType {
-	Standard2D,
-};
-
 class RenderPipeline {
 public:
 	RenderPipeline() = delete;
-	RenderPipeline(std::string vertexShaderName, std::string fragShaderName, std::string rootSignatureShaderName, VertexLayoutType layoutType, DXContext& context);
+	RenderPipeline(std::string vertexShaderName, std::string fragShaderName, std::string rootSignatureShaderName, DXContext& context);
 
 	ComPointer<ID3D12RootSignature>& getRootSignature();
 
@@ -20,8 +16,6 @@ public:
 	Shader& getFragmentShader() { return fragShader; }
 private:
 	Shader vertexShader, fragShader, rootSignatureShader;
-
-	VertexLayoutType layoutType;
 
 	ComPointer<ID3D12RootSignature> rootSignature;
 };

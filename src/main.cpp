@@ -37,7 +37,7 @@ int main() {
 	// Execute command list
 	context.executeCommandList();
 
-    RenderPipeline basicPipeline( "VertexShader.cso" , "PixelShader.cso" , "RootSignature.cso" , Standard2D, context);
+    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context);
 
     // === Create root signature ===
     ComPointer<ID3D12RootSignature> rootSignature = basicPipeline.getRootSignature();
