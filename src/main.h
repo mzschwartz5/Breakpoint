@@ -16,4 +16,6 @@
 
 #include "Scene/Camera.h"
 
+const int voxelGridSize = 32; //voxel per axis
+const float voxelGridWorldSize = 1.0f;
 
