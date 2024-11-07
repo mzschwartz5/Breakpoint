@@ -63,9 +63,6 @@ int main() {
             Window::get().resize();
             camera->updateAspect((float)Window::get().getWidth() / (float)Window::get().getHeight());
         }
-
-        //update camera
-        camera->updateViewMat();
         
         //check keyboard state
         auto kState = keyboard->GetState();
@@ -90,6 +87,9 @@ int main() {
 
         //check mouse state
         auto mState = mouse->GetState();
+
+        //update camera
+        camera->updateViewMat();
 
         //begin draw
         cmdList = context.initCommandList();
