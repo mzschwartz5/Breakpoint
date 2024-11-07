@@ -6,6 +6,7 @@ int main() {
     auto* cmdList = context.initCommandList();
     std::unique_ptr<Camera> camera = std::make_unique<Camera>();
     std::unique_ptr<Keyboard> keyboard = std::make_unique<Keyboard>();
+    std::unique_ptr<Mouse> mouse = std::make_unique<Mouse>();
 
     if (!Window::get().init(&context, SCREEN_WIDTH, SCREEN_HEIGHT)) {
         //handle could not initialize window
@@ -13,6 +14,8 @@ int main() {
         Window::get().shutdown();
         return false;
     }
+
+    mouse->SetWindow(Window::get().getHWND());
 
     //pass triangle data to gpu, get vertex buffer view
     unsigned int idxdata[] = {
@@ -63,6 +66,15 @@ int main() {
 
         //update camera
         camera->updateViewMat();
+        
+        //check keyboard state
+        auto kState = keyboard->GetState();
+        if (kState.W) {
+            camera->translate({ 0, 0, 0.0005 });
+        }
+
+        //check mouse state
+        auto mState = mouse->GetState();
 
         //begin draw
         cmdList = context.initCommandList();
@@ -88,7 +100,6 @@ int main() {
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 
         // Draw
-        //cmdList->DrawInstanced(3, 2, 0, 0);
         cmdList->DrawIndexedInstanced(6, 1, 0, 0, 0);
 
         Window::get().endFrame(cmdList);

@@ -208,6 +208,43 @@ LRESULT Window::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam
         case WM_CLOSE:
             get().shouldClose = true;
             return 0;
+        case WM_ACTIVATEAPP:
+            DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
+            DirectX::Mouse::ProcessMessage(msg, wParam, lParam);
+            break;
+        case WM_ACTIVATE:
+        case WM_INPUT:
+        case WM_MOUSEMOVE:
+        case WM_LBUTTONDOWN:
+        case WM_LBUTTONUP:
+        case WM_RBUTTONDOWN:
+        case WM_RBUTTONUP:
+        case WM_MBUTTONDOWN:
+        case WM_MBUTTONUP:
+        case WM_MOUSEWHEEL:
+        case WM_XBUTTONDOWN:
+        case WM_XBUTTONUP:
+        case WM_KEYDOWN:
+        case WM_KEYUP:
+        case WM_SYSKEYUP:
+            DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
+            break;
+        case WM_SYSKEYDOWN:
+            DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
+            if (wParam == VK_RETURN && (lParam & 0x60000000) == 0x20000000) {}
+            break;
+        case WM_MOUSEHOVER:
+            DirectX::Mouse::ProcessMessage(msg, wParam, lParam);
+            break;
+        case WM_MOUSEACTIVATE:
+            //ignore first click when returning to window
+            return MA_ACTIVATEANDEAT;
+        case WM_CHAR:
+            switch (wParam)
+                case VK_ESCAPE:
+                    get().shouldClose = true;
+                    DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
+                    return 0;
     }
     return DefWindowProc(wnd, msg, wParam, lParam);
 }
