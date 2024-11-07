@@ -11,6 +11,7 @@
 #include <DirectXMath.h>
 
 #include <Keyboard.h>
+#include <Mouse.h>
 
 #ifdef _DEBUG
 #include <d3d12sdklayers.h>

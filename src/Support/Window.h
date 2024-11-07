@@ -16,6 +16,10 @@ public:
 		return instance;
 	}
 
+	inline HWND getHWND() const {
+		return window;
+	}
+
 	inline bool getShouldResize() const {
 		return shouldResize;
 	}
