@@ -1,6 +1,6 @@
 #include "VertexBuffer.h"
 
-VertexBuffer::VertexBuffer(float* vertexData, size_t vertexDataSize, size_t vertexSize) 
+VertexBuffer::VertexBuffer(std::vector<XMFLOAT3> &vertexData, const size_t vertexDataSize, const size_t vertexSize)
     : vertexData(vertexData), vertexDataSize(vertexDataSize), vertexSize(vertexSize), uploadBuffer(), vertexBuffer()
 {}
 
@@ -47,18 +47,10 @@ D3D12_VERTEX_BUFFER_VIEW VertexBuffer::passVertexDataToGPU(DXContext& context, I
 		throw std::runtime_error("Could not map upload buffer");
     }
 
-    memcpy(uploadBufferAddress, vertexData, vertexDataSize);
+    memcpy(uploadBufferAddress, vertexData.data(), vertexDataSize);
     uploadBuffer->Unmap(0, &uploadRange);
     // Copy CPU Resource --> GPU Resource
     cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, 0, vertexDataSize);
-    
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = vertexBuffer.Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    cmdList->ResourceBarrier(1, &barrier);
 
     // === Vertex buffer view ===
     D3D12_VERTEX_BUFFER_VIEW vbv{};

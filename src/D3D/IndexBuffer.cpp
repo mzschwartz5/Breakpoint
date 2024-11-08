@@ -1,6 +1,6 @@
 #include "IndexBuffer.h"
 
-IndexBuffer::IndexBuffer(unsigned int* indexData, size_t indexDataSize)
+IndexBuffer::IndexBuffer(std::vector<unsigned int> &indexData, const size_t indexDataSize)
     : indexData(indexData), indexDataSize(indexDataSize), uploadBuffer(), indexBuffer()
 {}
 
@@ -48,18 +48,10 @@ D3D12_INDEX_BUFFER_VIEW IndexBuffer::passIndexDataToGPU(DXContext& context, ID3D
 		throw std::runtime_error("Could not map upload buffer");
     }
     
-    memcpy(uploadBufferAddress, indexData, indexDataSize);
+    memcpy(uploadBufferAddress, indexData.data(), indexDataSize);
     uploadBuffer->Unmap(0, &uploadRange);
     // Copy CPU Resource --> GPU Resource
     cmdList->CopyBufferRegion(indexBuffer, 0, uploadBuffer, 0, indexDataSize);
-    
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = indexBuffer.Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    cmdList->ResourceBarrier(1, &barrier);
 
     // === Index buffer view ===
     D3D12_INDEX_BUFFER_VIEW ibv{};
