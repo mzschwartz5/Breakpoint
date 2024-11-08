@@ -88,6 +88,14 @@ int main() {
         //check mouse state
         auto mState = mouse->GetState();
 
+        if (mState.positionMode == Mouse::MODE_RELATIVE) {
+            camera->rotateOnX(-mState.y * 0.01);
+            camera->rotateOnY(mState.x * 0.01);
+            camera->rotate();
+        }
+
+        mouse->SetMode(mState.leftButton ? Mouse::MODE_RELATIVE : Mouse::MODE_ABSOLUTE);
+
         //update camera
         camera->updateViewMat();
 

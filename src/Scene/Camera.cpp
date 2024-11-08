@@ -18,19 +18,51 @@ void Camera::updateAspect(float p_aspect) {
 	updateProjMat();
 }
 
-void Camera::rotateY(float angle) {
-	XMMATRIX R = XMMatrixRotationY(angle);
-
-	XMStoreFloat3(&right, XMVector3TransformNormal(XMLoadFloat3(&right), R));
-	XMStoreFloat3(&up, XMVector3TransformNormal(XMLoadFloat3(&up), R));
-	XMStoreFloat3(&forward, XMVector3TransformNormal(XMLoadFloat3(&forward), R));
+void Camera::rotateOnX(float angle) {
+	rotateX += angle;
 }
 
-void Camera::rotateX(float angle) {
-	XMMATRIX R = XMMatrixRotationAxis(XMLoadFloat3(&right), angle);
+void Camera::rotateOnY(float angle) {
+	rotateY += angle;
+}
 
-	XMStoreFloat3(&up, XMVector3TransformNormal(XMLoadFloat3(&up), R));
-	XMStoreFloat3(&forward, XMVector3TransformNormal(XMLoadFloat3(&forward), R));
+void Camera::rotate() {
+	// limit pitch to straight up or straight down
+	constexpr float limit = XM_PIDIV2 - 0.01f;
+	rotateX = std::max(-limit, rotateX);
+	rotateX = std::min(+limit, rotateX);
+
+	// keep longitude in sane range by wrapping
+	if (rotateY > XM_PI)
+	{
+		rotateY -= XM_2PI;
+	}
+	else if (rotateY < -XM_PI)
+	{
+		rotateY += XM_2PI;
+	}
+
+	float y = sinf(rotateX);
+	float r = cosf(rotateX);
+	float z = r * cosf(rotateY);
+	float x = r * sinf(rotateY);
+
+	XMVECTOR newForward = XMLoadFloat3(&forward) + XMVECTOR{ x, y, z };
+
+	XMVECTOR tempUp{ 0, 1, 0 };
+
+	// Right vector is perpendicular to forward and up
+	XMVECTOR newRight = XMVector3Cross(tempUp, newForward);
+	newRight = XMVector3Normalize(newRight);
+
+	// Up vector is perpendicular to forward and right
+	XMVECTOR newUp = XMVector3Cross(newForward, newRight);
+	newUp = XMVector3Normalize(newUp);
+
+	// Store the updated vectors back into the class member variables
+	XMStoreFloat3(&right, newRight);
+	XMStoreFloat3(&up, newUp);
+	XMStoreFloat3(&forward, newForward);
 }
 
 void Camera::translate(XMFLOAT3 distance) {

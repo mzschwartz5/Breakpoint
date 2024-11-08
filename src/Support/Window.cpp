@@ -1,7 +1,6 @@
 #include "Window.h"
 
 bool Window::init(DXContext* contextPtr, int w, int h) {
-
     width = w;
     height = h;
 
@@ -12,12 +11,12 @@ bool Window::init(DXContext* contextPtr, int w, int h) {
     wcex.cbClsExtra = 0;
     wcex.cbWndExtra = 0;
     wcex.hInstance = GetModuleHandle(nullptr);
-    //wcex.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
-    //wcex.hCursor = LoadCursorW(nullptr, IDC_ARROW);
+    wcex.hIcon = LoadIconW(nullptr, IDI_APPLICATION);
+    wcex.hCursor = LoadCursorW(nullptr, IDC_ARROW);
     wcex.hbrBackground = nullptr;
     wcex.lpszMenuName = nullptr;
-    wcex.lpszClassName = (LPCWSTR)("BreakpointWndCls");
-    //wcex.hIconSm = LoadIconW(nullptr, IDI_APPLICATION);
+    wcex.lpszClassName = L"BreakpointWndCls";
+    wcex.hIconSm = LoadIconW(nullptr, IDI_APPLICATION);
     wndClass = RegisterClassExW(&wcex);
     if (wndClass == 0) {
         return false;
@@ -222,6 +221,12 @@ LRESULT Window::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam
         case WM_MBUTTONDOWN:
         case WM_MBUTTONUP:
         case WM_MOUSEWHEEL:
+        case WM_MOUSEHOVER:
+            DirectX::Mouse::ProcessMessage(msg, wParam, lParam);
+            break;
+        case WM_MOUSEACTIVATE:
+            //ignore first click when returning to window
+            return MA_ACTIVATEANDEAT;
         case WM_XBUTTONDOWN:
         case WM_XBUTTONUP:
         case WM_KEYDOWN:
@@ -233,12 +238,6 @@ LRESULT Window::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam
             DirectX::Keyboard::ProcessMessage(msg, wParam, lParam);
             if (wParam == VK_RETURN && (lParam & 0x60000000) == 0x20000000) {}
             break;
-        case WM_MOUSEHOVER:
-            DirectX::Mouse::ProcessMessage(msg, wParam, lParam);
-            break;
-        case WM_MOUSEACTIVATE:
-            //ignore first click when returning to window
-            return MA_ACTIVATEANDEAT;
         case WM_CHAR:
             switch (wParam)
                 case VK_ESCAPE:
