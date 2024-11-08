@@ -1,4 +1,5 @@
 #include "main.h"
+#include "Scene/Geometry.h"
 
 int main() {
     DebugLayer debugLayer = DebugLayer();
@@ -18,17 +19,7 @@ int main() {
     mouse->SetWindow(Window::get().getHWND());
 
     //pass triangle data to gpu, get vertex buffer view
-    unsigned int idxdata[] = {
-        0, 1, 2
-    };
-
-    float vdata[] = {
-        -0.25f, -0.25f, 0.0f,
-		0.0f, 0.183f, 0.0f,
-		0.25, -0.25f, 0.0f
-    };
-
-    int instanceCount = 20;
+    int instanceCount = 8;
 
     // Create Test Model Matrices
     std::vector<XMFLOAT4X4> modelMatrices;
@@ -39,12 +30,15 @@ int main() {
         modelMatrices.push_back(model);
     }
 
-    VertexBuffer vertBuffer = VertexBuffer(vdata, sizeof(vdata), 3 * sizeof(float));
+	// Create circle geometry
+	auto circleData = generateCircle(0.05f, 32);
+   
+    VertexBuffer vertBuffer = VertexBuffer(circleData.first, circleData.first.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
     auto vbv = vertBuffer.passVertexDataToGPU(context, cmdList);
 
-    IndexBuffer idxBuffer = IndexBuffer(idxdata, sizeof(idxdata));
+    IndexBuffer idxBuffer = IndexBuffer(circleData.second, circleData.second.size() * sizeof(unsigned int));
     auto ibv = idxBuffer.passIndexDataToGPU(context, cmdList);
-
+    
     //Transition both buffers to their usable states
     D3D12_RESOURCE_BARRIER barriers[2] = {};
 
@@ -146,7 +140,7 @@ int main() {
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 
         // Draw
-        cmdList->DrawIndexedInstanced(6, instanceCount, 0, 0, 0);
+        cmdList->DrawIndexedInstanced(circleData.second.size(), instanceCount, 0, 0, 0);
 
         Window::get().endFrame(cmdList);
 

@@ -1,6 +1,6 @@
 #include "VertexBuffer.h"
 
-VertexBuffer::VertexBuffer(float* vertexData, size_t vertexDataSize, size_t vertexSize) 
+VertexBuffer::VertexBuffer(std::vector<XMFLOAT3> &vertexData, const size_t vertexDataSize, const size_t vertexSize)
     : vertexData(vertexData), vertexDataSize(vertexDataSize), vertexSize(vertexSize), uploadBuffer(), vertexBuffer()
 {}
 
@@ -47,7 +47,7 @@ D3D12_VERTEX_BUFFER_VIEW VertexBuffer::passVertexDataToGPU(DXContext& context, I
 		throw std::runtime_error("Could not map upload buffer");
     }
 
-    memcpy(uploadBufferAddress, vertexData, vertexDataSize);
+    memcpy(uploadBufferAddress, vertexData.data(), vertexDataSize);
     uploadBuffer->Unmap(0, &uploadRange);
     // Copy CPU Resource --> GPU Resource
     cmdList->CopyBufferRegion(vertexBuffer, 0, uploadBuffer, 0, vertexDataSize);
