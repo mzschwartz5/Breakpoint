@@ -58,7 +58,8 @@ int main() {
 
 	cmdList->ResourceBarrier(2, barriers);
 
-    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context);
+    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     // === Create root signature ===
     ComPointer<ID3D12RootSignature> rootSignature = basicPipeline.getRootSignature();
