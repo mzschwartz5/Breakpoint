@@ -13,7 +13,7 @@ public:
 				   D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags);
 
 	ComPointer<ID3D12RootSignature>& getRootSignature();
-	ComPointer<ID3D12DescriptorHeap>& getSrvHeap();
+	ComPointer<ID3D12DescriptorHeap>& getDescriptorHeap();
 
 	Shader& getVertexShader() { return vertexShader; }
 	Shader& getFragmentShader() { return fragShader; }
@@ -24,5 +24,5 @@ private:
 	Shader vertexShader, fragShader, rootSignatureShader;
 
 	ComPointer<ID3D12RootSignature> rootSignature;
-	DescriptorHeap srvHeap;
+	DescriptorHeap descriptorHeap;
 };

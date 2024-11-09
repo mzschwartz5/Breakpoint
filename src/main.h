@@ -12,7 +12,7 @@
 #include "D3D/RenderPipeline.h"
 #include "D3D/VertexBuffer.h"
 #include "D3D/IndexBuffer.h"
-#include "D3D/ModelMatrixBuffer.h"
+#include "D3D/StructuredBuffer.h"
 
 #include "Scene/Camera.h"
 

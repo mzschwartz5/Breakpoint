@@ -9,12 +9,12 @@
 
 using namespace DirectX;
 
-class ModelMatrixBuffer {
+class StructuredBuffer {
 public:
-	ModelMatrixBuffer() = delete;
-	ModelMatrixBuffer(std::vector<XMFLOAT4X4> &matrices, size_t instanceSize);
+	StructuredBuffer() = delete;
+	StructuredBuffer(const void* data, unsigned int numEle, size_t eleSize);
 
-	void passModelMatrixDataToGPU(DXContext& context, RenderPipeline& pipeline, ID3D12GraphicsCommandList5* cmdList);
+	void passModelMatrixDataToGPU(DXContext& context, ComPointer<ID3D12DescriptorHeap> dh, ID3D12GraphicsCommandList5* cmdList);
 
 	ComPointer<ID3D12Resource1>& getModelMatrixBuffer();
 
@@ -23,7 +23,7 @@ public:
 private:
 	ComPointer<ID3D12Resource1> modelMatrixBuffer;
 
-	std::vector<XMFLOAT4X4>* modelMatrices;
-
-	size_t instanceCount;
+	const void* data;
+	unsigned int numElements;
+	size_t elementSize;
 };

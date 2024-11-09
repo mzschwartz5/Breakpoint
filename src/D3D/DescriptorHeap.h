@@ -4,6 +4,8 @@
 #include <wrl.h>
 #include "DXContext.h"
 
+// Sourced from https://github.com/stefanpgd/Compute-DirectX12-Tutorial/
+
 class DescriptorHeap
 {
 public:

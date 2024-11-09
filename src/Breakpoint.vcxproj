@@ -11,10 +11,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="D3D\ComputePipeline.cpp" />
     <ClCompile Include="D3D\DescriptorHeap.cpp" />
     <ClCompile Include="D3D\DXContext.cpp" />
     <ClCompile Include="D3D\IndexBuffer.cpp" />
-    <ClCompile Include="D3D\ModelMatrixBuffer.cpp" />
+    <ClCompile Include="D3D\StructuredBuffer.cpp" />
     <ClCompile Include="D3D\RenderPipeline.cpp" />
     <ClCompile Include="D3D\VertexBuffer.cpp" />
     <ClCompile Include="Debug\DebugLayer.cpp" />
@@ -24,6 +25,7 @@
     <ClCompile Include="Support\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="D3D\ComputePipeline.h" />
     <ClInclude Include="D3D\d3dx12.h" />
     <ClInclude Include="D3D\DescriptorHeap.h" />
     <ClInclude Include="D3D\DXContext.h" />
@@ -34,7 +36,7 @@
     <ClInclude Include="Debug\DebugLayer.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Scene\Camera.h" />
-    <ClInclude Include="D3D\ModelMatrixBuffer.h" />
+    <ClInclude Include="D3D\StructuredBuffer.h" />
     <ClInclude Include="Scene\Geometry.h" />
     <ClInclude Include="Support\ComPointer.h" />
     <ClInclude Include="Support\Shader.h" />

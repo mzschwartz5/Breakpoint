@@ -72,8 +72,8 @@ int main() {
     ComPointer<ID3D12PipelineState> pso;
     context.getDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
 
-    ModelMatrixBuffer modelBuffer = ModelMatrixBuffer(modelMatrices, instanceCount);
-	modelBuffer.passModelMatrixDataToGPU(context, basicPipeline, cmdList);
+    StructuredBuffer modelBuffer = StructuredBuffer(modelMatrices.data(), instanceCount, sizeof(XMFLOAT4X4));
+	modelBuffer.passModelMatrixDataToGPU(context, basicPipeline.getDescriptorHeap(), cmdList);
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -139,9 +139,9 @@ int main() {
         cmdList->SetGraphicsRootSignature(rootSignature);
         // == ROOT ==
 
-        ID3D12DescriptorHeap* descriptorHeaps[] = { basicPipeline.getSrvHeap().Get() };
+        ID3D12DescriptorHeap* descriptorHeaps[] = { basicPipeline.getDescriptorHeap().Get() };
         cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-        cmdList->SetGraphicsRootDescriptorTable(1, basicPipeline.getSrvHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
+        cmdList->SetGraphicsRootDescriptorTable(1, basicPipeline.getDescriptorHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
 
         auto viewMat = camera->getViewMat();
         auto projMat = camera->getProjMat();

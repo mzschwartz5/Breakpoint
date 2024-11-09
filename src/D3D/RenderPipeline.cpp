@@ -5,7 +5,7 @@ RenderPipeline::RenderPipeline(std::string vertexShaderName, std::string fragSha
 	: vertexShader(vertexShaderName),
 	  fragShader(fragShaderName),
 	  rootSignatureShader(rootSignatureShaderName),
-	  srvHeap(context, type, numberOfDescriptors, flags)
+	  descriptorHeap(context, type, numberOfDescriptors, flags)
 {
 	context.getDevice()->CreateRootSignature(0, rootSignatureShader.getBuffer(), rootSignatureShader.getSize(), IID_PPV_ARGS(&rootSignature));
 }
@@ -15,13 +15,13 @@ ComPointer<ID3D12RootSignature>& RenderPipeline::getRootSignature()
 	return this->rootSignature;
 }
 
-ComPointer<ID3D12DescriptorHeap>& RenderPipeline::getSrvHeap()
+ComPointer<ID3D12DescriptorHeap>& RenderPipeline::getDescriptorHeap()
 {
-	return srvHeap.Get();
+	return descriptorHeap.Get();
 }
 
 void RenderPipeline::releaseResources()
 {
 	rootSignature.Release();
-	srvHeap.releaseResources();
+	descriptorHeap.releaseResources();
 }
