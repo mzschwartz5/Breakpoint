@@ -17,9 +17,10 @@ void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdLi
 }
 
 int main() {
+    //set up DX, window, keyboard mouse
     DebugLayer debugLayer = DebugLayer();
     DXContext context = DXContext();
-    auto* cmdList = context.initCommandList();
+    ID3D12GraphicsCommandList5* cmdList = context.initCommandList();
     std::unique_ptr<Camera> camera = std::make_unique<Camera>();
     std::unique_ptr<Keyboard> keyboard = std::make_unique<Keyboard>();
     std::unique_ptr<Mouse> mouse = std::make_unique<Mouse>();
@@ -32,6 +33,9 @@ int main() {
     }
 
     mouse->SetWindow(Window::get().getHWND());
+
+    //set up scene
+    Scene scene{&context, cmdList};
 
     //pass triangle data to gpu, get vertex buffer view
     int instanceCount = 8;
@@ -164,6 +168,9 @@ int main() {
         // Draw
         cmdList->DrawIndexedInstanced(circleData.second.size(), instanceCount, 0, 0, 0);
 		//cmdList->DispatchMesh(1, 1, 1);
+
+        //Draw scene
+        cmdList->DrawIndexedInstanced(scene.getSceneSize(), 1, 0, 0, 0);
 
         Window::get().endFrame(cmdList);
 

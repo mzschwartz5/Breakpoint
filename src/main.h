@@ -15,3 +15,6 @@
 #include "D3D/StructuredBuffer.h"
 
 #include "Scene/Camera.h"
+#include "Scene/Scene.h"
+
+
