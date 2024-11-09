@@ -1,8 +1,8 @@
 #include "Scene.h"
 
 Scene::Scene(DXContext* p_context, ID3D12GraphicsCommandList5* p_cmdList) : context(p_context), cmdList(p_cmdList) {
-	//inputStrings.push_back("objs\\wolf.obj");
-    inputStrings.push_back("objs\\triangle.obj");
+	inputStrings.push_back("objs\\wolf.obj");
+    //inputStrings.push_back("objs\\triangle.obj");
     constructScene(context, cmdList);
 }
 

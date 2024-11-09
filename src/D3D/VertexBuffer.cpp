@@ -1,6 +1,6 @@
 #include "VertexBuffer.h"
 
-VertexBuffer::VertexBuffer(std::vector<XMFLOAT3> &vertexData, const size_t vertexDataSize, const size_t vertexSize)
+VertexBuffer::VertexBuffer(std::vector<XMFLOAT3> vertexData, const size_t vertexDataSize, const size_t vertexSize)
     : vertexData(vertexData), vertexDataSize(vertexDataSize), vertexSize(vertexSize), uploadBuffer(), vertexBuffer()
 {}
 
