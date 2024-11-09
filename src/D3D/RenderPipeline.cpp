@@ -1,9 +1,10 @@
 #include "RenderPipeline.h"
 
-RenderPipeline::RenderPipeline(std::string vertexShaderName, std::string fragShaderName, std::string rootSignatureShaderName, DXContext& context,
+RenderPipeline::RenderPipeline(std::string vertexShaderName, std::string fragShaderName, std::string meshShaderName, std::string rootSignatureShaderName, DXContext& context,
 							   D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
 	: vertexShader(vertexShaderName),
 	  fragShader(fragShaderName),
+	  meshShader(meshShaderName),
 	  rootSignatureShader(rootSignatureShaderName),
 	  descriptorHeap(context, type, numberOfDescriptors, flags)
 {

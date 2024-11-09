@@ -9,7 +9,7 @@
 class RenderPipeline {
 public:
 	RenderPipeline() = delete;
-	RenderPipeline(std::string vertexShaderName, std::string fragShaderName, std::string rootSignatureShaderName, DXContext& context,
+	RenderPipeline(std::string vertexShaderName, std::string fragShaderName, std::string meshShaderName, std::string rootSignatureShaderName, DXContext& context,
 				   D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags);
 
 	ComPointer<ID3D12RootSignature>& getRootSignature();
@@ -17,11 +17,12 @@ public:
 
 	Shader& getVertexShader() { return vertexShader; }
 	Shader& getFragmentShader() { return fragShader; }
+	Shader& getMeshShader() { return meshShader; }
 
 	void releaseResources();
 
 private:
-	Shader vertexShader, fragShader, rootSignatureShader;
+	Shader vertexShader, fragShader, meshShader, rootSignatureShader;
 
 	ComPointer<ID3D12RootSignature> rootSignature;
 	DescriptorHeap descriptorHeap;

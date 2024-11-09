@@ -87,6 +87,23 @@ void createShaderPSOD(D3D12_GRAPHICS_PIPELINE_STATE_DESC& gfxPsod, ComPointer<ID
     gfxPsod.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 }
 
+void createMeshShaderPSOD(D3DX12_MESH_SHADER_PIPELINE_STATE_DESC& psoDesc, ComPointer<ID3D12RootSignature> rootSignature, Shader& ms, Shader& fs) {
+    psoDesc.pRootSignature = rootSignature;
+    psoDesc.MS.BytecodeLength = ms.getSize();
+    psoDesc.MS.pShaderBytecode = ms.getBuffer();
+    psoDesc.PS.BytecodeLength = fs.getSize();
+    psoDesc.PS.pShaderBytecode = fs.getBuffer();
+    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    psoDesc.NumRenderTargets = 1;
+    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
+    psoDesc.SampleDesc.Count = 1;
+    psoDesc.SampleMask = UINT_MAX;
+    psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
+    psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
+    psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
+}
+
+
 void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
     vp.TopLeftX = vp.TopLeftY = 0;
     vp.Width = Window::get().getWidth();
