@@ -61,47 +61,52 @@ int main() {
 	positionBuffer.passUAVDataToGPU(context, computePipeline.getDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), cmdList);
 
     cmdList = context.initCommandList();
-	cmdList->SetPipelineState(computePipeline.GetAddress());
-	cmdList->SetComputeRootSignature(computePipeline.getRootSignature());
+    cmdList->SetPipelineState(computePipeline.GetAddress());
+    cmdList->SetComputeRootSignature(computePipeline.getRootSignature());
 
-	//// Set descriptor heap
-	ID3D12DescriptorHeap* computeDescriptorHeaps[] = { computePipeline.getDescriptorHeap().Get() };
-	cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
+    //// Set descriptor heap
+    ID3D12DescriptorHeap* computeDescriptorHeaps[] = { computePipeline.getDescriptorHeap().Get() };
+    cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
 
-	//// Set compute root descriptor table
-	cmdList->SetComputeRootDescriptorTable(0, computePipeline.getDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+    //// Set compute root descriptor table
+    cmdList->SetComputeRootDescriptorTable(0, computePipeline.getDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
 
-	//// Dispatch
-	cmdList->Dispatch(1, 1, 1);
-
-    // Close command list
-    cmdList->Close();
-
-	//// Execute command list
-	context.executeCommandList();
-
-	//// Wait for GPU to finish
-	context.flush(1);
+    //// Dispatch
+    cmdList->Dispatch(instanceCount, 1, 1);
 
     // Create a fence
     UINT64 fenceValue = 1;
     ComPointer<ID3D12Fence> fence;
     context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 
-    // Signal and wait
+    //// Execute command list
+    context.executeCommandList();
     context.getCommandQueue()->Signal(fence.Get(), fenceValue);
+
+    //// Wait for GPU to finish
+    context.flush(1);
+
     if (fence->GetCompletedValue() < fenceValue) {
-        HANDLE eventHandle = CreateEventEx(nullptr, FALSE, FALSE, EVENT_ALL_ACCESS);
+        HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        if (eventHandle == nullptr) {
+            throw std::runtime_error("Failed to create event handle.");
+        }
+
+        // Set the event to be triggered when the GPU reaches the fence value
         fence->SetEventOnCompletion(fenceValue, eventHandle);
+
+        // Wait until the event is triggered, meaning the GPU has finished
         WaitForSingleObject(eventHandle, INFINITE);
         CloseHandle(eventHandle);
     }
 
-	//// Copy data from GPU to CPU
-	positionBuffer.copyDataFromGPU(context, positions.data(), cmdList);
+    cmdList = context.initCommandList();
 
-	//// Reset command list
-	cmdList = context.initCommandList();
+    //// Copy data from GPU to CPU
+    positionBuffer.copyDataFromGPU(context, positions.data(), cmdList);
+
+    //// Reset command list
+    cmdList = context.initCommandList();
 
 	// Create circle geometry
 	auto circleData = generateCircle(0.05f, 32);

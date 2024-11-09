@@ -9,7 +9,6 @@ void main(uint3 DTid : SV_DispatchThreadID) {
 
     // Read the float3 from the buffer, increment the y component, and write back
     float3 value = outputBuffer[id];
-    value.y += 0.2f;
+    value.y += 2.2f;
     outputBuffer[id] = value;
-    //outputBuffer[DTid.x] = DTid.x;  // Write the thread ID as output
 }

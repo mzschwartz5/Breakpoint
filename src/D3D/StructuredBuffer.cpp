@@ -108,7 +108,39 @@ void StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR
 
     // Step 4: Copy data from the upload buffer to the GPU buffer
     cmdList->CopyResource(buffer.Get(), uploadBuffer.Get());
+
+    D3D12_RESOURCE_BARRIER barrier = {};
+    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    barrier.Transition.pResource = buffer.Get();
+    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
+    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    cmdList->ResourceBarrier(1, &barrier);
+
+    ComPointer<ID3D12Fence> fence;
+    UINT64 fenceValue = 1;
+    hr = context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create fence.");
+    }
+
     context.executeCommandList();
+    context.getCommandQueue()->Signal(fence.Get(), fenceValue);
+
+    // Wait for the fence to reach the signaled value
+    if (fence->GetCompletedValue() < fenceValue) {
+        HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        if (eventHandle == nullptr) {
+            throw std::runtime_error("Failed to create event handle.");
+        }
+
+        // Set the event to be triggered when the GPU reaches the fence value
+        fence->SetEventOnCompletion(fenceValue, eventHandle);
+
+        // Wait until the event is triggered, meaning the GPU has finished
+        WaitForSingleObject(eventHandle, INFINITE);
+        CloseHandle(eventHandle);
+    }
 
     // Step 5: Create the UAV in the descriptor heap
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
@@ -165,11 +197,37 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
     // Copy the data from the GPU buffer to the readback buffer
     cmdList->CopyResource(readbackBuffer.Get(), buffer.Get());
 
-    cmdList->Close();
+    D3D12_RESOURCE_BARRIER copySourceToUavBarrier = {};
+    copySourceToUavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    copySourceToUavBarrier.Transition.pResource = buffer.Get();
+    copySourceToUavBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    copySourceToUavBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    copySourceToUavBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    cmdList->ResourceBarrier(1, &copySourceToUavBarrier);
+
+    // Create a fence
+    UINT64 fenceValue = 1;
+    ComPointer<ID3D12Fence> fence;
+    context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 
     // Execute the command list to perform the copy operation
     context.executeCommandList();
+    context.getCommandQueue()->Signal(fence.Get(), fenceValue);
     context.flush(1);
+
+    if (fence->GetCompletedValue() < fenceValue) {
+        HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        if (eventHandle == nullptr) {
+            throw std::runtime_error("Failed to create event handle.");
+        }
+
+        // Set the event to be triggered when the GPU reaches the fence value
+        fence->SetEventOnCompletion(fenceValue, eventHandle);
+
+        // Wait until the event is triggered, meaning the GPU has finished
+        WaitForSingleObject(eventHandle, INFINITE);
+        CloseHandle(eventHandle);
+    }
 
     // Map the readback buffer to access the data on the CPU
     void* mappedData = nullptr;
@@ -178,7 +236,6 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
     if (FAILED(hr)) {
         throw std::runtime_error("Failed to map readback buffer.");
     }
-
     // Copy data from the mapped readback buffer to outputData
     memcpy(outputData, mappedData, elementSize * numElements);
 
