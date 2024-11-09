@@ -103,7 +103,7 @@ int main() {
     cmdList = context.initCommandList();
 
     //// Copy data from GPU to CPU
-    positionBuffer.copyDataFromGPU(context, positions.data(), cmdList);
+    positionBuffer.copyDataFromGPU(context, positions.data(), cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 
     //// Reset command list
     cmdList = context.initCommandList();
@@ -149,7 +149,7 @@ int main() {
     basicPipeline.createPipelineState(context.getDevice());
 
     StructuredBuffer modelBuffer = StructuredBuffer(modelMatrices.data(), instanceCount, sizeof(XMFLOAT4X4));
-	modelBuffer.passSRVDataToGPU(context, basicPipeline.getDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
+	modelBuffer.passCBVDataToGPU(context, basicPipeline.getDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
     while (!Window::get().getShouldClose()) {
         //update window

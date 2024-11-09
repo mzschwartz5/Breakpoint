@@ -1,10 +1,10 @@
 #pragma once
 #include <string>
-#include "../Support/WinInclude.h"
-#include "../Support/Shader.h"
-#include "../Support/ComPointer.h"
-#include "../Support/Window.h"
-#include "DescriptorHeap.h"
+#include "../../Support/WinInclude.h"
+#include "../../Support/Shader.h"
+#include "../../Support/ComPointer.h"
+#include "../../Support/Window.h"
+#include "../DescriptorHeap.h"
 
 class ComputePipeline
 {

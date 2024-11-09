@@ -13,6 +13,6 @@
 #include "D3D/VertexBuffer.h"
 #include "D3D/IndexBuffer.h"
 #include "D3D/StructuredBuffer.h"
-#include "D3D/ComputePipeline.h"
+#include "D3D/Pipeline/ComputePipeline.h"
 
 #include "Scene/Camera.h"

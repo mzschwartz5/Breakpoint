@@ -14,9 +14,10 @@ public:
 	StructuredBuffer() = delete;
 	StructuredBuffer(const void* data, unsigned int numEle, size_t eleSize);
 
-	void passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle);
+	void passCBVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle);
+	void passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5* cmdList);
 	void passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList);
-	void copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList5* cmdList);
+	void copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList5* cmdList, D3D12_RESOURCE_STATES state);
 
 	ComPointer<ID3D12Resource1>& getBuffer();
 

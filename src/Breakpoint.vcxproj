@@ -11,7 +11,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="D3D\ComputePipeline.cpp" />
+    <ClCompile Include="D3D\Pipeline\ComputePipeline.cpp" />
     <ClCompile Include="D3D\DescriptorHeap.cpp" />
     <ClCompile Include="D3D\DXContext.cpp" />
     <ClCompile Include="D3D\IndexBuffer.cpp" />
@@ -27,7 +27,7 @@
     <ClCompile Include="Support\Window.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="D3D\ComputePipeline.h" />
+    <ClInclude Include="D3D\Pipeline\ComputePipeline.h" />
     <ClInclude Include="D3D\d3dx12.h" />
     <ClInclude Include="D3D\DescriptorHeap.h" />
     <ClInclude Include="D3D\DXContext.h" />

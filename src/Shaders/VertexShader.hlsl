@@ -5,8 +5,13 @@ cbuffer CameraMatrices : register(b0) {
     float4x4 projectionMatrix;  // 16 floats
 };
 
+#define MAX_INSTANCE_SIZE 1000
+
 // Model Matrices for each instance
-StructuredBuffer<float4x4> modelMatrices : register(t0);
+// Model matrices for instances in CBV at register b1
+cbuffer ModelMatrices : register(b1) {
+    float4x4 modelMatrices[MAX_INSTANCE_SIZE]; // Array of model matrices
+};
 
 struct VSInput
 {
