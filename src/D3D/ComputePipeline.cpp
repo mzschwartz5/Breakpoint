@@ -1,13 +1,13 @@
 #include "ComputePipeline.h"
 
-ComputePipeline::ComputePipeline(std::string rootSignatureShaderName, const std::string& shaderFilePath, DXContext& context,
+ComputePipeline::ComputePipeline(std::string rootSignatureShaderName, const std::string shaderFilePath, DXContext& context,
 	D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
 	: computeShader(shaderFilePath),
 	rootSignatureShader(rootSignatureShaderName),
-	srvHeap(context, type, numberOfDescriptors, flags)
+	descriptorHeap(context, type, numberOfDescriptors, flags)
 {
 	context.getDevice()->CreateRootSignature(0, rootSignatureShader.getBuffer(), rootSignatureShader.getSize(), IID_PPV_ARGS(&rootSignature));
-	CreatePipelineState(context, rootSignature);
+	CreatePipelineState(context);
 }
 
 ID3D12PipelineState* ComputePipeline::GetAddress()
@@ -15,24 +15,25 @@ ID3D12PipelineState* ComputePipeline::GetAddress()
 	return pipeline.Get();
 }
 
-ComPointer<ID3D12RootSignature>& ComputePipeline::getRootSignature()
+ComPointer<ID3D12RootSignature> ComputePipeline::getRootSignature()
 {
+	// Return a pointer to the root signature
 	return rootSignature;
 }
 
-ComPointer<ID3D12DescriptorHeap>& ComputePipeline::getSrvHeap()
+ComPointer<ID3D12DescriptorHeap> ComputePipeline::getDescriptorHeap()
 {
-	return srvHeap.Get();
+	return descriptorHeap.Get();
 }
 
 void ComputePipeline::releaseResources()
 {
 	rootSignature.Release();
 	pipeline.Release();
-	srvHeap.releaseResources();
+	descriptorHeap.releaseResources();
 }
 
-void ComputePipeline::CreatePipelineState(DXContext& context, ComPointer<ID3D12RootSignature> rootSignature)
+void ComputePipeline::CreatePipelineState(DXContext& context)
 {
 	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc = {};
 	psoDesc.pRootSignature = rootSignature.Get();

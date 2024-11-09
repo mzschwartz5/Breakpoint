@@ -4,7 +4,7 @@ StructuredBuffer::StructuredBuffer(const void* inputData, unsigned int numEle, s
 	: data(inputData), numElements(numEle), elementSize(eleSize)
 {}
 
-void StructuredBuffer::passModelMatrixDataToGPU(DXContext& context, ComPointer<ID3D12DescriptorHeap> dh, ID3D12GraphicsCommandList5* cmdList)
+void StructuredBuffer::passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle)
 {
     D3D12_HEAP_PROPERTIES heapProps = {};
     heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
@@ -24,14 +24,14 @@ void StructuredBuffer::passModelMatrixDataToGPU(DXContext& context, ComPointer<I
         &bufferDesc,
         D3D12_RESOURCE_STATE_GENERIC_READ,
         nullptr,
-        IID_PPV_ARGS(&modelMatrixBuffer)
+        IID_PPV_ARGS(&buffer)
     );
 
     // Copy model matrices data to the buffer
     void* mappedData;
-    modelMatrixBuffer->Map(0, nullptr, &mappedData);
+    buffer->Map(0, nullptr, &mappedData);
     memcpy(mappedData, data, elementSize * numElements);
-    modelMatrixBuffer->Unmap(0, nullptr);
+    buffer->Unmap(0, nullptr);
 
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -40,15 +40,147 @@ void StructuredBuffer::passModelMatrixDataToGPU(DXContext& context, ComPointer<I
     srvDesc.Buffer.NumElements = static_cast<UINT>(numElements);
     srvDesc.Buffer.StructureByteStride = elementSize;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
-    context.getDevice()->CreateShaderResourceView(modelMatrixBuffer.Get(), &srvDesc, dh->GetCPUDescriptorHandleForHeapStart());
+    context.getDevice()->CreateShaderResourceView(buffer.Get(), &srvDesc, descriptorHandle);
 }
 
-ComPointer<ID3D12Resource1>& StructuredBuffer::getModelMatrixBuffer()
+void StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList) {
+    // Calculate the total buffer size
+    UINT bufferSize = numElements * elementSize;
+
+    // Step 1: Create a default heap resource for the UAV (GPU-only)
+    D3D12_HEAP_PROPERTIES defaultHeapProps = {};
+    defaultHeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
+
+    D3D12_RESOURCE_DESC bufferDesc = {};
+    bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    bufferDesc.Width = bufferSize;
+    bufferDesc.Height = 1;
+    bufferDesc.DepthOrArraySize = 1;
+    bufferDesc.MipLevels = 1;
+    bufferDesc.SampleDesc.Count = 1;
+    bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
+
+    HRESULT hr = context.getDevice()->CreateCommittedResource(
+        &defaultHeapProps,
+        D3D12_HEAP_FLAG_NONE,
+        &bufferDesc,
+        D3D12_RESOURCE_STATE_COPY_DEST,
+        nullptr,
+        IID_PPV_ARGS(&buffer)
+    );
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create UAV buffer.");
+    }
+
+    // Step 2: Create an upload buffer to copy `data` to the GPU buffer
+    D3D12_HEAP_PROPERTIES uploadHeapProps = {};
+    uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
+
+    D3D12_RESOURCE_DESC uploadDesc = {};
+    uploadDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    uploadDesc.Width = bufferSize;
+    uploadDesc.Height = 1;
+    uploadDesc.DepthOrArraySize = 1;
+    uploadDesc.MipLevels = 1;
+    uploadDesc.SampleDesc.Count = 1;
+    uploadDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+	uploadDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+    ComPointer<ID3D12Resource> uploadBuffer;
+    hr = context.getDevice()->CreateCommittedResource(
+        &uploadHeapProps,
+        D3D12_HEAP_FLAG_NONE,
+        &uploadDesc,
+        D3D12_RESOURCE_STATE_GENERIC_READ,
+        nullptr,
+        IID_PPV_ARGS(&uploadBuffer)
+    );
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create UAV upload buffer.");
+    }
+
+    // Step 3: Copy data into the upload buffer
+    void* mappedData = nullptr;
+    uploadBuffer->Map(0, nullptr, &mappedData);
+    memcpy(mappedData, data, bufferSize); // Assume `data` is correctly sized
+    uploadBuffer->Unmap(0, nullptr);
+
+    // Step 4: Copy data from the upload buffer to the GPU buffer
+    cmdList->CopyResource(buffer.Get(), uploadBuffer.Get());
+    context.executeCommandList();
+
+    // Step 5: Create the UAV in the descriptor heap
+    D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
+    uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
+    uavDesc.Buffer.FirstElement = 0;
+    uavDesc.Buffer.NumElements = numElements;
+    uavDesc.Buffer.StructureByteStride = elementSize;
+
+    context.getDevice()->CreateUnorderedAccessView(buffer.Get(), nullptr, &uavDesc, descriptorHandle);
+}
+
+void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList5* cmdList) {
+    // Create a readback buffer to copy data from the GPU buffer
+    ComPointer<ID3D12Resource> readbackBuffer;
+
+    // Set up heap properties for a readback buffer
+    D3D12_HEAP_PROPERTIES heapProps = {};
+    heapProps.Type = D3D12_HEAP_TYPE_READBACK;  // CPU-accessible for readback
+
+    // Describe the buffer resource
+    D3D12_RESOURCE_DESC bufferDesc = {};
+    bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
+    bufferDesc.Width = elementSize * numElements;  // Match the size of the GPU buffer
+    bufferDesc.Height = 1;
+    bufferDesc.DepthOrArraySize = 1;
+    bufferDesc.MipLevels = 1;
+    bufferDesc.SampleDesc.Count = 1;
+    bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
+    bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
+
+    // Create the readback buffer resource
+    HRESULT hr = context.getDevice()->CreateCommittedResource(
+        &heapProps,
+        D3D12_HEAP_FLAG_NONE,
+        &bufferDesc,
+        D3D12_RESOURCE_STATE_COPY_DEST,  // Must be in COPY_DEST state to receive copied data
+        nullptr,
+        IID_PPV_ARGS(&readbackBuffer)
+    );
+
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create readback buffer.");
+    }
+
+    // Copy the data from the GPU buffer to the readback buffer
+    cmdList->CopyResource(readbackBuffer.Get(), buffer.Get());
+
+    // Execute the command list to perform the copy operation
+    context.executeCommandList();
+
+    // Map the readback buffer to access the data on the CPU
+    void* mappedData = nullptr;
+    D3D12_RANGE readRange{ 0, elementSize * numElements }; // The range of the buffer to map
+    hr = readbackBuffer->Map(0, &readRange, &mappedData);
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to map readback buffer.");
+    }
+
+    // Copy data from the mapped readback buffer to outputData
+    memcpy(outputData, mappedData, elementSize * numElements);
+
+    // Unmap the readback buffer
+    D3D12_RANGE writeRange{ 0, 0 }; // Indicate no data written by CPU
+    readbackBuffer->Unmap(0, &writeRange);
+}
+
+ComPointer<ID3D12Resource1>& StructuredBuffer::getBuffer()
 {
-	return this->modelMatrixBuffer;
+	return this->buffer;
 }
 
 void StructuredBuffer::releaseResources()
 {
-	this->modelMatrixBuffer.Release();
+	this->buffer.Release();
 }

@@ -45,6 +45,50 @@ int main() {
         modelMatrices.push_back(model);
     }
 
+ //   // Create test position data
+	//std::vector<XMFLOAT3> positions;
+	//for (int i = 0; i < instanceCount; ++i) {
+	//	positions.push_back({ i * 0.2f, i * 0.2f, i * 0.2f });
+	//}
+
+	//// Create buffer for position data
+	//StructuredBuffer positionBuffer = StructuredBuffer(positions.data(), instanceCount, sizeof(XMFLOAT3));
+
+	//// Create compute pipeline
+	//ComputePipeline computePipeline("TestRootSignature.cso", "TestComputeShader.cso", context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+ //   
+	//// Pass position data to GPU
+	//positionBuffer.passUAVDataToGPU(context, computePipeline.getDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), cmdList);
+
+ //   cmdList = context.initCommandList();
+	//cmdList->SetPipelineState(computePipeline.GetAddress());
+	//cmdList->SetComputeRootSignature(computePipeline.getRootSignature());
+
+	//// Set descriptor heap
+	//ID3D12DescriptorHeap* computeDescriptorHeaps[] = { computePipeline.getDescriptorHeap().Get() };
+	//cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
+
+	//// Set compute root descriptor table
+	//cmdList->SetComputeRootDescriptorTable(0, computePipeline.getDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+
+	//// Dispatch
+	//cmdList->Dispatch(instanceCount, 1, 1);
+
+ //   // Close command list
+ //   cmdList->Close();
+
+	//// Execute command list
+	//context.executeCommandList();
+
+	//// Wait for GPU to finish
+	//context.flush(FRAME_COUNT);
+
+	//// Copy data from GPU to CPU
+	//positionBuffer.copyDataFromGPU(context, positions.data(), cmdList);
+
+	//// Reset command list
+	//cmdList = context.initCommandList();
+
 	// Create circle geometry
 	auto circleData = generateCircle(0.05f, 32);
    
@@ -86,7 +130,7 @@ int main() {
     basicPipeline.createPipelineState(context.getDevice());
 
     StructuredBuffer modelBuffer = StructuredBuffer(modelMatrices.data(), instanceCount, sizeof(XMFLOAT4X4));
-	modelBuffer.passModelMatrixDataToGPU(context, basicPipeline.getDescriptorHeap(), cmdList);
+	modelBuffer.passSRVDataToGPU(context, basicPipeline.getDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -177,6 +221,8 @@ int main() {
     idxBuffer.releaseResources();
 	modelBuffer.releaseResources();
 	basicPipeline.releaseResources();
+	//positionBuffer.releaseResources();
+	//computePipeline.releaseResources();
 
     //flush pending buffer operations in swapchain
     context.flush(FRAME_COUNT);
