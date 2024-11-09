@@ -1,5 +1,4 @@
 #include "main.h"
-#include "Scene/Geometry.h"
 
 // This should probably go somewhere else
 void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
@@ -77,8 +76,7 @@ int main() {
 
 	cmdList->ResourceBarrier(2, barriers);
 
-    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context,
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context);
 
 	/*MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);*/
@@ -89,8 +87,8 @@ int main() {
     //output merger
     basicPipeline.createPipelineState(context.getDevice());
 
-    StructuredBuffer modelBuffer = StructuredBuffer(modelMatrices.data(), instanceCount, sizeof(XMFLOAT4X4));
-	modelBuffer.passModelMatrixDataToGPU(context, basicPipeline.getDescriptorHeap(), cmdList);
+    //set up scene
+    Scene scene{ &context, &basicPipeline, cmdList };
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -105,22 +103,22 @@ int main() {
         //check keyboard state
         auto kState = keyboard->GetState();
         if (kState.W) {
-            camera->translate({ 0, 0, 0.0005 });
+            camera->translate({ 0.f, 0.f, 0.0005f });
         }
         if (kState.A) {
-            camera->translate({ -0.0005, 0, 0 });
+            camera->translate({ -0.0005f, 0.f, 0.f });
         }
         if (kState.S) {
-            camera->translate({ 0, 0, -0.0005 });
+            camera->translate({ 0.f, 0.f, -0.0005f });
         }
         if (kState.D) {
-            camera->translate({ 0.0005, 0, 0 });
+            camera->translate({ 0.0005f, 0.f, 0.f });
         }
         if (kState.Space) {
-            camera->translate({ 0, 0.0005, 0 });
+            camera->translate({ 0.f, 0.0005f, 0.f });
         }
         if (kState.LeftControl) {
-            camera->translate({ 0, -0.0005, 0 });
+            camera->translate({ 0.f, -0.0005f, 0.f });
         }
 
         //check mouse state
@@ -143,34 +141,11 @@ int main() {
         //draw to window
         Window::get().beginFrame(cmdList);
 
-        //draw
-        // == IA ==
-        cmdList->IASetVertexBuffers(0, 1, &vbv);
-		cmdList->IASetIndexBuffer(&ibv);
-        cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-        // == RS ==
         D3D12_VIEWPORT vp;
         createDefaultViewport(vp, cmdList);
-        // == PSO ==
-        cmdList->SetPipelineState(basicPipeline.getPSO());
-        cmdList->SetGraphicsRootSignature(basicPipeline.getRootSignature());
-        // == ROOT ==
-
-        ID3D12DescriptorHeap* descriptorHeaps[] = { basicPipeline.getDescriptorHeap().Get() };
-        cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-        cmdList->SetGraphicsRootDescriptorTable(1, basicPipeline.getDescriptorHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
-
-        auto viewMat = camera->getViewMat();
-        auto projMat = camera->getProjMat();
-        cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
-        cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
-
-        // Draw
-        cmdList->DrawIndexedInstanced(circleData.second.size(), instanceCount, 0, 0, 0);
-		//cmdList->DispatchMesh(1, 1, 1);
 
         //Draw scene
-        scene.draw(basicPipeline, pso, rootSignature, camera.get());
+        scene.draw(pso, rootSignature, camera.get());
 
         Window::get().endFrame(cmdList);
 
@@ -180,9 +155,6 @@ int main() {
     }
 
     // Close
-    vertBuffer.releaseResources();
-    idxBuffer.releaseResources();
-	modelBuffer.releaseResources();
 	basicPipeline.releaseResources();
 
     //flush pending buffer operations in swapchain

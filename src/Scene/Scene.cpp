@@ -1,20 +1,20 @@
 #include "Scene.h"
 
-Scene::Scene(DXContext* p_context, ID3D12GraphicsCommandList5* p_cmdList) : context(p_context), cmdList(p_cmdList) {
+Scene::Scene(DXContext* p_context, RenderPipeline* p_pipeline, ID3D12GraphicsCommandList5* p_cmdList) : context(p_context), pipeline(p_pipeline), cmdList(p_cmdList) {
 	inputStrings.push_back("objs\\wolf.obj");
     //inputStrings.push_back("objs\\triangle.obj");
-    constructScene(context, cmdList);
+    constructScene();
 }
 
-void Scene::constructScene(DXContext* context, ID3D12GraphicsCommandList5* cmdList) {
+void Scene::constructScene() {
 	for (auto string : inputStrings) {
-		Mesh newMesh = Mesh((std::filesystem::current_path() / string).string(), context, cmdList);
+		Mesh newMesh = Mesh((std::filesystem::current_path() / string).string(), context, cmdList, pipeline);
 		meshes.push_back(newMesh);
 		sceneSize += newMesh.getNumTriangles();
 	}
 }
 
-void Scene::draw(RenderPipeline& pipeline, ComPointer<ID3D12PipelineState>& pso, ComPointer<ID3D12RootSignature>& rootSignature, Camera* camera) {
+void Scene::draw(ComPointer<ID3D12PipelineState>& pso, ComPointer<ID3D12RootSignature>& rootSignature, Camera* camera) {
     for (Mesh m : meshes) {
         // == IA ==
         cmdList->IASetVertexBuffers(0, 1, m.getVBV());
@@ -27,9 +27,9 @@ void Scene::draw(RenderPipeline& pipeline, ComPointer<ID3D12PipelineState>& pso,
         cmdList->SetGraphicsRootSignature(rootSignature);
         // == ROOT ==
 
-        ID3D12DescriptorHeap* descriptorHeaps[] = { pipeline.getSrvHeap().Get() };
+        ID3D12DescriptorHeap* descriptorHeaps[] = { pipeline->getSrvHeap().Get() };
         cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-        cmdList->SetGraphicsRootDescriptorTable(1, pipeline.getSrvHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
+        cmdList->SetGraphicsRootDescriptorTable(1, pipeline->getSrvHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
 
         auto viewMat = camera->getViewMat();
         auto projMat = camera->getProjMat();
@@ -42,4 +42,10 @@ void Scene::draw(RenderPipeline& pipeline, ComPointer<ID3D12PipelineState>& pso,
 
 size_t Scene::getSceneSize() {
 	return sceneSize;
+}
+
+void Scene::releaseResources() {
+    for (Mesh m : meshes) {
+        m.releaseResources();
+    }
 }

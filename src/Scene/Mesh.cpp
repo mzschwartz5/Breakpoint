@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList5* cmdList) {
+Mesh::Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList5* cmdList, RenderPipeline* pipeline) {
 	loadMesh(fileLocation);
     vertexBuffer = VertexBuffer(vertexPositions, vertices.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
     indexBuffer = IndexBuffer(indices, indices.size() * sizeof(unsigned int));
@@ -26,6 +26,14 @@ Mesh::Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandLi
     barriers[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 
     cmdList->ResourceBarrier(2, barriers);
+
+    XMFLOAT4X4 modelMatrix;
+    XMStoreFloat4x4(&modelMatrix, XMMatrixTranslation(0, 0, 0)); // Example transformation
+    modelMatrices.push_back(modelMatrix);
+
+    numInstances = 1;
+    modelMatrixBuffer = ModelMatrixBuffer(modelMatrices, numInstances);
+    modelMatrixBuffer.passModelMatrixDataToGPU(*context, *pipeline, cmdList);
 }
 
 void Mesh::loadMesh(std::string fileLocation) {
@@ -110,6 +118,16 @@ D3D12_INDEX_BUFFER_VIEW* Mesh::getIBV() {
 
 D3D12_VERTEX_BUFFER_VIEW* Mesh::getVBV() {
     return &vbv;
+}
+
+ModelMatrixBuffer* Mesh::getMMB() {
+    return &modelMatrixBuffer;
+}
+
+void Mesh::releaseResources() {
+    vertexBuffer.releaseResources();
+    indexBuffer.releaseResources();
+    modelMatrixBuffer.releaseResources();
 }
 
 size_t Mesh::getNumTriangles() {

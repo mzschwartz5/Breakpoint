@@ -9,13 +9,15 @@
 
 class Scene {
 public:
-	Scene(DXContext* context, ID3D12GraphicsCommandList5* cmdList);
+	Scene(DXContext* context, RenderPipeline* pipeline, ID3D12GraphicsCommandList5* cmdList);
 
-	void constructScene(DXContext* context, ID3D12GraphicsCommandList5* cmdList);
+	void constructScene();
 
-	void draw(RenderPipeline& pipeline, ComPointer<ID3D12PipelineState>& pso, ComPointer<ID3D12RootSignature>& rootSignature, Camera* camera);
+	void draw(ComPointer<ID3D12PipelineState>& pso, ComPointer<ID3D12RootSignature>& rootSignature, Camera* camera);
 
 	size_t getSceneSize();
+
+	void releaseResources();
 
 private:
 	std::vector<std::string> inputStrings;
@@ -24,7 +26,6 @@ private:
 	size_t sceneSize{ 0 };
 
 	DXContext* context;
+	RenderPipeline* pipeline;
 	ID3D12GraphicsCommandList5* cmdList;
-
-
 };
