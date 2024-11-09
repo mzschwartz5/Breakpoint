@@ -170,7 +170,7 @@ int main() {
 		//cmdList->DispatchMesh(1, 1, 1);
 
         //Draw scene
-        cmdList->DrawIndexedInstanced(scene.getSceneSize(), 1, 0, 0, 0);
+        scene.draw(basicPipeline, pso, rootSignature, camera.get());
 
         Window::get().endFrame(cmdList);
 
