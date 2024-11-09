@@ -11,4 +11,5 @@ void main(uint3 DTid : SV_DispatchThreadID) {
     float3 value = outputBuffer[id];
     value.y += 0.2f;
     outputBuffer[id] = value;
+    //outputBuffer[DTid.x] = DTid.x;  // Write the thread ID as output
 }

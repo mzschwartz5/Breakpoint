@@ -153,11 +153,23 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
         throw std::runtime_error("Failed to create readback buffer.");
     }
 
+    // 2. Transition the UAV buffer to COPY_SOURCE state
+    D3D12_RESOURCE_BARRIER uavToCopySourceBarrier = {};
+    uavToCopySourceBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+    uavToCopySourceBarrier.Transition.pResource = buffer.Get();
+    uavToCopySourceBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+    uavToCopySourceBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_COPY_SOURCE;
+    uavToCopySourceBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+    cmdList->ResourceBarrier(1, &uavToCopySourceBarrier);
+
     // Copy the data from the GPU buffer to the readback buffer
     cmdList->CopyResource(readbackBuffer.Get(), buffer.Get());
 
+    cmdList->Close();
+
     // Execute the command list to perform the copy operation
     context.executeCommandList();
+    context.flush(1);
 
     // Map the readback buffer to access the data on the CPU
     void* mappedData = nullptr;
