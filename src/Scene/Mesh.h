@@ -7,7 +7,6 @@
 #include <fstream>
 #include <sstream>
 
-#include "Support/ComPointer.h"
 #include "Support/WinInclude.h"
 
 #include "D3D/DXContext.h"
