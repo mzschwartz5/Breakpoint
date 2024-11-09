@@ -1,8 +1,9 @@
 #include "Scene.h"
 
 Scene::Scene(DXContext* p_context, ID3D12GraphicsCommandList5* p_cmdList) : context(p_context), cmdList(p_cmdList) {
-	inputStrings.push_back("objs\\wolf.obj");
-	constructScene(context, cmdList);
+	//inputStrings.push_back("objs\\wolf.obj");
+    inputStrings.push_back("objs\\triangle.obj");
+    constructScene(context, cmdList);
 }
 
 void Scene::constructScene(DXContext* context, ID3D12GraphicsCommandList5* cmdList) {
@@ -16,8 +17,8 @@ void Scene::constructScene(DXContext* context, ID3D12GraphicsCommandList5* cmdLi
 void Scene::draw(RenderPipeline& pipeline, ComPointer<ID3D12PipelineState>& pso, ComPointer<ID3D12RootSignature>& rootSignature, Camera* camera) {
     for (Mesh m : meshes) {
         // == IA ==
-        cmdList->IASetVertexBuffers(0, 1, &m.getVBV());
-        cmdList->IASetIndexBuffer(&m.getIBV());
+        cmdList->IASetVertexBuffers(0, 1, m.getVBV());
+        cmdList->IASetIndexBuffer(m.getIBV());
         cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
         // == RS ==
         //NO NEED TO RESET VIEWPORT??

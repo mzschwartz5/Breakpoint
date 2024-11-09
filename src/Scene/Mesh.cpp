@@ -2,11 +2,11 @@
 
 Mesh::Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList5* cmdList) {
 	loadMesh(fileLocation);
-    IndexBuffer indexBuffer = IndexBuffer(indices, indices.size() * sizeof(unsigned int));
-    VertexBuffer vertexBuffer = VertexBuffer(vertexPositions, vertices.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
+    vertexBuffer = VertexBuffer(vertexPositions, vertices.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
+    indexBuffer = IndexBuffer(indices, indices.size() * sizeof(unsigned int));
 
-    auto vbv = vertexBuffer.passVertexDataToGPU(*context, cmdList);
-    auto ibv = indexBuffer.passIndexDataToGPU(*context, cmdList);
+    vbv = vertexBuffer.passVertexDataToGPU(*context, cmdList);
+    ibv = indexBuffer.passIndexDataToGPU(*context, cmdList);
 
     //Transition both buffers to their usable states
     D3D12_RESOURCE_BARRIER barriers[2] = {};
@@ -104,12 +104,12 @@ void Mesh::loadMesh(std::string fileLocation) {
     file.close();
 }
 
-D3D12_INDEX_BUFFER_VIEW& Mesh::getIBV() {
-    return ibv;
+D3D12_INDEX_BUFFER_VIEW* Mesh::getIBV() {
+    return &ibv;
 }
 
-D3D12_VERTEX_BUFFER_VIEW& Mesh::getVBV() {
-    return vbv;
+D3D12_VERTEX_BUFFER_VIEW* Mesh::getVBV() {
+    return &vbv;
 }
 
 size_t Mesh::getNumTriangles() {
