@@ -1,6 +1,20 @@
 #include "main.h"
 #include "Scene/Geometry.h"
-#include <comdef.h> // For _com_error
+
+// This should probably go somewhere else
+void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
+    vp.TopLeftX = vp.TopLeftY = 0;
+    vp.Width = Window::get().getWidth();
+    vp.Height = Window::get().getHeight();
+    vp.MinDepth = 1.f;
+    vp.MaxDepth = 0.f;
+    cmdList->RSSetViewports(1, &vp);
+    RECT scRect;
+    scRect.left = scRect.top = 0;
+    scRect.right = Window::get().getWidth();
+    scRect.bottom = Window::get().getHeight();
+    cmdList->RSSetScissorRects(1, &scRect);
+}
 
 int main() {
     DebugLayer debugLayer = DebugLayer();
@@ -59,24 +73,17 @@ int main() {
 
 	cmdList->ResourceBarrier(2, barriers);
 
-    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "MeshShader.cso", "RootSignature.cso", context,
+    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
-    // === Create root signature ===
-    ComPointer<ID3D12RootSignature> rootSignature = basicPipeline.getRootSignature();
+	/*MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);*/
 
     // === Pipeline state ===
-    //D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod{};
-    //createShaderPSOD(gfxPsod, rootSignature, basicPipeline.getVertexShader(), basicPipeline.getFragmentShader());
-    D3DX12_MESH_SHADER_PIPELINE_STATE_DESC gfxPsod{};
-	createMeshShaderPSOD(gfxPsod, rootSignature, basicPipeline.getMeshShader(), basicPipeline.getFragmentShader());
+    basicPipeline.createPSOD();
 
     //output merger
-    ComPointer<ID3D12PipelineState> pso;
-    //context.getDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
-    CD3DX12_PIPELINE_MESH_STATE_STREAM psoStream = CD3DX12_PIPELINE_MESH_STATE_STREAM(gfxPsod);
-	D3D12_PIPELINE_STATE_STREAM_DESC streamDesc = { sizeof(psoStream), &psoStream };
-    context.getDevice()->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&pso));
+    basicPipeline.createPipelineState(context.getDevice());
 
     StructuredBuffer modelBuffer = StructuredBuffer(modelMatrices.data(), instanceCount, sizeof(XMFLOAT4X4));
 	modelBuffer.passModelMatrixDataToGPU(context, basicPipeline.getDescriptorHeap(), cmdList);
@@ -141,8 +148,8 @@ int main() {
         D3D12_VIEWPORT vp;
         createDefaultViewport(vp, cmdList);
         // == PSO ==
-        cmdList->SetPipelineState(pso);
-        cmdList->SetGraphicsRootSignature(rootSignature);
+        cmdList->SetPipelineState(basicPipeline.getPSO());
+        cmdList->SetGraphicsRootSignature(basicPipeline.getRootSignature());
         // == ROOT ==
 
         ID3D12DescriptorHeap* descriptorHeaps[] = { basicPipeline.getDescriptorHeap().Get() };
@@ -155,8 +162,8 @@ int main() {
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 
         // Draw
-        //cmdList->DrawIndexedInstanced(circleData.second.size(), instanceCount, 0, 0, 0);
-		cmdList->DispatchMesh(1, 1, 1);
+        cmdList->DrawIndexedInstanced(circleData.second.size(), instanceCount, 0, 0, 0);
+		//cmdList->DispatchMesh(1, 1, 1);
 
         Window::get().endFrame(cmdList);
 

@@ -1,26 +1,26 @@
-#pragma once
+#include "RenderPipeline.h"
 
-#include "../Support/WinInclude.h"
-#include "../Support/Shader.h"
-#include "../Support/ComPointer.h"
-#include "../Support/Window.h"
+RenderPipeline::RenderPipeline(std::string vertexShaderName, std::string fragShaderName, std::string rootSignatureShaderName, DXContext& context,
+	D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
+	: Pipeline(rootSignatureShaderName, context, type, numberOfDescriptors, flags), vertexShader(vertexShaderName), fragShader(fragShaderName) {
+}
 
 D3D12_INPUT_ELEMENT_DESC vertexLayout[] =
 {
     { "Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 };
 
-void createShaderPSOD(D3D12_GRAPHICS_PIPELINE_STATE_DESC& gfxPsod, ComPointer<ID3D12RootSignature> rootSignature, Shader& vs, Shader& fs) {
+void RenderPipeline::createPSOD() {
     gfxPsod.pRootSignature = rootSignature;
     gfxPsod.InputLayout.NumElements = _countof(vertexLayout);
     gfxPsod.InputLayout.pInputElementDescs = vertexLayout;
     gfxPsod.IBStripCutValue = D3D12_INDEX_BUFFER_STRIP_CUT_VALUE_DISABLED;
 
-    gfxPsod.VS.BytecodeLength = vs.getSize();
-    gfxPsod.VS.pShaderBytecode = vs.getBuffer();
+    gfxPsod.VS.BytecodeLength = vertexShader.getSize();
+    gfxPsod.VS.pShaderBytecode = vertexShader.getBuffer();
 
-    gfxPsod.PS.BytecodeLength = fs.getSize();
-    gfxPsod.PS.pShaderBytecode = fs.getBuffer();
+    gfxPsod.PS.BytecodeLength = fragShader.getSize();
+    gfxPsod.PS.pShaderBytecode = fragShader.getBuffer();
 
     gfxPsod.DS.BytecodeLength = 0;
     gfxPsod.DS.pShaderBytecode = nullptr;
@@ -87,33 +87,6 @@ void createShaderPSOD(D3D12_GRAPHICS_PIPELINE_STATE_DESC& gfxPsod, ComPointer<ID
     gfxPsod.Flags = D3D12_PIPELINE_STATE_FLAG_NONE;
 }
 
-void createMeshShaderPSOD(D3DX12_MESH_SHADER_PIPELINE_STATE_DESC& psoDesc, ComPointer<ID3D12RootSignature> rootSignature, Shader& ms, Shader& fs) {
-    psoDesc.pRootSignature = rootSignature;
-    psoDesc.MS.BytecodeLength = ms.getSize();
-    psoDesc.MS.pShaderBytecode = ms.getBuffer();
-    psoDesc.PS.BytecodeLength = fs.getSize();
-    psoDesc.PS.pShaderBytecode = fs.getBuffer();
-    psoDesc.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-    psoDesc.NumRenderTargets = 1;
-    psoDesc.DSVFormat = DXGI_FORMAT_D32_FLOAT;
-    psoDesc.SampleDesc.Count = 1;
-    psoDesc.SampleMask = UINT_MAX;
-    psoDesc.RasterizerState = CD3DX12_RASTERIZER_DESC(D3D12_DEFAULT);
-    psoDesc.BlendState = CD3DX12_BLEND_DESC(D3D12_DEFAULT);
-    psoDesc.DepthStencilState = CD3DX12_DEPTH_STENCIL_DESC(D3D12_DEFAULT);
-}
-
-
-void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
-    vp.TopLeftX = vp.TopLeftY = 0;
-    vp.Width = Window::get().getWidth();
-    vp.Height = Window::get().getHeight();
-    vp.MinDepth = 1.f;
-    vp.MaxDepth = 0.f;
-    cmdList->RSSetViewports(1, &vp);
-    RECT scRect;
-    scRect.left = scRect.top = 0;
-    scRect.right = Window::get().getWidth();
-    scRect.bottom = Window::get().getHeight();
-    cmdList->RSSetScissorRects(1, &scRect);
+void RenderPipeline::createPipelineState(ComPointer<ID3D12Device6> device) {
+	device->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
 }
