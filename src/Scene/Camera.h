@@ -13,9 +13,10 @@ public:
 
 	void setFOV(float FOVY, float aspect, float nearPlane, float farPlane);
 	void updateAspect(float aspect);
-
-	void rotateY(float angle);
-	void rotateX(float angle);
+	
+	void rotateOnX(float angle);
+	void rotateOnY(float angle);
+	void rotate();
 	void translate(XMFLOAT3 distance);
 
 	void updateViewMat();
@@ -28,6 +29,9 @@ private:
 	float aspect;
 	float nearPlane;
 	float farPlane;
+
+	float rotateX{ 0 };
+	float rotateY{ 0 };
 
 	XMFLOAT3 position{ 0, 0, -1 };
 	XMFLOAT3 up{ 0, 1, 0 };

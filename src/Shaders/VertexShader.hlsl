@@ -5,8 +5,13 @@ cbuffer CameraMatrices : register(b0) {
     float4x4 projectionMatrix;  // 16 floats
 };
 
+#define MAX_INSTANCE_SIZE 1000
+
 // Model Matrices for each instance
-StructuredBuffer<float4x4> modelMatrices : register(t0);
+// Model matrices for instances in CBV at register b1
+cbuffer ModelMatrices : register(b1) {
+    float4x4 modelMatrices[MAX_INSTANCE_SIZE]; // Array of model matrices
+};
 
 struct VSInput
 {
@@ -20,8 +25,8 @@ float4 main(VSInput input) : SV_Position
     // Retrieve the model matrix for the current instance using the InstanceID
     float4x4 modelMatrix = modelMatrices[input.InstanceID];
 
-// Apply the model, view, and projection transformations
-float4 worldPos = mul(modelMatrix, float4(input.Position, 1.0));
-float4 viewPos = mul(viewMatrix, worldPos);
-return mul(projectionMatrix, viewPos);
+    // Apply the model, view, and projection transformations
+    float4 worldPos = mul(modelMatrix, float4(input.Position, 1.0));
+    float4 viewPos = mul(viewMatrix, worldPos);
+    return mul(projectionMatrix, viewPos);
 }

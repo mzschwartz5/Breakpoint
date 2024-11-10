@@ -16,7 +16,7 @@ public:
 		return instance;
 	}
 
-	inline HWND getHWND() const {
+	inline HWND& getHWND() {
 		return window;
 	}
 

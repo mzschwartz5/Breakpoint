@@ -1,6 +1,6 @@
 #include "IndexBuffer.h"
 
-IndexBuffer::IndexBuffer(unsigned int* indexData, size_t indexDataSize)
+IndexBuffer::IndexBuffer(std::vector<unsigned int> &indexData, const size_t indexDataSize)
     : indexData(indexData), indexDataSize(indexDataSize), uploadBuffer(), indexBuffer()
 {}
 
@@ -48,7 +48,7 @@ D3D12_INDEX_BUFFER_VIEW IndexBuffer::passIndexDataToGPU(DXContext& context, ID3D
 		throw std::runtime_error("Could not map upload buffer");
     }
     
-    memcpy(uploadBufferAddress, indexData, indexDataSize);
+    memcpy(uploadBufferAddress, indexData.data(), indexDataSize);
     uploadBuffer->Unmap(0, &uploadRange);
     // Copy CPU Resource --> GPU Resource
     cmdList->CopyBufferRegion(indexBuffer, 0, uploadBuffer, 0, indexDataSize);

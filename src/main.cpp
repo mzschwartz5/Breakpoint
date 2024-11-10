@@ -1,4 +1,20 @@
 #include "main.h"
+#include "Scene/Geometry.h"
+
+// This should probably go somewhere else
+void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
+    vp.TopLeftX = vp.TopLeftY = 0;
+    vp.Width = Window::get().getWidth();
+    vp.Height = Window::get().getHeight();
+    vp.MinDepth = 1.f;
+    vp.MaxDepth = 0.f;
+    cmdList->RSSetViewports(1, &vp);
+    RECT scRect;
+    scRect.left = scRect.top = 0;
+    scRect.right = Window::get().getWidth();
+    scRect.bottom = Window::get().getHeight();
+    cmdList->RSSetScissorRects(1, &scRect);
+}
 
 int main() {
     DebugLayer debugLayer = DebugLayer();
@@ -18,17 +34,7 @@ int main() {
     mouse->SetWindow(Window::get().getHWND());
 
     //pass triangle data to gpu, get vertex buffer view
-    unsigned int idxdata[] = {
-        0, 1, 2
-    };
-
-    float vdata[] = {
-        -0.25f, -0.25f, 0.0f,
-		0.0f, 0.183f, 0.0f,
-		0.25, -0.25f, 0.0f
-    };
-
-    int instanceCount = 20;
+    int instanceCount = 8;
 
     // Create Test Model Matrices
     std::vector<XMFLOAT4X4> modelMatrices;
@@ -39,12 +45,78 @@ int main() {
         modelMatrices.push_back(model);
     }
 
-    VertexBuffer vertBuffer = VertexBuffer(vdata, sizeof(vdata), 3 * sizeof(float));
+    // Create test position data
+	std::vector<XMFLOAT3> positions;
+	for (int i = 0; i < instanceCount; ++i) {
+		positions.push_back({ i * 0.2f, i * 0.2f, i * 0.2f });
+	}
+
+	//// Create buffer for position data
+	StructuredBuffer positionBuffer = StructuredBuffer(positions.data(), instanceCount, sizeof(XMFLOAT3));
+
+	//// Create compute pipeline
+	ComputePipeline computePipeline("TestRootSignature.cso", "TestComputeShader.cso", context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+   
+	//// Pass position data to GPU
+	positionBuffer.passUAVDataToGPU(context, computePipeline.getDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), cmdList);
+
+    cmdList = context.initCommandList();
+    cmdList->SetPipelineState(computePipeline.GetAddress());
+    cmdList->SetComputeRootSignature(computePipeline.getRootSignature());
+
+    //// Set descriptor heap
+    ID3D12DescriptorHeap* computeDescriptorHeaps[] = { computePipeline.getDescriptorHeap().Get() };
+    cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
+
+    //// Set compute root descriptor table
+    cmdList->SetComputeRootDescriptorTable(0, computePipeline.getDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
+
+    //// Dispatch
+    cmdList->Dispatch(instanceCount, 1, 1);
+
+    // Create a fence
+    UINT64 fenceValue = 1;
+    ComPointer<ID3D12Fence> fence;
+    context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+
+    //// Execute command list
+    context.executeCommandList();
+    context.getCommandQueue()->Signal(fence.Get(), fenceValue);
+
+    //// Wait for GPU to finish
+    context.flush(1);
+
+    if (fence->GetCompletedValue() < fenceValue) {
+        HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        if (eventHandle == nullptr) {
+            throw std::runtime_error("Failed to create event handle.");
+        }
+
+        // Set the event to be triggered when the GPU reaches the fence value
+        fence->SetEventOnCompletion(fenceValue, eventHandle);
+
+        // Wait until the event is triggered, meaning the GPU has finished
+        WaitForSingleObject(eventHandle, INFINITE);
+        CloseHandle(eventHandle);
+    }
+
+    cmdList = context.initCommandList();
+
+    //// Copy data from GPU to CPU
+    positionBuffer.copyDataFromGPU(context, positions.data(), cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+    //// Reset command list
+    cmdList = context.initCommandList();
+
+	// Create circle geometry
+	auto circleData = generateCircle(0.05f, 32);
+   
+    VertexBuffer vertBuffer = VertexBuffer(circleData.first, circleData.first.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
     auto vbv = vertBuffer.passVertexDataToGPU(context, cmdList);
 
-    IndexBuffer idxBuffer = IndexBuffer(idxdata, sizeof(idxdata));
+    IndexBuffer idxBuffer = IndexBuffer(circleData.second, circleData.second.size() * sizeof(unsigned int));
     auto ibv = idxBuffer.passIndexDataToGPU(context, cmdList);
-
+    
     //Transition both buffers to their usable states
     D3D12_RESOURCE_BARRIER barriers[2] = {};
 
@@ -64,21 +136,20 @@ int main() {
 
 	cmdList->ResourceBarrier(2, barriers);
 
-    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context);
+    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
-    // === Create root signature ===
-    ComPointer<ID3D12RootSignature> rootSignature = basicPipeline.getRootSignature();
+	/*MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);*/
 
     // === Pipeline state ===
-    D3D12_GRAPHICS_PIPELINE_STATE_DESC gfxPsod{};
-    createShaderPSOD(gfxPsod, rootSignature, basicPipeline.getVertexShader(), basicPipeline.getFragmentShader());
-    
-    //output merger
-    ComPointer<ID3D12PipelineState> pso;
-    context.getDevice()->CreateGraphicsPipelineState(&gfxPsod, IID_PPV_ARGS(&pso));
+    basicPipeline.createPSOD();
 
-    ModelMatrixBuffer modelBuffer = ModelMatrixBuffer(modelMatrices, instanceCount);
-	modelBuffer.passModelMatrixDataToGPU(context, basicPipeline, cmdList);
+    //output merger
+    basicPipeline.createPipelineState(context.getDevice());
+
+    StructuredBuffer modelBuffer = StructuredBuffer(modelMatrices.data(), instanceCount, sizeof(XMFLOAT4X4));
+	modelBuffer.passCBVDataToGPU(context, basicPipeline.getDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -114,6 +185,14 @@ int main() {
         //check mouse state
         auto mState = mouse->GetState();
 
+        if (mState.positionMode == Mouse::MODE_RELATIVE) {
+            camera->rotateOnX(-mState.y * 0.01);
+            camera->rotateOnY(mState.x * 0.01);
+            camera->rotate();
+        }
+
+        mouse->SetMode(mState.leftButton ? Mouse::MODE_RELATIVE : Mouse::MODE_ABSOLUTE);
+
         //update camera
         camera->updateViewMat();
 
@@ -132,13 +211,13 @@ int main() {
         D3D12_VIEWPORT vp;
         createDefaultViewport(vp, cmdList);
         // == PSO ==
-        cmdList->SetPipelineState(pso);
-        cmdList->SetGraphicsRootSignature(rootSignature);
+        cmdList->SetPipelineState(basicPipeline.getPSO());
+        cmdList->SetGraphicsRootSignature(basicPipeline.getRootSignature());
         // == ROOT ==
 
-        ID3D12DescriptorHeap* descriptorHeaps[] = { basicPipeline.getSrvHeap().Get() };
+        ID3D12DescriptorHeap* descriptorHeaps[] = { basicPipeline.getDescriptorHeap().Get() };
         cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-        cmdList->SetGraphicsRootDescriptorTable(1, basicPipeline.getSrvHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
+        cmdList->SetGraphicsRootDescriptorTable(1, basicPipeline.getDescriptorHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
 
         auto viewMat = camera->getViewMat();
         auto projMat = camera->getProjMat();
@@ -146,7 +225,8 @@ int main() {
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 
         // Draw
-        cmdList->DrawIndexedInstanced(6, instanceCount, 0, 0, 0);
+        cmdList->DrawIndexedInstanced(circleData.second.size(), instanceCount, 0, 0, 0);
+		//cmdList->DispatchMesh(1, 1, 1);
 
         Window::get().endFrame(cmdList);
 
@@ -160,6 +240,8 @@ int main() {
     idxBuffer.releaseResources();
 	modelBuffer.releaseResources();
 	basicPipeline.releaseResources();
+	positionBuffer.releaseResources();
+	computePipeline.releaseResources();
 
     //flush pending buffer operations in swapchain
     context.flush(FRAME_COUNT);
