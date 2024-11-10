@@ -26,14 +26,14 @@ struct Particle {
 };
 
 struct Voxel {
-    Particle* particles[8];
-    // Additional data if needed
+    UINT particleIndices[8]; // Indices to the 8 corner particles
+    XMFLOAT3 u; // Local X-axis
+    XMFLOAT3 v; // Local Y-axis
+    XMFLOAT3 w; // Local Z-axis
 };
 
-struct GPU_Constraint {
-    UINT type;         // Constraint type (0: Orthogonality, 1: Length, 2: Glue)
-    UINT indices[4];    
-    float stiffness;
-    float breakingThreshold;
-    UINT isBroken;
+struct FaceConstraint {
+    UINT voxelA;
+    UINT voxelB;
+    UINT faceIndex; // Identifies which face is shared
 };
