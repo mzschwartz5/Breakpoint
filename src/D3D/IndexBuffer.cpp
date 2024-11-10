@@ -1,6 +1,6 @@
 #include "IndexBuffer.h"
 
-IndexBuffer::IndexBuffer(std::vector<unsigned int> &indexData, const size_t indexDataSize)
+IndexBuffer::IndexBuffer(std::vector<unsigned int> indexData, const size_t indexDataSize)
     : indexData(indexData), indexDataSize(indexDataSize), uploadBuffer(), indexBuffer()
 {}
 

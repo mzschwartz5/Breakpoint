@@ -7,8 +7,8 @@
 
 class IndexBuffer {
 public:
-	IndexBuffer() = delete;
-	IndexBuffer(std::vector<unsigned int> &indexData, const size_t indexDataSize);
+	IndexBuffer() = default;
+	IndexBuffer(std::vector<unsigned int> indexData, const size_t indexDataSize);
 
 	D3D12_INDEX_BUFFER_VIEW passIndexDataToGPU(DXContext& context, ID3D12GraphicsCommandList5* cmdList);
 
@@ -21,6 +21,6 @@ private:
 	ComPointer<ID3D12Resource1> uploadBuffer;
 	ComPointer<ID3D12Resource1> indexBuffer;
 
-	const size_t indexDataSize;
-	std::vector<unsigned int> &indexData;
+	size_t indexDataSize;
+	std::vector<unsigned int> indexData;
 };
