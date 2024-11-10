@@ -15,4 +15,7 @@
 #include "D3D/StructuredBuffer.h"
 #include "D3D/Pipeline/ComputePipeline.h"
 
+const int voxelGridSize = 32; //voxel per axis
+const float voxelGridWorldSize = 1.0f;
+
 #include "Scene/Camera.h"
