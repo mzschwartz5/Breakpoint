@@ -27,9 +27,9 @@ void Scene::draw(ComPointer<ID3D12PipelineState>& pso, ComPointer<ID3D12RootSign
         cmdList->SetGraphicsRootSignature(rootSignature);
         // == ROOT ==
 
-        ID3D12DescriptorHeap* descriptorHeaps[] = { pipeline->getSrvHeap().Get() };
+        ID3D12DescriptorHeap* descriptorHeaps[] = { pipeline->getDescriptorHeap().Get() };
         cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-        cmdList->SetGraphicsRootDescriptorTable(1, pipeline->getSrvHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
+        cmdList->SetGraphicsRootDescriptorTable(1, pipeline->getDescriptorHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
 
         auto viewMat = camera->getViewMat();
         auto projMat = camera->getProjMat();

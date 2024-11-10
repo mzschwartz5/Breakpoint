@@ -12,7 +12,9 @@
 #include "D3D/DXContext.h"
 #include "D3D/VertexBuffer.h"
 #include "D3D/IndexBuffer.h"
-#include "D3D/ModelMatrixBuffer.h"
+#include "D3D/StructuredBuffer.h"
+
+#include "D3D/Pipeline/RenderPipeline.h"
 
 using namespace DirectX;
 
@@ -30,7 +32,7 @@ public:
 
 	D3D12_INDEX_BUFFER_VIEW* getIBV();
 	D3D12_VERTEX_BUFFER_VIEW* getVBV();
-	ModelMatrixBuffer* getMMB();
+	StructuredBuffer* getMMB();
 
 	void releaseResources();
 
@@ -46,7 +48,7 @@ private:
 
 	VertexBuffer vertexBuffer;
 	IndexBuffer indexBuffer;
-	ModelMatrixBuffer modelMatrixBuffer;
+	StructuredBuffer modelMatrixBuffer;
 	D3D12_VERTEX_BUFFER_VIEW vbv;
 	D3D12_INDEX_BUFFER_VIEW ibv;
 };

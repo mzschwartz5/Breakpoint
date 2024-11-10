@@ -32,8 +32,8 @@ Mesh::Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandLi
     modelMatrices.push_back(modelMatrix);
 
     numInstances = 1;
-    modelMatrixBuffer = ModelMatrixBuffer(modelMatrices, numInstances);
-    modelMatrixBuffer.passModelMatrixDataToGPU(*context, *pipeline, cmdList);
+    modelMatrixBuffer = StructuredBuffer(modelMatrices.data(), numInstances, sizeof(XMFLOAT4X4));
+    modelMatrixBuffer.passModelMatrixDataToGPU(*context, pipeline->getDescriptorHeap(), cmdList);
 }
 
 void Mesh::loadMesh(std::string fileLocation) {
@@ -120,7 +120,7 @@ D3D12_VERTEX_BUFFER_VIEW* Mesh::getVBV() {
     return &vbv;
 }
 
-ModelMatrixBuffer* Mesh::getMMB() {
+StructuredBuffer* Mesh::getMMB() {
     return &modelMatrixBuffer;
 }
 

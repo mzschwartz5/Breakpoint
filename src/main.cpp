@@ -33,50 +33,8 @@ int main() {
 
     mouse->SetWindow(Window::get().getHWND());
 
-    //set up scene
-    Scene scene{&context, cmdList};
-
-    //pass triangle data to gpu, get vertex buffer view
-    int instanceCount = 8;
-
-    // Create Test Model Matrices
-    std::vector<XMFLOAT4X4> modelMatrices;
-    // Populate modelMatrices with transformation matrices for each instance
-    for (int i = 0; i < instanceCount; ++i) {
-        XMFLOAT4X4 model;
-        XMStoreFloat4x4(&model, XMMatrixTranslation(i * 0.2f, i * 0.2f, i * 0.2f)); // Example transformation
-        modelMatrices.push_back(model);
-    }
-
-	// Create circle geometry
-	auto circleData = generateCircle(0.05f, 32);
-   
-    VertexBuffer vertBuffer = VertexBuffer(circleData.first, circleData.first.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
-    auto vbv = vertBuffer.passVertexDataToGPU(context, cmdList);
-
-    IndexBuffer idxBuffer = IndexBuffer(circleData.second, circleData.second.size() * sizeof(unsigned int));
-    auto ibv = idxBuffer.passIndexDataToGPU(context, cmdList);
-    
-    //Transition both buffers to their usable states
-    D3D12_RESOURCE_BARRIER barriers[2] = {};
-
-    // Vertex buffer barrier
-    barriers[0].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barriers[0].Transition.pResource = vertBuffer.getVertexBuffer().Get();
-    barriers[0].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barriers[0].Transition.StateAfter = D3D12_RESOURCE_STATE_VERTEX_AND_CONSTANT_BUFFER;
-    barriers[0].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
-    // Index buffer barrier
-    barriers[1].Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barriers[1].Transition.pResource = idxBuffer.getIndexBuffer().Get();
-    barriers[1].Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
-    barriers[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-
-	cmdList->ResourceBarrier(2, barriers);
-
-    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context);
+    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	/*MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);*/
@@ -125,8 +83,8 @@ int main() {
         auto mState = mouse->GetState();
 
         if (mState.positionMode == Mouse::MODE_RELATIVE) {
-            camera->rotateOnX(-mState.y * 0.01);
-            camera->rotateOnY(mState.x * 0.01);
+            camera->rotateOnX(-mState.y * 0.01f);
+            camera->rotateOnY(mState.x * 0.01f);
             camera->rotate();
         }
 
@@ -145,7 +103,7 @@ int main() {
         createDefaultViewport(vp, cmdList);
 
         //Draw scene
-        scene.draw(pso, rootSignature, camera.get());
+        scene.draw(basicPipeline.getPSO(), basicPipeline.getRootSignature(), camera.get());
 
         Window::get().endFrame(cmdList);
 
@@ -156,6 +114,7 @@ int main() {
 
     // Close
 	basicPipeline.releaseResources();
+    scene.releaseResources();
 
     //flush pending buffer operations in swapchain
     context.flush(FRAME_COUNT);

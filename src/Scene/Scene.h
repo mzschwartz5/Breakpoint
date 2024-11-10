@@ -5,7 +5,7 @@
 #include "Scene/Mesh.h"
 #include "Scene/Camera.h"
 
-#include "D3D/RenderPipeline.h"
+#include "D3D/Pipeline/RenderPipeline.h"
 
 class Scene {
 public:
