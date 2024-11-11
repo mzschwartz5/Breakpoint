@@ -1,4 +1,7 @@
 #define ROOTSIG \
-"RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT)," \
-"RootConstants(num32BitConstants=4, b0),"     /* 4 constants: gravityStrength, inputX, inputY, deltaTime */ \
-"DescriptorTable(UAV(u0, numDescriptors=2))"  /* UAV table for positions and velocities buffers */
+    "RootFlags(ALLOW_INPUT_ASSEMBLER_INPUT_LAYOUT)," \
+    "DescriptorTable(UAV(u0, numDescriptors = 1))," /* UAV for particles buffer */ \
+    "DescriptorTable(SRV(t0, numDescriptors = 1))" /* SRV for constraints buffer */
+
+   
+

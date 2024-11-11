@@ -1,55 +1,63 @@
 #include "TestComputeRootSignature.hlsl"  // Includes the ROOTSIG definition
 
-// Root constants bound to b0
-struct Constants {
-    float gravityStrength;
-    float2 inputVector;
-    float deltaTime;
+
+struct Particle {
+	float3 position;
+	float3 prevPosition;
+	float3 velocity;
+	float invMass;
 };
 
-ConstantBuffer<Constants> cb : register(b0);
+struct DistanceConstraint {
+	uint particleA;
+	uint particleB;
+	float restLength;
+};
 
-// UAV for positions buffer (output buffer)
-RWStructuredBuffer<float3> positionsBuffer : register(u0);
+// RWStructuredBuffer for particle data
+RWStructuredBuffer<Particle> particles : register(u0);
 
-// UAV for velocities buffer (output buffer)
-RWStructuredBuffer<float3> velocitiesBuffer : register(u1);
+// StructuredBuffer for constraints
+StructuredBuffer<DistanceConstraint> constraints : register(t0);
 
-float Random(float2 seed) {
-    // Apply some mathematical transformations for randomness
-    float dotProduct = dot(seed, float2(12.9898, 78.233));
-    float sinValue = sin(dotProduct) * 43758.5453;
+//float Random(float2 seed) {
+//    // Apply some mathematical transformations for randomness
+//    float dotProduct = dot(seed, float2(12.9898, 78.233));
+//    float sinValue = sin(dotProduct) * 43758.5453;
+//
+//    // Fract() returns the fractional part to get a pseudo-random number between 0 and 1
+//    return frac(sinValue);
+//}
 
-    // Fract() returns the fractional part to get a pseudo-random number between 0 and 1
-    return frac(sinValue);
-}
+
+
+
 
 [numthreads(1, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID) {
-	float deltaTime = cb.deltaTime;
-	float2 position = float2(positionsBuffer[DTid.x].x, positionsBuffer[DTid.x].y);
-	float2 velocity = float2(velocitiesBuffer[DTid.x].x, velocitiesBuffer[DTid.x].y);
-    velocity += float3(0, -1, 0) * cb.gravityStrength * cb.deltaTime;
-	position += velocity * cb.deltaTime;
+    uint constraintIndex = DTid.x;
 
-	// Bounce Velocity if the particle hits the ground
-	if (abs(position.y) > 0.365f) {
-		position.y = sign(position.y) * 0.365f;
-		velocity.y = -velocitiesBuffer[DTid.x].y;
-		// Randomize the x-velocity a bit
-		velocity.x += Random(position) - 0.5;
-	}
-	// Bounce Velocity if the particle hits the walls
-	if (abs(position.x) > 0.72f) {
-		position.x = sign(position.x) * 0.72f;
-		// Dampen the x-velocity
-		velocity.x = -velocitiesBuffer[DTid.x].x * 0.9;
-		// Randomize the y-velocity a bit
-		velocity.y += Random(position) - 0.5;
-	}
+    if (constraintIndex >= 10)
+        return;
 
-	// Update the position and velocity
-	positionsBuffer[DTid.x] = float3(position.x, position.y, 0);
-	velocitiesBuffer[DTid.x] = float3(velocity.x, velocity.y, 0);
+    DistanceConstraint dc = constraints[constraintIndex];
+    Particle pa = particles[dc.particleA];
+    Particle pb = particles[dc.particleB];
+
+    float3 delta = pb.position - pa.position;
+    float currentLength = length(delta);
+    float3 correctionVector = normalize(delta) * ((currentLength - dc.restLength) * 0.1);
+
+    // Apply corrections inversely proportional to mass (invMass)
+    if (pa.invMass > 0.0f) {
+        pa.position -= correctionVector * pa.invMass;
+    }
+    if (pb.invMass > 0.0f) {
+        pb.position += correctionVector * pb.invMass;
+    }
+
+    // Write back corrected positions
+    particles[dc.particleA] = pa;
+    particles[dc.particleB] = pb;
 
 }
