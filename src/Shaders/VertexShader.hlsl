@@ -5,12 +5,15 @@ cbuffer CameraMatrices : register(b0) {
     float4x4 projectionMatrix;  // 16 floats
 };
 
-#define MAX_INSTANCE_SIZE 1000
+// Max array size is 64KB
+// Not applicable to particles, just for other instanced meshes
+// Can also make more CBV's if we want
+#define MAX_MODEL_MATRIX_SIZE 1000
 
 // Model Matrices for each instance
 // Model matrices for instances in CBV at register b1
 cbuffer ModelMatrices : register(b1) {
-    float4x4 modelMatrices[MAX_INSTANCE_SIZE]; // Array of model matrices
+    float4x4 modelMatrices[MAX_MODEL_MATRIX_SIZE]; // Array of model matrices
 };
 
 struct VSInput

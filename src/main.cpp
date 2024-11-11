@@ -1,5 +1,8 @@
 #include "main.h"
 
+// Base Mesh Scene = 0, Physics Scene = 1, Mesh Shader Scene = 2
+#define SCENE 0
+
 // This should probably go somewhere else
 void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
     vp.TopLeftX = vp.TopLeftY = 0;
@@ -33,17 +36,26 @@ int main() {
 
     mouse->SetWindow(Window::get().getHWND());
 
+#if SCENE == 0
+    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context,
+	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    Scene scene{ &context, &basicPipeline, cmdList };
+#endif
+#if SCENE == 1
     RenderPipeline basicPipeline("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", context,
-    //RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context,
-D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    //// Create compute pipeline
+	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+    // Create compute pipeline
     ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, 
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
-	/*MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
-		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);*/
-
-	PhysicsScene scene{ &context, &basicPipeline, &computePipeline, cmdList, 10 };
+    PhysicsScene scene{ &context, &basicPipeline, &computePipeline, cmdList, 10 };
+#endif
+#if SCENE == 2
+    MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    // TODO: Make a Scene Class for Mesh Shading?
+#endif
 	scene.constructScene();
 
     while (!Window::get().getShouldClose()) {
@@ -90,10 +102,13 @@ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VIS
 
         //update camera
         camera->updateViewMat();
-
+#if SCENE == 1
+		// Dispatch compute shader for physics scene
         scene.compute();
+#endif
 
         //draw to window
+        context.initCommandList();
         Window::get().beginFrame(cmdList);
         D3D12_VIEWPORT vp;
         createDefaultViewport(vp, cmdList);
@@ -106,6 +121,7 @@ D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VIS
     }
 
     // Close
+    // Scene should release all resources, including their pipelines
     scene.releaseResources();
 
     //flush pending buffer operations in swapchain

@@ -54,20 +54,20 @@
     <ClInclude Include="Support\WinInclude.h" />
   </ItemGroup>
   <ItemGroup>
-    <FxCompile Include="Shaders\PhysicsVertexShader.hlsl">
+    <FxCompile Include="Shaders\BouncingPhysicsShaders\PhysicsVertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Shaders\PhysicsRootSignature.hlsl">
+    <FxCompile Include="Shaders\BouncingPhysicsShaders\PhysicsRootSignature.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ROOTSIG</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">RootSignature</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">rootsig_1.1</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Shaders\ComputeShaders\TestComputeShader.hlsl">
+    <FxCompile Include="Shaders\BouncingPhysicsShaders\TestComputeShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.0</ShaderModel>
     </FxCompile>
-    <FxCompile Include="Shaders\ComputeShaders\TestComputeRootSignature.hlsl">
+    <FxCompile Include="Shaders\BouncingPhysicsShaders\TestComputeRootSignature.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ROOTSIG</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">RootSignature</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">rootsig_1.1</ShaderModel>

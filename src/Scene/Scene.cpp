@@ -1,10 +1,13 @@
 #include "Scene.h"
 
-Scene::Scene(DXContext* p_context, RenderPipeline* p_pipeline, ID3D12GraphicsCommandList5* p_cmdList) : context(p_context), pipeline(p_pipeline), cmdList(p_cmdList) {
+Scene::Scene(DXContext* p_context, RenderPipeline* p_pipeline, ID3D12GraphicsCommandList5* p_cmdList) : 
+    context(p_context), pipeline(p_pipeline), cmdList(p_cmdList) {
     //inputStrings.push_back("objs\\triangle.obj");
 }
 
 void Scene::constructScene() {
+    pipeline->createPSOD();
+	pipeline->createPipelineState(context->getDevice());
     inputStrings.push_back("objs\\wolf.obj");
 	for (auto string : inputStrings) {
 		Mesh newMesh = Mesh((std::filesystem::current_path() / string).string(), context, cmdList, pipeline);
@@ -13,7 +16,7 @@ void Scene::constructScene() {
 	}
 }
 
-void Scene::draw(ComPointer<ID3D12PipelineState>& pso, ComPointer<ID3D12RootSignature>& rootSignature, Camera* camera) {
+void Scene::draw(Camera* camera) {
     for (Mesh m : meshes) {
         // == IA ==
         cmdList->IASetVertexBuffers(0, 1, m.getVBV());
@@ -22,8 +25,8 @@ void Scene::draw(ComPointer<ID3D12PipelineState>& pso, ComPointer<ID3D12RootSign
         // == RS ==
         //NO NEED TO RESET VIEWPORT??
         // == PSO ==
-        cmdList->SetPipelineState(pso);
-        cmdList->SetGraphicsRootSignature(rootSignature);
+        cmdList->SetPipelineState(pipeline->getPSO());
+        cmdList->SetGraphicsRootSignature(pipeline->getRootSignature());
         // == ROOT ==
 
         ID3D12DescriptorHeap* descriptorHeaps[] = { pipeline->getDescriptorHeap()->GetAddress()};
@@ -47,4 +50,5 @@ void Scene::releaseResources() {
     for (Mesh m : meshes) {
         m.releaseResources();
     }
+	pipeline->releaseResources();
 }

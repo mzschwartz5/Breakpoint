@@ -119,8 +119,6 @@ void PhysicsScene::compute() {
 	// --- End Compute Pass ---
 	context->executeCommandList();
 	context->signalAndWaitForFence(fence, fenceValue);
-
-	cmdList = context->initCommandList();
 }
 
 void PhysicsScene::draw(Camera* cam) {;

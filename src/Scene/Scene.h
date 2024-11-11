@@ -13,7 +13,7 @@ public:
 
 	void constructScene();
 
-	void draw(ComPointer<ID3D12PipelineState>& pso, ComPointer<ID3D12RootSignature>& rootSignature, Camera* camera);
+	void draw(Camera* camera);
 
 	size_t getSceneSize();
 
