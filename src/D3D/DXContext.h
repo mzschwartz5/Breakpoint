@@ -14,6 +14,7 @@ public:
     void executeCommandList();
 
     void flush(size_t count);
+    void signalAndWaitForFence(ComPointer<ID3D12Fence>& fence, UINT64& fenceValue);
 
     ComPointer<IDXGIFactory7>& getFactory();
     ComPointer<ID3D12Device6>& getDevice();

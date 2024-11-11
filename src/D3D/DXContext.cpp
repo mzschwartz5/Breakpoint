@@ -89,6 +89,24 @@ void DXContext::flush(size_t count) {
     }
 }
 
+void DXContext::signalAndWaitForFence(ComPointer<ID3D12Fence>& fence, UINT64& fenceValue) {
+	cmdQueue->Signal(fence, fenceValue);
+    if (fence->GetCompletedValue() < fenceValue) {
+        HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        if (eventHandle == nullptr) {
+            throw std::runtime_error("Failed to create event handle.");
+        }
+
+        // Set the event to be triggered when the GPU reaches the fence value
+        fence->SetEventOnCompletion(fenceValue, eventHandle);
+
+        // Wait until the event is triggered, meaning the GPU has finished
+        WaitForSingleObject(eventHandle, INFINITE);
+        CloseHandle(eventHandle);
+    }
+    fenceValue++;
+}
+
 ComPointer<IDXGIFactory7>& DXContext::getFactory() {
     return dxgiFactory;
 }

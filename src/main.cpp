@@ -1,6 +1,13 @@
 #include "main.h"
 #include "Scene/Geometry.h"
 
+struct Constants {
+    float gravityStrength;
+    float inputX;
+    float inputY;
+    float deltaTime;
+};
+
 // This should probably go somewhere else
 void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
     vp.TopLeftX = vp.TopLeftY = 0;
@@ -33,80 +40,38 @@ int main() {
 
     mouse->SetWindow(Window::get().getHWND());
 
-    //pass triangle data to gpu, get vertex buffer view
-    int instanceCount = 8;
+    int instanceCount = 10;
 
-    // Create Test Model Matrices
-    std::vector<XMFLOAT4X4> modelMatrices;
-    // Populate modelMatrices with transformation matrices for each instance
-    for (int i = 0; i < instanceCount; ++i) {
-        XMFLOAT4X4 model;
-        XMStoreFloat4x4(&model, XMMatrixTranslation(i * 0.2f, i * 0.2f, i * 0.2f)); // Example transformation
-        modelMatrices.push_back(model);
-    }
+    // Create Model Matrix
+    auto modelMat = XMMatrixIdentity();
+	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
     // Create test position data
 	std::vector<XMFLOAT3> positions;
 	for (int i = 0; i < instanceCount; ++i) {
-		positions.push_back({ i * 0.2f, i * 0.2f, i * 0.2f });
+		positions.push_back({-0.72f + 0.15f * i, 0.f, 0.f });
+	}
+
+	// Create test velocity data
+	std::vector<XMFLOAT3> velocities;
+	for (int i = 0; i < instanceCount; ++i) {
+		velocities.push_back({ 0.0f, 0.0f, 0.0f });
 	}
 
 	//// Create buffer for position data
 	StructuredBuffer positionBuffer = StructuredBuffer(positions.data(), instanceCount, sizeof(XMFLOAT3));
 
+	//// Create buffer for velocity data
+	StructuredBuffer velocityBuffer = StructuredBuffer(velocities.data(), instanceCount, sizeof(XMFLOAT3));
+
 	//// Create compute pipeline
-	ComputePipeline computePipeline("TestRootSignature.cso", "TestComputeShader.cso", context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+	ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
    
 	//// Pass position data to GPU
-	positionBuffer.passUAVDataToGPU(context, computePipeline.getDescriptorHeap()->GetCPUDescriptorHandleForHeapStart(), cmdList);
+	positionBuffer.passUAVDataToGPU(context, computePipeline.getDescriptorHeap()->GetCPUHandleAt(0), cmdList);
 
-    cmdList = context.initCommandList();
-    cmdList->SetPipelineState(computePipeline.GetAddress());
-    cmdList->SetComputeRootSignature(computePipeline.getRootSignature());
-
-    //// Set descriptor heap
-    ID3D12DescriptorHeap* computeDescriptorHeaps[] = { computePipeline.getDescriptorHeap().Get() };
-    cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
-
-    //// Set compute root descriptor table
-    cmdList->SetComputeRootDescriptorTable(0, computePipeline.getDescriptorHeap()->GetGPUDescriptorHandleForHeapStart());
-
-    //// Dispatch
-    cmdList->Dispatch(instanceCount, 1, 1);
-
-    // Create a fence
-    UINT64 fenceValue = 1;
-    ComPointer<ID3D12Fence> fence;
-    context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
-
-    //// Execute command list
-    context.executeCommandList();
-    context.getCommandQueue()->Signal(fence.Get(), fenceValue);
-
-    //// Wait for GPU to finish
-    context.flush(1);
-
-    if (fence->GetCompletedValue() < fenceValue) {
-        HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (eventHandle == nullptr) {
-            throw std::runtime_error("Failed to create event handle.");
-        }
-
-        // Set the event to be triggered when the GPU reaches the fence value
-        fence->SetEventOnCompletion(fenceValue, eventHandle);
-
-        // Wait until the event is triggered, meaning the GPU has finished
-        WaitForSingleObject(eventHandle, INFINITE);
-        CloseHandle(eventHandle);
-    }
-
-    cmdList = context.initCommandList();
-
-    //// Copy data from GPU to CPU
-    positionBuffer.copyDataFromGPU(context, positions.data(), cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-
-    //// Reset command list
-    cmdList = context.initCommandList();
+	//// Pass velocity data to GPU
+	velocityBuffer.passUAVDataToGPU(context, computePipeline.getDescriptorHeap()->GetCPUHandleAt(1), cmdList);
 
 	// Create circle geometry
 	auto circleData = generateCircle(0.05f, 32);
@@ -136,7 +101,7 @@ int main() {
 
 	cmdList->ResourceBarrier(2, barriers);
 
-    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context,
+    RenderPipeline basicPipeline("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", context,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	/*MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
@@ -148,8 +113,12 @@ int main() {
     //output merger
     basicPipeline.createPipelineState(context.getDevice());
 
-    StructuredBuffer modelBuffer = StructuredBuffer(modelMatrices.data(), instanceCount, sizeof(XMFLOAT4X4));
-	modelBuffer.passCBVDataToGPU(context, basicPipeline.getDescriptorHeap()->GetCPUDescriptorHandleForHeapStart());
+	context.executeCommandList();
+
+    // Create a fence
+    UINT64 fenceValue = 1;
+    ComPointer<ID3D12Fence> fence;
+    context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -196,6 +165,56 @@ int main() {
         //update camera
         camera->updateViewMat();
 
+		// Transition position buffer to UAV
+        D3D12_RESOURCE_BARRIER UAVbarrier = {};
+        UAVbarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        UAVbarrier.Transition.pResource = positionBuffer.getBuffer();  // The resource used as UAV and SRV
+        UAVbarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+        UAVbarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        UAVbarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        cmdList->ResourceBarrier(1, &UAVbarrier);
+
+		// Run command list
+		context.executeCommandList();
+		context.signalAndWaitForFence(fence, fenceValue);
+
+        // --- Begin Compute Pass ---
+		cmdList = context.initCommandList();
+        cmdList->SetPipelineState(computePipeline.getPSO());
+        cmdList->SetComputeRootSignature(computePipeline.getRootSignature());
+
+        //// Set descriptor heap
+        ID3D12DescriptorHeap* computeDescriptorHeaps[] = { computePipeline.getDescriptorHeap()->Get()};
+        cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
+
+		//// Set compute root constants
+        Constants constants = { 9.81f, 1.0f, 0.0f, 0.0005f };
+
+        cmdList->SetComputeRoot32BitConstants(0, 4, &constants, 0);
+
+        //// Set compute root descriptor table
+        cmdList->SetComputeRootDescriptorTable(1, computePipeline.getDescriptorHeap()->GetGPUHandleAt(0));
+
+        //// Dispatch
+        cmdList->Dispatch(instanceCount, 1, 1);
+
+        //// Execute command list
+        context.executeCommandList();
+        context.signalAndWaitForFence(fence, fenceValue);
+
+		// Transition position buffer to SRV
+        D3D12_RESOURCE_BARRIER SRVbarrier = {};
+        SRVbarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+        SRVbarrier.Transition.pResource = positionBuffer.getBuffer();  // The resource used as UAV and SRV
+        SRVbarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+        SRVbarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
+        SRVbarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+        cmdList->ResourceBarrier(1, &SRVbarrier);
+
+		// --- End Compute Pass ---
+		context.executeCommandList();
+        context.signalAndWaitForFence(fence, fenceValue);
+
         //begin draw
         cmdList = context.initCommandList();
 
@@ -215,14 +234,16 @@ int main() {
         cmdList->SetGraphicsRootSignature(basicPipeline.getRootSignature());
         // == ROOT ==
 
-        ID3D12DescriptorHeap* descriptorHeaps[] = { basicPipeline.getDescriptorHeap().Get() };
+        ID3D12DescriptorHeap* descriptorHeaps[] = { basicPipeline.getDescriptorHeap()->Get()};
         cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-        cmdList->SetGraphicsRootDescriptorTable(1, basicPipeline.getDescriptorHeap()->GetGPUDescriptorHandleForHeapStart()); // Descriptor table slot 1 for SRV
+
+		cmdList->SetGraphicsRootDescriptorTable(1, computePipeline.getDescriptorHeap()->GetGPUHandleAt(0)); // Descriptor table slot 2 for CBV
 
         auto viewMat = camera->getViewMat();
         auto projMat = camera->getProjMat();
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
+		cmdList->SetGraphicsRoot32BitConstants(0, 16, &modelMat, 32);
 
         // Draw
         cmdList->DrawIndexedInstanced(circleData.second.size(), instanceCount, 0, 0, 0);
@@ -238,7 +259,7 @@ int main() {
     // Close
     vertBuffer.releaseResources();
     idxBuffer.releaseResources();
-	modelBuffer.releaseResources();
+	//modelBuffer.releaseResources();
 	basicPipeline.releaseResources();
 	positionBuffer.releaseResources();
 	computePipeline.releaseResources();

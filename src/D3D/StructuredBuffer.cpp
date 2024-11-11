@@ -49,6 +49,8 @@ void StructuredBuffer::passCBVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR
 }
 
 void StructuredBuffer::passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5* cmdList) {
+	// THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
+
     // Calculate the total buffer size
     UINT bufferSize = numElements * elementSize;
 
@@ -152,9 +154,13 @@ void StructuredBuffer::passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR
     srvDesc.Buffer.StructureByteStride = elementSize;
 
     context.getDevice()->CreateShaderResourceView(buffer.Get(), &srvDesc, descriptorHandle);
+
+    cmdList = context.initCommandList();
 }
 
 void StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList) {
+    // THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
+
     // Calculate the total buffer size
     UINT bufferSize = numElements * elementSize;
 
@@ -263,9 +269,14 @@ void StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR
     uavDesc.Buffer.StructureByteStride = elementSize;
 
     context.getDevice()->CreateUnorderedAccessView(buffer.Get(), nullptr, &uavDesc, descriptorHandle);
+
+	// Reset the command list
+    cmdList = context.initCommandList();
 }
 
 void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList5* cmdList, D3D12_RESOURCE_STATES state) {
+	// THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
+
     // Create a readback buffer to copy data from the GPU buffer
     ComPointer<ID3D12Resource> readbackBuffer;
 
@@ -356,6 +367,8 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
     // Unmap the readback buffer
     D3D12_RANGE writeRange{ 0, 0 }; // Indicate no data written by CPU
     readbackBuffer->Unmap(0, &writeRange);
+
+    cmdList = context.initCommandList();
 }
 
 ComPointer<ID3D12Resource1>& StructuredBuffer::getBuffer()

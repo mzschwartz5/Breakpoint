@@ -1,0 +1,159 @@
+[33mcommit 2c61d7be95392550dc419de2b1c641af6d64f6bd[m[33m ([m[1;36mHEAD -> [m[1;32mcompute-pipeline-setup[m[33m)[m
+Author: dinethmeegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Sat Nov 9 16:46:53 2024 -0500
+
+    transitioned model matrices to use cbv
+
+[33mcommit 1c3fde119ce9e858d6da54516d9cc7b6bc4b5646[m
+Author: dinethmeegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Sat Nov 9 16:03:58 2024 -0500
+
+    compute pipeline finally giving values
+
+[33mcommit a2f78c4985b298ce39e5b13e5be448ce7ecb4f24[m
+Author: dinethmeegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Sat Nov 9 14:37:05 2024 -0500
+
+    the compute shader buffer is giving back all 0's for some reason
+
+[33mcommit 34dd28d9ac65ebce80101c9d84c1d8860f57f544[m
+Author: dinethmeegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Sat Nov 9 13:30:54 2024 -0500
+
+    setting up compute pipeline with pipeline class
+
+[33mcommit e92012cd7b24c323502dd3bb63e7c63cbdabbfed[m[33m ([m[1;31morigin/main[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m
+Merge: 5a511a6 6edcf0e
+Author: Matt Schwartz <68516435+mzschwartz5@users.noreply.github.com>
+Date:   Sat Nov 9 13:15:18 2024 -0500
+
+    Merge pull request #8 from dgerh/mesh-shading
+    
+    Mesh shading
+
+[33mcommit 6edcf0e0f1e05db8d85cc4e743f4b7e6c250c2da[m
+Author: Matt Schwartz <mzschwartz5@gmail.com>
+Date:   Fri Nov 8 22:20:59 2024 -0500
+
+    Refactor render pipeline into parent / subclasses
+
+[33mcommit a3acb6dd1e8dd040bb325f16c98e5ba0872ff94a[m
+Author: Matt Schwartz <mzschwartz5@gmail.com>
+Date:   Fri Nov 8 20:14:17 2024 -0500
+
+    Basic mesh shading (hello triangle!)
+
+[33mcommit 5a511a6fa77b8c07c1b7dbed3f1525497fa19efc[m
+Author: dinethmeegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Fri Nov 8 22:02:58 2024 -0500
+
+    added structured buffer and compute pipeline skeleton
+
+[33mcommit 21bcb26cc02d7a90698a8d35add088f42660ac71[m
+Author: dinethmeegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Fri Nov 8 16:30:39 2024 -0500
+
+    added descriptor heap class
+
+[33mcommit 1f10dc9a0e8b71ea5b490fd73aceace3ebef712f[m
+Merge: 84ea1d4 b912a6a
+Author: Daniel <dgerh@sas.upenn.edu>
+Date:   Fri Nov 8 08:53:46 2024 -0500
+
+    added mouse movement
+
+[33mcommit 84ea1d4a91e58c76947860b39e09a18111c4cfa0[m
+Author: Daniel <dgerh@sas.upenn.edu>
+Date:   Fri Nov 8 08:52:29 2024 -0500
+
+    added mouse movement
+
+[33mcommit b912a6a8ecd7737c24421e744f8ead92da672173[m
+Author: dinethmeegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Thu Nov 7 22:06:03 2024 -0500
+
+    added circles and transitioned to use vectors of XMFLOAT3
+
+[33mcommit 6ecb52c9200cff5f6dcdb6d939c93a81b9b72edd[m
+Author: dinethmeegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Thu Nov 7 15:06:33 2024 -0500
+
+    added model matrices
+
+[33mcommit b0bc8e3ea7b637933b1295892e17d97e13907ca4[m
+Author: Daniel <dgerh@sas.upenn.edu>
+Date:   Thu Nov 7 09:45:22 2024 -0500
+
+    moved camera update after key/mouse check
+
+[33mcommit 10bfeaf76640198fe86ce4c0789ea9d068dac776[m
+Author: Daniel <dgerh@sas.upenn.edu>
+Date:   Thu Nov 7 09:44:07 2024 -0500
+
+    omnidirectional movement
+
+[33mcommit 7fe9ca587839ac9c79bdeeeac18c5fac447a8059[m
+Author: Daniel <dgerh@sas.upenn.edu>
+Date:   Thu Nov 7 09:28:21 2024 -0500
+
+    mouse and keyboard infra
+
+[33mcommit 98de6141d801bb6a69f8f58f8290de43e53e7824[m
+Author: Daniel <dgerh@sas.upenn.edu>
+Date:   Thu Nov 7 08:50:51 2024 -0500
+
+    added main.h in proj
+
+[33mcommit efeef0a51900d799b6399dfa25971cdd78b9522d[m
+Author: Daniel <dgerh@sas.upenn.edu>
+Date:   Thu Nov 7 08:48:23 2024 -0500
+
+    added resizing aspect ratio, camera/keyboard uptrs
+
+[33mcommit eacbde5a22fac567a5e745ab0145d5e57f8ee07c[m
+Author: Daniel <dgerh@sas.upenn.edu>
+Date:   Thu Nov 7 08:05:15 2024 -0500
+
+    refactoring errors, removed unused layout type
+
+[33mcommit 4bae76305b43c03044b620c53b0ae21b96007d93[m
+Merge: c458651 2a27e73
+Author: Dineth Meegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Thu Nov 7 02:31:46 2024 -0500
+
+    Merge pull request #6 from dgerh/index-buffer
+    
+    Index buffer fixed
+
+[33mcommit 2a27e735815503ab67972b8d2275dbf830958220[m[33m ([m[1;31morigin/index-buffer[m[33m, [m[1;32mindex-buffer[m[33m)[m
+Author: dinethmeegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Thu Nov 7 02:31:15 2024 -0500
+
+    fixed index buffer
+
+[33mcommit a8b75d05dee713ffbcf8319b1a7b82f54d97b3b0[m
+Author: Daniel <dgerh@sas.upenn.edu>
+Date:   Wed Nov 6 18:39:57 2024 -0500
+
+    index buffers added, need to fix reading on gpu
+
+[33mcommit c458651b540161fa9a83761d65888d842e4924b8[m
+Author: dinethmeegoda <35506196+dinethmeegoda@users.noreply.github.com>
+Date:   Wed Nov 6 18:26:08 2024 -0500
+
+    fixed aspect ratio
+
+[33mcommit 69b60af745ef409c5d0c012afc9747e575315274[m
+Merge: 97597a6 1f294c3
+Author: Daniel Gerhardt <dgerh@sas.upenn.edu>
+Date:   Wed Nov 6 17:27:10 2024 -0500
+
+    Merge pull request #5 from dgerh/3d-shaders
+    
+    added index buffer files
+
+[33mcommit 1f294c359b63ea54cec348e2a734597f37d267f7[m[33m ([m[1;31morigin/3d-shaders[m[33m)[m
+Author: Daniel <dgerh@sas.upenn.edu>
+Date:   Wed Nov 6 17:26:31 2024 -0500
+
+    added index buffer files

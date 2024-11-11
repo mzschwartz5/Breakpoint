@@ -1,31 +1,24 @@
 #pragma once
 #include <string>
+#include "Pipeline.h"
 #include "../../Support/WinInclude.h"
 #include "../../Support/Shader.h"
 #include "../../Support/ComPointer.h"
 #include "../../Support/Window.h"
 #include "../DescriptorHeap.h"
 
-class ComputePipeline
+class ComputePipeline : public Pipeline
 {
 public:
+	ComputePipeline() = delete;
 	ComputePipeline(std::string rootSignatureShaderName, const std::string shaderFilePath, DXContext& context,
 		D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags);
 
-	ID3D12PipelineState* GetAddress();
-	ComPointer<ID3D12RootSignature> getRootSignature();
-	ComPointer<ID3D12DescriptorHeap> getDescriptorHeap();
-
 	Shader& getComputeShader() { return computeShader; }
-
-	void releaseResources();
-
-private:
-	void CreatePipelineState(DXContext& context);
+	void createPSOD() override;
+	void createPipelineState(ComPointer<ID3D12Device6> device) override;
 
 private:
-	Shader computeShader, rootSignatureShader;
-	ComPointer<ID3D12RootSignature> rootSignature;
-	ComPointer<ID3D12PipelineState> pipeline;
-	DescriptorHeap descriptorHeap;
+	Shader computeShader;
+	D3D12_COMPUTE_PIPELINE_STATE_DESC psoDesc{};
 };

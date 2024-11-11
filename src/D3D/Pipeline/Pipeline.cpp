@@ -12,9 +12,9 @@ ComPointer<ID3D12RootSignature>& Pipeline::getRootSignature()
 	return this->rootSignature;
 }
 
-ComPointer<ID3D12DescriptorHeap>& Pipeline::getDescriptorHeap()
+DescriptorHeap* Pipeline::getDescriptorHeap()
 {
-	return descriptorHeap.Get();
+	return &descriptorHeap;
 }
 
 void Pipeline::releaseResources()
