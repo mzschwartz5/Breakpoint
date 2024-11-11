@@ -17,7 +17,7 @@ public:
 	virtual void createPipelineState(ComPointer<ID3D12Device6> device) = 0;
 
 	ComPointer<ID3D12RootSignature>& getRootSignature();
-	ComPointer<ID3D12DescriptorHeap>& getDescriptorHeap();
+	DescriptorHeap* getDescriptorHeap();
 	ComPointer<ID3D12PipelineState>& getPSO() { return pso; }
 
 	void releaseResources();
