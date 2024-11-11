@@ -4,7 +4,7 @@ StructuredBuffer::StructuredBuffer(const void* inputData, unsigned int numEle, s
 	: data(inputData), numElements(numEle), elementSize(eleSize)
 {}
 
-void StructuredBuffer::passCBVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle) {
+D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passCBVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle) {
     // Calculate the aligned buffer size (256-byte alignment required for CBV)
     UINT bufferSize = (numElements * elementSize + 255) & ~255; // Round up to 256 bytes
 
@@ -46,9 +46,11 @@ void StructuredBuffer::passCBVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR
     cbvDesc.SizeInBytes = bufferSize; // Must be 256-byte aligned
 
     context.getDevice()->CreateConstantBufferView(&cbvDesc, descriptorHandle);
+
+	return buffer->GetGPUVirtualAddress();
 }
 
-void StructuredBuffer::passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5* cmdList) {
+D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5* cmdList) {
 	// THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
 
     // Calculate the total buffer size
@@ -156,9 +158,11 @@ void StructuredBuffer::passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR
     context.getDevice()->CreateShaderResourceView(buffer.Get(), &srvDesc, descriptorHandle);
 
     cmdList = context.initCommandList();
+
+	return buffer->GetGPUVirtualAddress();
 }
 
-void StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList) {
+D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList) {
     // THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
 
     // Calculate the total buffer size
@@ -272,6 +276,8 @@ void StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR
 
 	// Reset the command list
     cmdList = context.initCommandList();
+
+    return buffer->GetGPUVirtualAddress();
 }
 
 void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList5* cmdList, D3D12_RESOURCE_STATES state) {
