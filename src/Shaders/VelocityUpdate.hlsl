@@ -9,27 +9,25 @@ struct Particle {
 
 cbuffer SimulationParams : register(b0) {
     float deltaTime;
+    float3 gravity;
 };
 
 RWStructuredBuffer<Particle> particles : register(u0);
 
-[RootSignature(ROOTSIG)]
+
 [numthreads(256, 1, 1)]
 void main(uint id : SV_DispatchThreadID) {
-    if (id >= particles.Length) return;
+    //uint particleIndex = DTid.x;
+    //if (particleIndex >= particles.Length)
+    //    return;
 
-    Particle p = particles[id];
+    //Particle p = particles[particleIndex];
 
-    if (p.inverseMass > 0.0f) {
-       
-        p.velocity = (p.position - p.previousPosition) / deltaTime;
+    //// Update velocity with gravity
+    //p.velocity += gravity * deltaTime;
 
-        float damping = 0.98f; // Adjust damping factor as needed
-        p.velocity *= damping;
-    }
-    else {
-        p.velocity = float3(0.0f, 0.0f, 0.0f);
-    }
+    //// Update position with velocity
+    //p.position += p.velocity * deltaTime;
 
-    particles[id] = p;
+    //particles[particleIndex] = p;
 }

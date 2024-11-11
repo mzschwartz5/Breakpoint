@@ -13,31 +13,37 @@ struct Particle {
 
 cbuffer SimulationParams : register(b0) {
     float deltaTime;
-    float3 gravity;
+    float stiffness;
 };
 
 RWStructuredBuffer<Particle> particles : register(u0);
+//StructuredBuffer<DistanceConstraint> constraints : register(t0);
 
-[RootSignature(ROOTSIG)]
+
 [numthreads(256, 1, 1)]
 void main(uint id : SV_DispatchThreadID) {
-    if (id >= particles.Length) return;
+    //uint constraintIndex = id.x;
+    //if (constraintIndex >= constraints.Length)
+    //    return;
 
-    Particle p = particles[id];
+    //DistanceConstraint dc = constraints[constraintIndex];
 
-    if (p.inverseMass > 0.0f) {
-        // Apply external forces: should be changed later
-        float3 acceleration = gravity;
+    //Particle pa = particles[dc.particleA];
+    //Particle pb = particles[dc.particleB];
 
-        
-        p.velocity += acceleration * deltaTime;
+    //float3 delta = pb.position - pa.position;
+    //float currentLength = length(delta);
+    //float3 n = delta / currentLength;
 
-        float3 tempPosition = p.position;
+    //float correction = (currentLength - dc.restLength) / (pa.mass + pb.mass);
+    //float3 correctionA = n * correction * pb.mass * stiffness;
+    //float3 correctionB = -n * correction * pa.mass * stiffness;
 
-        p.position += p.velocity * deltaTime;
+    //// Apply corrections
+    //pa.position += correctionA;
+    //pb.position += correctionB;
 
-        p.previousPosition = tempPosition;
-    }
-
-    particles[id] = p;
+    //// Update particles
+    //particles[dc.particleA] = pa;
+    //particles[dc.particleB] = pb;
 }

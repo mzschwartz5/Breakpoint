@@ -25,15 +25,22 @@ struct Particle {
     float invMass;
 };
 
-struct Voxel {
-    UINT particleIndices[8]; // Indices to the 8 corner particles
-    XMFLOAT3 u; // Local X-axis
-    XMFLOAT3 v; // Local Y-axis
-    XMFLOAT3 w; // Local Z-axis
-};
+//struct Voxel {
+//    UINT particleIndices[8]; // Indices to the 8 corner particles
+//    XMFLOAT3 u; // Local X-axis
+//    XMFLOAT3 v; // Local Y-axis
+//    XMFLOAT3 w; // Local Z-axis
+//};
 
 struct FaceConstraint {
     UINT voxelA;
     UINT voxelB;
     UINT faceIndex; // Identifies which face is shared
+};
+
+//testing
+struct DistanceConstraint {
+    UINT particleA;
+    UINT particleB;
+    float restLength;
 };

@@ -20,7 +20,7 @@ struct VSInput {
     uint InstanceID : SV_InstanceID; // Instance ID for indexing into model matrices
 };
 
-[RootSignature(ROOTSIG)]
+
 float4 main(VSInput input) : SV_Position{
     // Retrieve the model matrix for the current instance using the InstanceID
     float4x4 modelMatrix = modelMatrices[input.InstanceID];

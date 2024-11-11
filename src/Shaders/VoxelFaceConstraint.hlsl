@@ -18,7 +18,7 @@ struct FaceConstraint {
 RWStructuredBuffer<Voxel> voxels : register(u0);
 StructuredBuffer<FaceConstraint> faceConstraints : register(t0);
 
-[RootSignature(ROOTSIG)]
+
 [numthreads(1, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID) {
     uint constraintIndex = DTid.x;

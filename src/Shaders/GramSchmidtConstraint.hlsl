@@ -25,7 +25,7 @@ RWStructuredBuffer<Particle> particles : register(u0);
 RWStructuredBuffer<Voxel> voxels : register(u1);
 StructuredBuffer<uint> Indices : register(t0);
 
-[RootSignature(ROOTSIG)]
+
 [numthreads(1, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID) {
     uint voxelIndex = Indices[DTid.x];
