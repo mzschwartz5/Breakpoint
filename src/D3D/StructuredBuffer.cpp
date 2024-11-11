@@ -4,7 +4,7 @@ StructuredBuffer::StructuredBuffer(const void* inputData, unsigned int numEle, s
 	: data(inputData), numElements(numEle), elementSize(eleSize)
 {}
 
-void StructuredBuffer::passModelMatrixDataToGPU(DXContext& context, ComPointer<ID3D12DescriptorHeap> dh, ID3D12GraphicsCommandList5* cmdList)
+void StructuredBuffer::passModelMatrixDataToGPU(DXContext& context, ComPointer<ID3D12DescriptorHeap> dh, ID3D12GraphicsCommandList6* cmdList)
 {
     D3D12_HEAP_PROPERTIES heapProps = {};
     heapProps.Type = D3D12_HEAP_TYPE_UPLOAD;

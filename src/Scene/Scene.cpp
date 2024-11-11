@@ -1,6 +1,6 @@
 #include "Scene.h"
 
-Scene::Scene(DXContext* p_context, RenderPipeline* p_pipeline, ID3D12GraphicsCommandList5* p_cmdList) : context(p_context), pipeline(p_pipeline), cmdList(p_cmdList) {
+Scene::Scene(DXContext* p_context, RenderPipeline* p_pipeline) : context(p_context), pipeline(p_pipeline), cmdList(p_pipeline->getCommandList()) {
 	inputStrings.push_back("objs\\wolf.obj");
     //inputStrings.push_back("objs\\triangle.obj");
     constructScene();

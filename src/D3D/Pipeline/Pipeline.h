@@ -19,6 +19,7 @@ public:
 	ComPointer<ID3D12RootSignature>& getRootSignature();
 	ComPointer<ID3D12DescriptorHeap>& getDescriptorHeap();
 	ComPointer<ID3D12PipelineState>& getPSO() { return pso; }
+	ID3D12GraphicsCommandList6* getCommandList() { return cmdList; }
 
 	void releaseResources();
 
@@ -28,4 +29,6 @@ protected:
 	ComPointer<ID3D12RootSignature> rootSignature;
 	DescriptorHeap descriptorHeap;
 	ComPointer<ID3D12PipelineState> pso;
+
+	ID3D12GraphicsCommandList6* cmdList;
 };
