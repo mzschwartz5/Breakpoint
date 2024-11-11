@@ -4,7 +4,7 @@ VertexBuffer::VertexBuffer(std::vector<XMFLOAT3> vertexData, const size_t vertex
     : vertexData(vertexData), vertexDataSize(vertexDataSize), vertexSize(vertexSize), uploadBuffer(), vertexBuffer()
 {}
 
-D3D12_VERTEX_BUFFER_VIEW VertexBuffer::passVertexDataToGPU(DXContext& context, ID3D12GraphicsCommandList5* cmdList) {
+D3D12_VERTEX_BUFFER_VIEW VertexBuffer::passVertexDataToGPU(DXContext& context, ID3D12GraphicsCommandList6* cmdList) {
     D3D12_HEAP_PROPERTIES hpUpload{};
     hpUpload.Type = D3D12_HEAP_TYPE_UPLOAD;
     hpUpload.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;

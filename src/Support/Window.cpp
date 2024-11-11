@@ -127,7 +127,7 @@ void Window::resize() {
     getBuffers();
 }
 
-void Window::beginFrame(ID3D12GraphicsCommandList5* cmdList) {
+void Window::beginFrame(ID3D12GraphicsCommandList6* cmdList) {
     currentSwapChainBufferIdx = swapChain->GetCurrentBackBufferIndex();
 
     D3D12_RESOURCE_BARRIER barrier;
@@ -146,7 +146,7 @@ void Window::beginFrame(ID3D12GraphicsCommandList5* cmdList) {
     cmdList->OMSetRenderTargets(1, &rtvHandles[currentSwapChainBufferIdx], false, nullptr);
 }
 
-void Window::endFrame(ID3D12GraphicsCommandList5* cmdList) {
+void Window::endFrame(ID3D12GraphicsCommandList6* cmdList) {
     D3D12_RESOURCE_BARRIER barrier;
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;

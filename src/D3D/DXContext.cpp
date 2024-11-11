@@ -37,15 +37,13 @@ DXContext::DXContext() {
         //handle cannot create cmd allocator
         throw std::runtime_error("Could not create command allocator");
     }
-
-    if (FAILED(device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList)))) {
-        //handle could not create cmd list
-        throw std::runtime_error("Could not create command list");
-    }
 }
 
 DXContext::~DXContext() {
-    cmdList.Release();
+    for (auto& cmdList : cmdLists) {
+        cmdList.Release();
+    }
+
     cmdAllocator.Release();
     if (fenceEvent)
     {
@@ -68,18 +66,22 @@ void DXContext::signalAndWait() {
     }
 }
 
-ID3D12GraphicsCommandList6* DXContext::initCommandList()
+void DXContext::resetCommandLists()
 {
     cmdAllocator->Reset();
-    cmdList->Reset(cmdAllocator, nullptr);
-    return cmdList;
+    
+    for (auto& cmdList : cmdLists) {
+        cmdList->Reset(cmdAllocator, nullptr);
+    }
 }
 
-void DXContext::executeCommandList() {
-    if (SUCCEEDED(cmdList->Close())) {
-        ID3D12CommandList* lists[] = { cmdList };
-        cmdQueue->ExecuteCommandLists(1, lists);
-        signalAndWait();
+void DXContext::executeCommandLists() {
+    for (auto& cmdList : cmdLists) {
+        if (SUCCEEDED(cmdList->Close())) {
+            ID3D12CommandList* lists[] = { cmdList };
+            cmdQueue->ExecuteCommandLists(1, lists);
+            signalAndWait();
+        }
     }
 }
 
@@ -99,4 +101,16 @@ ComPointer<ID3D12Device6>& DXContext::getDevice() {
 
 ComPointer<ID3D12CommandQueue>& DXContext::getCommandQueue() {
     return cmdQueue;
+}
+
+ID3D12GraphicsCommandList6* DXContext::createCommandList(CommandListID id)
+{
+    ComPointer<ID3D12GraphicsCommandList6> cmdList;
+    if (FAILED(device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList)))) {
+        //handle could not create cmd list
+        throw std::runtime_error("Could not create command list");
+    }
+
+    cmdLists[id] = cmdList;
+    return cmdList.Get();
 }

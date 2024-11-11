@@ -9,7 +9,7 @@
 
 class Scene {
 public:
-	Scene(DXContext* context, RenderPipeline* pipeline, ID3D12GraphicsCommandList5* cmdList);
+	Scene(DXContext* context, RenderPipeline* pipeline);
 
 	void constructScene();
 
@@ -27,5 +27,5 @@ private:
 
 	DXContext* context;
 	RenderPipeline* pipeline;
-	ID3D12GraphicsCommandList5* cmdList;
+	ID3D12GraphicsCommandList6* cmdList;
 };

@@ -14,7 +14,7 @@ public:
 	StructuredBuffer() = default;
 	StructuredBuffer(const void* data, unsigned int numEle, size_t eleSize);
 
-	void passModelMatrixDataToGPU(DXContext& context, ComPointer<ID3D12DescriptorHeap> dh, ID3D12GraphicsCommandList5* cmdList);
+	void passModelMatrixDataToGPU(DXContext& context, ComPointer<ID3D12DescriptorHeap> dh, ID3D12GraphicsCommandList6* cmdList);
 
 	ComPointer<ID3D12Resource1>& getModelMatrixBuffer();
 

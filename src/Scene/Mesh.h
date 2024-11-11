@@ -27,7 +27,7 @@ struct Vertex {
 class Mesh {
 public:
 	Mesh() = delete;
-	Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList5* cmdList, RenderPipeline* pipeline);
+	Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList6* cmdList, RenderPipeline* pipeline);
 	void loadMesh(std::string fileLocation);
 
 	D3D12_INDEX_BUFFER_VIEW* getIBV();

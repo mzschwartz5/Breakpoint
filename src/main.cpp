@@ -1,7 +1,7 @@
 #include "main.h"
 
 // This should probably go somewhere else
-void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
+void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList6* cmdList) {
     vp.TopLeftX = vp.TopLeftY = 0;
     vp.Width = Window::get().getWidth();
     vp.Height = Window::get().getHeight();
@@ -19,7 +19,6 @@ int main() {
     //set up DX, window, keyboard mouse
     DebugLayer debugLayer = DebugLayer();
     DXContext context = DXContext();
-    ID3D12GraphicsCommandList5* cmdList = context.initCommandList();
     std::unique_ptr<Camera> camera = std::make_unique<Camera>();
     std::unique_ptr<Keyboard> keyboard = std::make_unique<Keyboard>();
     std::unique_ptr<Mouse> mouse = std::make_unique<Mouse>();
@@ -36,6 +35,12 @@ int main() {
     RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
+    // TODO - this should go in the pipelines themselves
+    context.createCommandList(CommandListID::MESH_ID);
+    context.createCommandList(CommandListID::PAPA_ID);
+
+    context.resetCommandLists();
+
 	/*MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);*/
 
@@ -46,7 +51,7 @@ int main() {
     basicPipeline.createPipelineState(context.getDevice());
 
     //set up scene
-    Scene scene{ &context, &basicPipeline, cmdList };
+    Scene scene{ &context, &basicPipeline};
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -94,21 +99,21 @@ int main() {
         camera->updateViewMat();
 
         //begin draw
-        cmdList = context.initCommandList();
+        context.resetCommandLists();
 
         //draw to window
-        Window::get().beginFrame(cmdList);
+        Window::get().beginFrame(basicPipeline.getCommandList());
 
         D3D12_VIEWPORT vp;
-        createDefaultViewport(vp, cmdList);
+        createDefaultViewport(vp, basicPipeline.getCommandList());
 
         //Draw scene
         scene.draw(basicPipeline.getPSO(), basicPipeline.getRootSignature(), camera.get());
 
-        Window::get().endFrame(cmdList);
+        Window::get().endFrame(basicPipeline.getCommandList());
 
         //finish draw, present
-        context.executeCommandList();
+        context.executeCommandLists();
         Window::get().present();
     }
 

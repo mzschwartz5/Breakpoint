@@ -3,6 +3,8 @@
 RenderPipeline::RenderPipeline(std::string vertexShaderName, std::string fragShaderName, std::string rootSignatureShaderName, DXContext& context,
 	D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
 	: Pipeline(rootSignatureShaderName, context, type, numberOfDescriptors, flags), vertexShader(vertexShaderName), fragShader(fragShaderName) {
+    
+    cmdList = context.createCommandList(CommandListID::RENDER_ID);
 }
 
 D3D12_INPUT_ELEMENT_DESC vertexLayout[] =
