@@ -16,7 +16,7 @@ struct Constants {
 
 class PhysicsScene : public Scene {
 public:
-	PhysicsScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* compPipeline, ID3D12GraphicsCommandList5* cmdList, unsigned int instanceCount);
+	PhysicsScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* compPipeline, unsigned int instanceCount);
 
 	void constructScene();
 
@@ -30,7 +30,6 @@ private:
 	DXContext* context;
 	RenderPipeline* pipeline;
 	ComputePipeline* computePipeline;
-	ID3D12GraphicsCommandList5* cmdList;
 	XMMATRIX modelMat;
 	std::vector<XMFLOAT3> positions;
 	std::vector<XMFLOAT3> velocities;

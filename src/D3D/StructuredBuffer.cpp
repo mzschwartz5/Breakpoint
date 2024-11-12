@@ -46,11 +46,10 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passCBVDataToGPU(DXContext& context,
     cbvDesc.SizeInBytes = bufferSize; // Must be 256-byte aligned
 
     context.getDevice()->CreateConstantBufferView(&cbvDesc, descriptorHandle);
-
 	return buffer->GetGPUVirtualAddress();
 }
 
-D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5* cmdList) {
+D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5* cmdList, CommandListID cmdId) {
 	// THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
 
     // Calculate the total buffer size
@@ -128,7 +127,7 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passSRVDataToGPU(DXContext& context,
         throw std::runtime_error("Failed to create fence.");
     }
 
-    context.executeCommandList();
+    context.executeCommandList(cmdId);
     context.getCommandQueue()->Signal(fence.Get(), fenceValue);
 
     // Wait for the fence to reach the signaled value
@@ -157,12 +156,10 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passSRVDataToGPU(DXContext& context,
 
     context.getDevice()->CreateShaderResourceView(buffer.Get(), &srvDesc, descriptorHandle);
 
-    cmdList = context.initCommandList();
-
 	return buffer->GetGPUVirtualAddress();
 }
 
-D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList) {
+D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList, CommandListID cmdId) {
     // THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
 
     // Calculate the total buffer size
@@ -227,6 +224,10 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passUAVDataToGPU(DXContext& context,
     memcpy(mappedData, data, bufferSize); // Assume `data` is correctly sized
     uploadBuffer->Unmap(0, nullptr);
 
+    if (!buffer || !uploadBuffer) {
+        throw std::runtime_error("Buffer resources are not initialized correctly.");
+    }
+
     // Copy data from the upload buffer to the GPU buffer
     cmdList->CopyResource(buffer.Get(), uploadBuffer.Get());
 
@@ -247,7 +248,7 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passUAVDataToGPU(DXContext& context,
         throw std::runtime_error("Failed to create fence.");
     }
 
-    context.executeCommandList();
+    context.executeCommandList(cmdId);
     context.getCommandQueue()->Signal(fence.Get(), fenceValue);
 
     // Wait for the fence to reach the signaled value
@@ -265,6 +266,8 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passUAVDataToGPU(DXContext& context,
         CloseHandle(eventHandle);
     }
 
+    context.resetCommandList(cmdId);
+
     // Create the UAV in the descriptor heap
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
     uavDesc.ViewDimension = D3D12_UAV_DIMENSION_BUFFER;
@@ -273,9 +276,6 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passUAVDataToGPU(DXContext& context,
     uavDesc.Buffer.StructureByteStride = elementSize;
 
     context.getDevice()->CreateUnorderedAccessView(buffer.Get(), nullptr, &uavDesc, descriptorHandle);
-
-	// Reset the command list
-    cmdList = context.initCommandList();
 
     return buffer->GetGPUVirtualAddress();
 }
@@ -342,7 +342,7 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
     context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 
     // Execute the command list to perform the copy operation
-    context.executeCommandList();
+    context.executeCommandLists();
     context.getCommandQueue()->Signal(fence.Get(), fenceValue);
     context.flush(1);
 
@@ -374,7 +374,6 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
     D3D12_RANGE writeRange{ 0, 0 }; // Indicate no data written by CPU
     readbackBuffer->Unmap(0, &writeRange);
 
-    cmdList = context.initCommandList();
 }
 
 ComPointer<ID3D12Resource1>& StructuredBuffer::getBuffer()

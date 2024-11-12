@@ -14,6 +14,7 @@
 
 #include "Scene/Camera.h"
 #include "Scene/Scene.h"
+#include "Scene/ObjectScene.h"
 #include "Scene/PhysicsScene.h"
 #include "Scene/PBMPMScene.h"
 

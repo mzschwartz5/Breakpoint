@@ -1,6 +1,6 @@
 #include "main.h"
 
-// Base Mesh Scene = 0, Physics Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3
+// Base Mesh Scene = 0, Bouncing Ball Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3
 #define SCENE 3
 
 // This should probably go somewhere else
@@ -22,7 +22,6 @@ int main() {
     //set up DX, window, keyboard mouse
     DebugLayer debugLayer = DebugLayer();
     DXContext context = DXContext();
-    ID3D12GraphicsCommandList5* cmdList = context.initCommandList();
     std::unique_ptr<Camera> camera = std::make_unique<Camera>();
     std::unique_ptr<Keyboard> keyboard = std::make_unique<Keyboard>();
     std::unique_ptr<Mouse> mouse = std::make_unique<Mouse>();
@@ -36,20 +35,31 @@ int main() {
 
     mouse->SetWindow(Window::get().getHWND());
 
+    context.createCommandList(CommandListID::PAPA_ID);
+    context.resetCommandList(CommandListID::PAPA_ID);
+
 #if SCENE == 0
-    RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context,
+	RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context, CommandListID::RENDER_ID,
 	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    Scene scene{ &context, &basicPipeline, cmdList };
+
+	// Initialize command lists
+	context.resetCommandList(CommandListID::RENDER_ID);
+
+    ObjectScene scene{ &context, &basicPipeline };
 #endif
 #if SCENE == 1
-    RenderPipeline basicPipeline("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", context,
+    RenderPipeline basicPipeline("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", context, CommandListID::RENDER_ID,
 	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     // Create compute pipeline
-    ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, 
+    ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, CommandListID::PBMPM_COMPUTE_ID,
     D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
-    PhysicsScene scene{ &context, &basicPipeline, &computePipeline, cmdList, 10 };
+	// Initialize command lists
+    context.resetCommandList(CommandListID::RENDER_ID);
+    context.resetCommandList(CommandListID::PBMPM_COMPUTE_ID);
+
+    PhysicsScene scene{ &context, &basicPipeline, &computePipeline, 10 };
 #endif
 #if SCENE == 2
     MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
@@ -57,16 +67,19 @@ int main() {
     // TODO: Make a Scene Class for Mesh Shading?
 #endif
 #if SCENE == 3
-    RenderPipeline basicPipeline("PBMPMVertexShader.cso", "PixelShader.cso", "PBMPMVertexRootSignature.cso", context, 
+    RenderPipeline basicPipeline("PBMPMVertexShader.cso", "PixelShader.cso", "PBMPMVertexRootSignature.cso", context, CommandListID::RENDER_ID,
 	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     // Create compute pipeline
-    ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context,
+    ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, CommandListID::PBMPM_COMPUTE_ID,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
-    PBMPMScene scene{ &context, &basicPipeline, &computePipeline, cmdList, 10 };
+    // Initialize command lists
+    context.resetCommandList(CommandListID::RENDER_ID);
+    context.resetCommandList(CommandListID::PBMPM_COMPUTE_ID);
+
+    PBMPMScene scene{ &context, &basicPipeline, &computePipeline, 10 };
 #endif
-	scene.constructScene();
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -116,18 +129,17 @@ int main() {
 		// Dispatch compute shader for physics scene
         scene.compute();
 #endif
-
         //draw to window
-        context.initCommandList();
-        Window::get().beginFrame(cmdList);
+        Window::get().beginFrame(basicPipeline.getCommandList());
         D3D12_VIEWPORT vp;
-        createDefaultViewport(vp, cmdList);
+        createDefaultViewport(vp, basicPipeline.getCommandList());
         scene.draw(camera.get());
-        Window::get().endFrame(cmdList);
+        Window::get().endFrame(basicPipeline.getCommandList());
 
-        //finish draw, present
-        context.executeCommandList();
+        //finish draw, present, reset
+        context.executeCommandList(basicPipeline.getCommandListID());
         Window::get().present();
+		context.resetCommandList(basicPipeline.getCommandListID());
     }
 
     // Close

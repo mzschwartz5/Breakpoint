@@ -1,10 +1,12 @@
 #include "PBMPMScene.h"
 
-PBMPMScene::PBMPMScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* compPipeline, ID3D12GraphicsCommandList5* cmdList, unsigned int instances)
-	: Scene(context, pipeline, cmdList), context(context), pipeline(pipeline), 
-	computePipeline(compPipeline), cmdList(cmdList), instanceCount(instances),
+PBMPMScene::PBMPMScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* compPipeline, unsigned int instances)
+	: Scene(context, pipeline), context(context), pipeline(pipeline), 
+	computePipeline(compPipeline), instanceCount(instances),
 	modelMat(XMMatrixIdentity())
-{}
+{
+	constructScene();
+}
 
 void PBMPMScene::constructScene() {
 	// Create Model Matrix
@@ -23,19 +25,21 @@ void PBMPMScene::constructScene() {
 	positionBuffer = StructuredBuffer(positions.data(), instanceCount, sizeof(XMFLOAT3));
 	velocityBuffer = StructuredBuffer(velocities.data(), instanceCount, sizeof(XMFLOAT3));
 
+	auto computeId = computePipeline->getCommandListID();
+
 	// Pass Structured Buffers to Compute Pipeline
-	positionBuffer.passUAVDataToGPU(*context, computePipeline->getDescriptorHeap()->GetCPUHandleAt(0), cmdList);
-	velocityBuffer.passUAVDataToGPU(*context, computePipeline->getDescriptorHeap()->GetCPUHandleAt(1), cmdList);
+	positionBuffer.passUAVDataToGPU(*context, computePipeline->getDescriptorHeap()->GetCPUHandleAt(0), computePipeline->getCommandList(), computeId);
+	velocityBuffer.passUAVDataToGPU(*context, computePipeline->getDescriptorHeap()->GetCPUHandleAt(1), computePipeline->getCommandList(), computeId);
 
 	// Create Vertex & Index Buffer
 	auto circleData = generateCircle(0.05f, 32);
 	indexCount = circleData.second.size();
 
 	vertexBuffer = VertexBuffer(circleData.first, circleData.first.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
-	vbv = vertexBuffer.passVertexDataToGPU(*context, cmdList);
+	vbv = vertexBuffer.passVertexDataToGPU(*context, pipeline->getCommandList());
 
 	indexBuffer = IndexBuffer(circleData.second, circleData.second.size() * sizeof(unsigned int));
-	ibv = indexBuffer.passIndexDataToGPU(*context, cmdList);
+	ibv = indexBuffer.passIndexDataToGPU(*context, pipeline->getCommandList());
 
 	//Transition both buffers to their usable states
 	D3D12_RESOURCE_BARRIER barriers[2] = {};
@@ -54,34 +58,24 @@ void PBMPMScene::constructScene() {
 	barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
 	barriers[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 
-	cmdList->ResourceBarrier(2, barriers);
+	pipeline->getCommandList()->ResourceBarrier(2, barriers);
 
 	pipeline->createPSOD();
 	pipeline->createPipelineState(context->getDevice());
 
-	context->executeCommandList();
+	// Execute and reset render pipeline command list
+	context->executeCommandList(pipeline->getCommandListID());
+	context->resetCommandList(pipeline->getCommandListID());
 
 	context->getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 }
 
 void PBMPMScene::compute() {
 
-	context->initCommandList();
-
-	D3D12_RESOURCE_BARRIER UAVbarrier = {};
-	UAVbarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	UAVbarrier.Transition.pResource = positionBuffer.getBuffer();  // The resource used as UAV and SRV
-	UAVbarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-	UAVbarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-	UAVbarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	cmdList->ResourceBarrier(1, &UAVbarrier);
-
-	// Run command list
-	context->executeCommandList();
-	context->signalAndWaitForFence(fence, fenceValue);
-
 	// --- Begin Compute Pass ---
-	cmdList = context->initCommandList();
+
+	auto cmdList = computePipeline->getCommandList();
+
 	cmdList->SetPipelineState(computePipeline->getPSO());
 	cmdList->SetComputeRootSignature(computePipeline->getRootSignature());
 
@@ -101,27 +95,39 @@ void PBMPMScene::compute() {
 	cmdList->Dispatch(instanceCount, 1, 1);
 
 	//// Execute command list
-	context->executeCommandList();
+	context->executeCommandList(computePipeline->getCommandListID());
 	context->signalAndWaitForFence(fence, fenceValue);
 
 	// Reinitialize command list
-	cmdList = context->initCommandList();
+	context->resetCommandList(computePipeline->getCommandListID());
 
-	// Transition position buffer to SRV
-	D3D12_RESOURCE_BARRIER SRVbarrier = {};
-	SRVbarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-	SRVbarrier.Transition.pResource = positionBuffer.getBuffer();  // The resource used as UAV and SRV
-	SRVbarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-	SRVbarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE;
-	SRVbarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-	cmdList->ResourceBarrier(1, &SRVbarrier);
+	// Ensure that the writes to the UAV are completing before the SRV is used in the rendering pipeline
+	D3D12_RESOURCE_BARRIER uavBarrier = {};
+	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
+	uavBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	uavBarrier.UAV.pResource = positionBuffer.getBuffer(); // The UAV resource written by the compute shader
+	cmdList->ResourceBarrier(1, &uavBarrier);
+
+	// Transition position buffer to SRV to the rendering pipeline
+	D3D12_RESOURCE_BARRIER srvBarrier = {};
+	srvBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	srvBarrier.Flags = D3D12_RESOURCE_BARRIER_FLAG_NONE;
+	srvBarrier.Transition.pResource = positionBuffer.getBuffer();  // The resource used as UAV and SRV
+	srvBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	srvBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+	srvBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	pipeline->getCommandList()->ResourceBarrier(1, &srvBarrier);
 
 	// --- End Compute Pass ---
-	context->executeCommandList();
+	context->executeCommandList(pipeline->getCommandListID());
 	context->signalAndWaitForFence(fence, fenceValue);
+	context->resetCommandList(pipeline->getCommandListID());
 }
 
 void PBMPMScene::draw(Camera* cam) {;
+
+	auto cmdList = pipeline->getCommandList();
+
 	// IA
 	cmdList->IASetVertexBuffers(0, 1, &vbv);
 	cmdList->IASetIndexBuffer(&ibv);
@@ -142,6 +148,20 @@ void PBMPMScene::draw(Camera* cam) {;
 
 	// Draw
 	cmdList->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
+
+	D3D12_RESOURCE_BARRIER uavBarrier = {};
+	uavBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
+	uavBarrier.Transition.pResource = positionBuffer.getBuffer();  // The resource used as UAV and SRV
+	uavBarrier.Transition.StateBefore = D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE;
+	uavBarrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
+	uavBarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
+	cmdList->ResourceBarrier(1, &uavBarrier);
+
+	// Run command list, wait for fence, and reset
+	context->executeCommandList(pipeline->getCommandListID());
+	context->signalAndWaitForFence(fence, fenceValue);
+	context->resetCommandList(pipeline->getCommandListID());
+
 }
 
 void PBMPMScene::releaseResources() {
