@@ -4,11 +4,12 @@
 #include <stdexcept>
 #include <array>
 
-#define NUM_CMDLISTS 3
+#define NUM_CMDLISTS 4
 enum CommandListID {
+    PAPA_ID,
     RENDER_ID,
+    PBMPM_COMPUTE_ID,
     MESH_ID,
-    PAPA_ID
 };
 
 class DXContext
@@ -18,14 +19,16 @@ public:
     ~DXContext();
 
     void signalAndWait();
-    void resetCommandLists();
-    void executeCommandLists();
+    void resetCommandList(CommandListID id);
+	void executeCommandList(CommandListID id);
 
     void flush(size_t count);
+    void signalAndWaitForFence(ComPointer<ID3D12Fence>& fence, UINT64& fenceValue);
 
     ComPointer<IDXGIFactory7>& getFactory();
     ComPointer<ID3D12Device6>& getDevice();
     ComPointer<ID3D12CommandQueue>& getCommandQueue();
+    ComPointer<ID3D12CommandAllocator>& getCommandAllocator(CommandListID id) { return cmdAllocators[id]; };
     ID3D12GraphicsCommandList6* createCommandList(CommandListID id);
 
 private:
@@ -34,7 +37,7 @@ private:
     ComPointer<ID3D12Device6> device;
 
     ComPointer<ID3D12CommandQueue> cmdQueue;
-    ComPointer<ID3D12CommandAllocator> cmdAllocator;
+    std::array<ComPointer<ID3D12CommandAllocator>, NUM_CMDLISTS> cmdAllocators{};
     std::array<ComPointer<ID3D12GraphicsCommandList6>, NUM_CMDLISTS> cmdLists{};
 
     ComPointer<ID3D12Fence1> fence;

@@ -33,10 +33,15 @@ DXContext::DXContext() {
         throw std::runtime_error("Could not create fence event");
     }
 
-    if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAllocator)))) {
-        //handle cannot create cmd allocator
-        throw std::runtime_error("Could not create command allocator");
-    }
+	for (int i = 0; i < NUM_CMDLISTS; i++) {
+		ComPointer<ID3D12CommandAllocator> cmdAllocator;
+        if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAllocator)))) {
+			//handle cannot create cmd allocator
+			throw std::runtime_error("Could not create command allocator");
+		}
+		cmdAllocators[i] = cmdAllocator;
+	}
+
 }
 
 DXContext::~DXContext() {
@@ -44,7 +49,10 @@ DXContext::~DXContext() {
         cmdList.Release();
     }
 
-    cmdAllocator.Release();
+    for (auto& cmdAllocator : cmdAllocators) {
+        cmdAllocator.Release();
+    }
+
     if (fenceEvent)
     {
         CloseHandle(fenceEvent);
@@ -66,29 +74,43 @@ void DXContext::signalAndWait() {
     }
 }
 
-void DXContext::resetCommandLists()
+void DXContext::resetCommandList(CommandListID id)
 {
-    cmdAllocator->Reset();
+    cmdAllocators[id]->Reset();
     
-    for (auto& cmdList : cmdLists) {
-        cmdList->Reset(cmdAllocator, nullptr);
-    }
+	cmdLists[id]->Reset(cmdAllocators[id], nullptr);
 }
 
-void DXContext::executeCommandLists() {
-    for (auto& cmdList : cmdLists) {
-        if (SUCCEEDED(cmdList->Close())) {
-            ID3D12CommandList* lists[] = { cmdList };
-            cmdQueue->ExecuteCommandLists(1, lists);
-            signalAndWait();
-        }
-    }
+void DXContext::executeCommandList(CommandListID id) {
+	if (SUCCEEDED(cmdLists[id]->Close())) {
+		ID3D12CommandList* lists[] = { cmdLists[id] };
+		cmdQueue->ExecuteCommandLists(1, lists);
+		signalAndWait();
+	}
 }
 
 void DXContext::flush(size_t count) {
     for (size_t i = 0; i < count; i++) {
         signalAndWait();
     }
+}
+
+void DXContext::signalAndWaitForFence(ComPointer<ID3D12Fence>& fence, UINT64& fenceValue) {
+	cmdQueue->Signal(fence, fenceValue);
+    if (fence->GetCompletedValue() < fenceValue) {
+        HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        if (eventHandle == nullptr) {
+            throw std::runtime_error("Failed to create event handle.");
+        }
+
+        // Set the event to be triggered when the GPU reaches the fence value
+        fence->SetEventOnCompletion(fenceValue, eventHandle);
+
+        // Wait until the event is triggered, meaning the GPU has finished
+        WaitForSingleObject(eventHandle, INFINITE);
+        CloseHandle(eventHandle);
+    }
+    fenceValue++;
 }
 
 ComPointer<IDXGIFactory7>& DXContext::getFactory() {

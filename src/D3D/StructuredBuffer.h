@@ -14,14 +14,21 @@ public:
 	StructuredBuffer() = default;
 	StructuredBuffer(const void* data, unsigned int numEle, size_t eleSize);
 
-	void passModelMatrixDataToGPU(DXContext& context, ComPointer<ID3D12DescriptorHeap> dh, ID3D12GraphicsCommandList6* cmdList);
+	D3D12_GPU_VIRTUAL_ADDRESS passCBVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle);
+	D3D12_GPU_VIRTUAL_ADDRESS passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList6 *cmdList, CommandListID id);
+	D3D12_GPU_VIRTUAL_ADDRESS passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList6 *cmdList, CommandListID id);
+	void copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES state, CommandListID cmdId);
 
-	ComPointer<ID3D12Resource1>& getModelMatrixBuffer();
+	ComPointer<ID3D12Resource1>& getBuffer();
+
+	unsigned int getNumElements() { return numElements; }
+
+	size_t getElementSize() { return elementSize; }
 
 	void releaseResources();
 
 private:
-	ComPointer<ID3D12Resource1> modelMatrixBuffer;
+	ComPointer<ID3D12Resource1> buffer;
 
 	const void* data;
 	unsigned int numElements;

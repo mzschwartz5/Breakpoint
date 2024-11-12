@@ -1,8 +1,5 @@
 #pragma once
 
-#include <filesystem>
-
-#include "Scene/Mesh.h"
 #include "Scene/Camera.h"
 
 #include "D3D/Pipeline/RenderPipeline.h"
@@ -13,19 +10,11 @@ public:
 
 	void constructScene();
 
-	void draw(ComPointer<ID3D12PipelineState>& pso, ComPointer<ID3D12RootSignature>& rootSignature, Camera* camera);
-
-	size_t getSceneSize();
+	void draw(Camera* camera);
 
 	void releaseResources();
 
-private:
-	std::vector<std::string> inputStrings;
-	std::vector<Mesh> meshes;
-
-	size_t sceneSize{ 0 };
-
+protected:
 	DXContext* context;
 	RenderPipeline* pipeline;
-	ID3D12GraphicsCommandList6* cmdList;
 };
