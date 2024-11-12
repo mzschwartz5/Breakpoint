@@ -1,7 +1,7 @@
 #include "main.h"
 
-// Base Mesh Scene = 0, Bouncing Ball Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3
-#define SCENE 3
+// Base Object Scene = 0, Bouncing Ball Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3
+#define SCENE 0
 
 // This should probably go somewhere else
 void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
@@ -94,22 +94,22 @@ int main() {
         //check keyboard state
         auto kState = keyboard->GetState();
         if (kState.W) {
-            camera->translate({ 0.f, 0.f, 0.0005f });
+            camera->translate({ 0.f, 0.f, 1.0f });
         }
         if (kState.A) {
-            camera->translate({ -0.0005f, 0.f, 0.f });
+            camera->translate({ -1.0f, 0.f, 0.f });
         }
         if (kState.S) {
-            camera->translate({ 0.f, 0.f, -0.0005f });
+            camera->translate({ 0.f, 0.f, -1.0f });
         }
         if (kState.D) {
-            camera->translate({ 0.0005f, 0.f, 0.f });
+            camera->translate({ 1.0f, 0.f, 0.f });
         }
         if (kState.Space) {
-            camera->translate({ 0.f, 0.0005f, 0.f });
+            camera->translate({ 0.f, 1.0f, 0.f });
         }
         if (kState.LeftControl) {
-            camera->translate({ 0.f, -0.0005f, 0.f });
+            camera->translate({ 0.f, -1.0f, 0.f });
         }
 
         //check mouse state
