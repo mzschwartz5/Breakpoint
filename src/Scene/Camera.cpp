@@ -68,6 +68,7 @@ void Camera::rotate() {
 void Camera::translate(XMFLOAT3 distance) {
 	XMVECTOR P = XMLoadFloat3(&position);
 	XMVECTOR D = XMLoadFloat3(&distance);
+	D *= MOVE_SCALAR;
 	XMStoreFloat3(&position, XMVectorAdd(P, D));
 }
 
