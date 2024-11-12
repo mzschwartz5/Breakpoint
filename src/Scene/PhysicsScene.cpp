@@ -126,6 +126,8 @@ void PhysicsScene::compute() {
 
 void PhysicsScene::draw(Camera* cam) {
 
+	compute();
+
 	auto cmdList = pipeline->getCommandList();
 
 	// IA

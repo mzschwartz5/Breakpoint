@@ -20,7 +20,6 @@ public:
 
     void signalAndWait();
     void resetCommandList(CommandListID id);
-    void executeCommandLists();
 	void executeCommandList(CommandListID id);
 
     void flush(size_t count);
@@ -30,7 +29,7 @@ public:
     ComPointer<ID3D12Device6>& getDevice();
     ComPointer<ID3D12CommandQueue>& getCommandQueue();
     ComPointer<ID3D12CommandAllocator>& getCommandAllocator(CommandListID id) { return cmdAllocators[id]; };
-    ID3D12GraphicsCommandList5* createCommandList(CommandListID id);
+    ID3D12GraphicsCommandList6* createCommandList(CommandListID id);
 
 private:
     ComPointer<IDXGIFactory7> dxgiFactory;
@@ -39,7 +38,7 @@ private:
 
     ComPointer<ID3D12CommandQueue> cmdQueue;
     std::array<ComPointer<ID3D12CommandAllocator>, NUM_CMDLISTS> cmdAllocators{};
-    std::array<ComPointer<ID3D12GraphicsCommandList5>, NUM_CMDLISTS> cmdLists{};
+    std::array<ComPointer<ID3D12GraphicsCommandList6>, NUM_CMDLISTS> cmdLists{};
 
     ComPointer<ID3D12Fence1> fence;
     UINT64 fenceValue = 0;

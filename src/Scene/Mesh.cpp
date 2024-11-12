@@ -1,6 +1,6 @@
 #include "Mesh.h"
 
-Mesh::Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList5* cmdList, RenderPipeline* pipeline) {
+Mesh::Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList6* cmdList, RenderPipeline* pipeline) {
 	loadMesh(fileLocation);
     vertexBuffer = VertexBuffer(vertexPositions, vertices.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
     indexBuffer = IndexBuffer(indices, indices.size() * sizeof(unsigned int));

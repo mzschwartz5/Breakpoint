@@ -15,9 +15,9 @@ public:
 	StructuredBuffer(const void* data, unsigned int numEle, size_t eleSize);
 
 	D3D12_GPU_VIRTUAL_ADDRESS passCBVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle);
-	D3D12_GPU_VIRTUAL_ADDRESS passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList, CommandListID id);
-	D3D12_GPU_VIRTUAL_ADDRESS passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList, CommandListID id);
-	void copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList5* cmdList, D3D12_RESOURCE_STATES state);
+	D3D12_GPU_VIRTUAL_ADDRESS passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList6 *cmdList, CommandListID id);
+	D3D12_GPU_VIRTUAL_ADDRESS passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList6 *cmdList, CommandListID id);
+	void copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES state, CommandListID cmdId);
 
 	ComPointer<ID3D12Resource1>& getBuffer();
 

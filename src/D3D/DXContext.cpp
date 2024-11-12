@@ -81,16 +81,6 @@ void DXContext::resetCommandList(CommandListID id)
 	cmdLists[id]->Reset(cmdAllocators[id], nullptr);
 }
 
-void DXContext::executeCommandLists() {
-    for (auto& cmdList : cmdLists) {
-        if (SUCCEEDED(cmdList->Close())) {
-            ID3D12CommandList* lists[] = { cmdList };
-            cmdQueue->ExecuteCommandLists(1, lists);
-            signalAndWait();
-        }
-    }
-}
-
 void DXContext::executeCommandList(CommandListID id) {
 	if (SUCCEEDED(cmdLists[id]->Close())) {
 		ID3D12CommandList* lists[] = { cmdLists[id] };
@@ -135,9 +125,9 @@ ComPointer<ID3D12CommandQueue>& DXContext::getCommandQueue() {
     return cmdQueue;
 }
 
-ID3D12GraphicsCommandList5* DXContext::createCommandList(CommandListID id)
+ID3D12GraphicsCommandList6* DXContext::createCommandList(CommandListID id)
 {
-    ComPointer<ID3D12GraphicsCommandList5> cmdList;
+    ComPointer<ID3D12GraphicsCommandList6> cmdList;
     if (FAILED(device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList)))) {
         //handle could not create cmd list
         throw std::runtime_error("Could not create command list");

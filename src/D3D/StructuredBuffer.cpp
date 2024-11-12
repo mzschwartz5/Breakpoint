@@ -49,7 +49,7 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passCBVDataToGPU(DXContext& context,
 	return buffer->GetGPUVirtualAddress();
 }
 
-D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5* cmdList, CommandListID cmdId) {
+D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList6* cmdList, CommandListID cmdId) {
 	// THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
 
     // Calculate the total buffer size
@@ -159,7 +159,7 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passSRVDataToGPU(DXContext& context,
 	return buffer->GetGPUVirtualAddress();
 }
 
-D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList, CommandListID cmdId) {
+D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList6 *cmdList, CommandListID cmdId) {
     // THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
 
     // Calculate the total buffer size
@@ -280,7 +280,7 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::passUAVDataToGPU(DXContext& context,
     return buffer->GetGPUVirtualAddress();
 }
 
-void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList5* cmdList, D3D12_RESOURCE_STATES state) {
+void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES state, CommandListID cmdId) {
 	// THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
 
     // Create a readback buffer to copy data from the GPU buffer
@@ -342,7 +342,7 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
     context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 
     // Execute the command list to perform the copy operation
-    context.executeCommandLists();
+    context.executeCommandList(cmdId);
     context.getCommandQueue()->Signal(fence.Get(), fenceValue);
     context.flush(1);
 

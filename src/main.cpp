@@ -133,7 +133,9 @@ int main() {
         Window::get().beginFrame(basicPipeline.getCommandList());
         D3D12_VIEWPORT vp;
         createDefaultViewport(vp, basicPipeline.getCommandList());
+
         scene.draw(camera.get());
+        
         Window::get().endFrame(basicPipeline.getCommandList());
 
         //finish draw, present, reset

@@ -34,7 +34,7 @@ void ObjectScene::draw(Camera* camera) {
 
         ID3D12DescriptorHeap* descriptorHeaps[] = { pipeline->getDescriptorHeap()->GetAddress() };
         cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-        cmdList->SetGraphicsRootDescriptorTable(1, pipeline->getDescriptorHeap()->GetGPUHandleAt(0)); // Descriptor table slot 1 for SRV
+        cmdList->SetGraphicsRootDescriptorTable(1, pipeline->getDescriptorHeap()->GetGPUHandleAt(0)); // Descriptor table slot 1 for CBV
 
         auto viewMat = camera->getViewMat();
         auto projMat = camera->getProjMat();
