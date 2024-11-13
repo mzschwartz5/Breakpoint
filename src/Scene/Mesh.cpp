@@ -92,7 +92,7 @@ void Mesh::loadMesh(std::string fileLocation) {
         }
     }
 
-    for (int i = 0; i < normals.size(); i++) {
+    for (int i = 0; i < vertices.size(); i++) {
         vertices[i].nor = normals[i];
     }
 

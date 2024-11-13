@@ -12,14 +12,14 @@ void ObjectScene::constructScene()
 	pipeline->createPipelineState(context->getDevice());
 
 	inputStrings.push_back("objs\\wolf.obj");
-    inputStrings.push_back("objs\\wolf.obj");
+    inputStrings.push_back("objs\\saulgoodman.obj");
 
     XMFLOAT4X4 m1;
     XMStoreFloat4x4(&m1, XMMatrixTranslation(0, 0, 0));
     modelMatrices.push_back(m1);
 
     XMFLOAT4X4 m2;
-    XMStoreFloat4x4(&m2, XMMatrixTranslation(0, 10, 0));
+    XMStoreFloat4x4(&m2, XMMatrixScaling(0.2, 0.2, 0.2) * XMMatrixTranslation(-10, -8, 0));
     modelMatrices.push_back(m2);
 
     for (int i = 0; i < inputStrings.size(); i++) {
