@@ -32,8 +32,8 @@ Mesh::Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandLi
     modelMatrices.push_back(modelMatrix);
 
     numInstances = 1;
-    modelMatrixBuffer = StructuredBuffer(modelMatrices.data(), numInstances, sizeof(XMFLOAT4X4));
-    modelMatrixBuffer.passCBVDataToGPU(*context, pipeline->getDescriptorHeap()->GetCPUHandleAt(0));
+    modelMatrixBuffer = StructuredBuffer(modelMatrices.data(), numInstances, sizeof(XMFLOAT4X4), pipeline->getDescriptorHeap());
+    modelMatrixBuffer.passCBVDataToGPU(*context);
 }
 
 void Mesh::loadMesh(std::string fileLocation) {

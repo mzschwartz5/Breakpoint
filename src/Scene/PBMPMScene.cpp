@@ -12,9 +12,11 @@ void PBMPMScene::constructScene() {
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
+	float radius = 0.01;
+
 	// Create position and velocity data
 	for (int i = 0; i < instanceCount; ++i) {
-		positions.push_back({ -0.72f + 0.15f * i, 0.f, 0.f });
+		positions.push_back({ -0.76f + radius * 2.5f * i, 0.f, 0.f });
 	}
 
 	for (int i = 0; i < instanceCount; ++i) {
@@ -22,17 +24,17 @@ void PBMPMScene::constructScene() {
 	}
 
 	// Create Structured Buffers
-	positionBuffer = StructuredBuffer(positions.data(), instanceCount, sizeof(XMFLOAT3));
-	velocityBuffer = StructuredBuffer(velocities.data(), instanceCount, sizeof(XMFLOAT3));
+	positionBuffer = StructuredBuffer(positions.data(), instanceCount, sizeof(XMFLOAT3), computePipeline->getDescriptorHeap());
+	velocityBuffer = StructuredBuffer(velocities.data(), instanceCount, sizeof(XMFLOAT3), computePipeline->getDescriptorHeap());
 
 	auto computeId = computePipeline->getCommandListID();
 
 	// Pass Structured Buffers to Compute Pipeline
-	positionBuffer.passUAVDataToGPU(*context, computePipeline->getDescriptorHeap()->GetCPUHandleAt(0), computePipeline->getCommandList(), computeId);
-	velocityBuffer.passUAVDataToGPU(*context, computePipeline->getDescriptorHeap()->GetCPUHandleAt(1), computePipeline->getCommandList(), computeId);
+	positionBuffer.passUAVDataToGPU(*context, computePipeline->getCommandList(), computeId);
+	velocityBuffer.passUAVDataToGPU(*context, computePipeline->getCommandList(), computeId);
 
 	// Create Vertex & Index Buffer
-	auto circleData = generateCircle(0.05f, 32);
+	auto circleData = generateCircle(radius, 32);
 	indexCount = circleData.second.size();
 
 	vertexBuffer = VertexBuffer(circleData.first, circleData.first.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
@@ -84,9 +86,9 @@ void PBMPMScene::compute() {
 	cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
 
 	//// Set compute root constants
-	PBMPMConstants constants = { 9.81f, 1.0f, 0.0f, 0.0005f };
+	PBMPMConstants constants = { {10, 10}, 0.0005, 9.81, 1.5, 0.05, 5, 1, 90, 0 };
 
-	cmdList->SetComputeRoot32BitConstants(0, 4, &constants, 0);
+	cmdList->SetComputeRoot32BitConstants(0, 9, &constants, 0);
 
 	//// Set compute root descriptor table
 	cmdList->SetComputeRootDescriptorTable(1, computePipeline->getDescriptorHeap()->GetGPUHandleAt(0));
@@ -144,7 +146,7 @@ void PBMPMScene::draw(Camera* cam) {;
 	cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
 	cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 	cmdList->SetGraphicsRoot32BitConstants(0, 16, &modelMat, 32);
-	cmdList->SetGraphicsRootShaderResourceView(1, positionBuffer.getBuffer()->GetGPUVirtualAddress()); // Descriptor table slot 1 for position SRV
+	cmdList->SetGraphicsRootShaderResourceView(1, positionBuffer.getGPUVirtualAddress()); // Descriptor table slot 1 for position SRV
 
 	// Draw
 	cmdList->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);

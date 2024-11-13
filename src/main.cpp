@@ -1,7 +1,7 @@
 #include "main.h"
 
 // Base Object Scene = 0, Bouncing Ball Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3
-#define SCENE 0
+#define SCENE 3
 
 // This should probably go somewhere else
 void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
@@ -71,14 +71,14 @@ int main() {
 	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     // Create compute pipeline
-    ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, CommandListID::PBMPM_COMPUTE_ID,
+    ComputePipeline computePipeline("PBMPMComputeRootSignature.cso", "PBMPMComputeShader.cso", context, CommandListID::PBMPM_COMPUTE_ID,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     // Initialize command lists
     context.resetCommandList(CommandListID::RENDER_ID);
     context.resetCommandList(CommandListID::PBMPM_COMPUTE_ID);
 
-    PBMPMScene scene{ &context, &basicPipeline, &computePipeline, 10 };
+    PBMPMScene scene{ &context, &basicPipeline, &computePipeline, 50 };
 #endif
 
     while (!Window::get().getShouldClose()) {
