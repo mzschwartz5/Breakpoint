@@ -39,7 +39,7 @@ int main() {
     context.resetCommandList(CommandListID::PAPA_ID);
 
 #if SCENE == 0
-	RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context, CommandListID::RENDER_ID,
+	RenderPipeline basicPipeline("InstancedVertexShader.cso", "PixelShader.cso", "RootSignature.cso", context, CommandListID::RENDER_ID,
 	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
 	// Initialize command lists
