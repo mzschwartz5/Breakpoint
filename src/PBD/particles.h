@@ -37,10 +37,16 @@ struct DistanceConstraint {
     UINT particleA;
     UINT particleB;
     float restLength;
+
     
 };
 
+
+
+
 struct SimulationParams {
+    UINT constraintCount;
     float deltaTime;
-    float stiffness;
+    float count;
+    DirectX::XMFLOAT3 gravity;
 };

@@ -27,9 +27,10 @@ float4 main(VSInput input) : SV_Position
 {
     // Retrieve the particle position for the current instance
     Particle particle = particles[input.InstanceID];
+    float3 particlePosition = particle.position;
 
     // Apply the model, view, and projection transformations
-    float4 worldPos = mul(modelMatrix, float4(input.Position + particle.position, 1.0));
+    float4 worldPos = mul(modelMatrix, float4(input.Position + particlePosition, 1.0));
     float4 viewPos = mul(viewMatrix, worldPos);
     return mul(projectionMatrix, viewPos);
 }

@@ -24,6 +24,8 @@ void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdLi
     cmdList->RSSetScissorRects(1, &scRect);
 }
 
+
+
 int main() {
     DebugLayer debugLayer = DebugLayer();
     DXContext context = DXContext();
@@ -41,41 +43,31 @@ int main() {
 
     mouse->SetWindow(Window::get().getHWND());
 
-    int instanceCount = 10;
+    int instanceCount = 2;
 
     // Create Model Matrix
     auto modelMat = XMMatrixIdentity();
     modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-    // Create test position data
-    std::vector<XMFLOAT3> positions;
-    for (int i = 0; i < instanceCount; ++i) {
-        positions.push_back({ -0.72f + 0.15f * i, 0.f, 0.f });
-    }
+    std::vector<XMFLOAT3> positions = {
+    { -0.1f, 0.0f, 0.0f }, // Particle 0
+    {  0.1f, 0.0f, 0.0f }  // Particle 1
+    };
 
-    // Create test velocity data
-    std::vector<XMFLOAT3> velocities;
-    for (int i = 0; i < instanceCount; ++i) {
-        velocities.push_back({ 0.0f, 0.0f, 0.0f });
-    }
 
     std::vector<Particle> particles(instanceCount);
     for (int i = 0; i < instanceCount; ++i) {
         particles[i].position = positions[i];
         particles[i].prevPosition = particles[i].position;
         particles[i].velocity = { 0.0f, 0.0f, 0.0f };
-        particles[i].invMass = 1.0f; // Assuming uniform mass for simplicity
+        particles[i].invMass = 1.0f; // Uniform mass
     }
 
-    // Create DistanceConstraint data
-    std::vector<DistanceConstraint> constraints;
-    for (int i = 0; i < instanceCount - 1; ++i) {
-        DistanceConstraint dc;
-        dc.particleA = i;
-        dc.particleB = i + 1;
-        dc.restLength =2.0f; // Distance between connected particles
-        constraints.push_back(dc);
-    }
+    std::vector<DistanceConstraint> constraints(1);
+    constraints[0].particleA = 0;
+    constraints[0].particleB = 1;
+    constraints[0].restLength = 0.2f;
+  
 
 
     // Create buffer for particle data
@@ -86,7 +78,15 @@ int main() {
 
     // Create compute pipeline
     ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
+    ComputePipeline applyForcesPipeline("VelocitySignature.cso", "applyForce.cso", context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    ComputePipeline velocityUpdatePipeline("VelocitySignature.cso", "VelocityUpdate.cso", context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    
+    SimulationParams simParams = {};
+    simParams.deltaTime = 0.016f; //60 FPS
+    simParams.count = instanceCount;
+    simParams.gravity = { 0.0f, 0.0f, 0.0f };
+    int constraintCount = constraints.size();
+    simParams.constraintCount = constraintCount;
 
     // Pass particle data to GPU as UAV
     particleBuffer.passUAVDataToGPU(context, computePipeline.getDescriptorHeap()->GetCPUHandleAt(0), cmdList);
@@ -197,33 +197,59 @@ int main() {
         UAVbarrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
         cmdList->ResourceBarrier(1, &UAVbarrier);
 
-        // Set compute pipeline state and root signature
-       
-        cmdList->SetPipelineState(computePipeline.getPSO());
-        cmdList->SetComputeRootSignature(computePipeline.getRootSignature());
+        
+       /* cmdList->SetPipelineState(applyForcesPipeline.getPSO());
+        cmdList->SetComputeRootSignature(applyForcesPipeline.getRootSignature());
 
+        ID3D12DescriptorHeap* applyForcesDescriptorHeaps[] = { applyForcesPipeline.getDescriptorHeap()->Get() };
+        cmdList->SetDescriptorHeaps(_countof(applyForcesDescriptorHeaps), applyForcesDescriptorHeaps);
 
-
-        // Set descriptor heap and compute root descriptor table
-        ID3D12DescriptorHeap* computeDescriptorHeaps[] = { computePipeline.getDescriptorHeap()->Get() };
-        cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
-
-        // Set compute root descriptor table for particles UAV
-        cmdList->SetComputeRootDescriptorTable(0, computePipeline.getDescriptorHeap()->GetGPUHandleAt(0)); // Particles UAV
-
-        // Set compute root descriptor table for constraints SRV
-        cmdList->SetComputeRootDescriptorTable(1, computePipeline.getDescriptorHeap()->GetGPUHandleAt(1)); // Constraints SRV
-
-        // Dispatch the compute shader to update the particle positions
+        cmdList->SetComputeRootUnorderedAccessView(1, particleBuffer.getBuffer()->GetGPUVirtualAddress());
+        cmdList->SetComputeRoot32BitConstants(0, 5, &simParams, 0);
         cmdList->Dispatch(instanceCount, 1, 1);
-
-        // Execute the command list
         context.executeCommandList();
-        context.signalAndWaitForFence(fence, fenceValue);
+        context.signalAndWaitForFence(fence, fenceValue);*/
+
+
+        
+            
+
+            cmdList->SetPipelineState(computePipeline.getPSO());
+            cmdList->SetComputeRootSignature(computePipeline.getRootSignature());
+
+            ID3D12DescriptorHeap* constraintsDescriptorHeaps[] = { computePipeline.getDescriptorHeap()->Get() };
+            cmdList->SetDescriptorHeaps(_countof(constraintsDescriptorHeaps), constraintsDescriptorHeaps);
+
+            cmdList->SetComputeRootDescriptorTable(0, computePipeline.getDescriptorHeap()->GetGPUHandleAt(0)); // Particles UAV
+            cmdList->SetComputeRootDescriptorTable(1, computePipeline.getDescriptorHeap()->GetGPUHandleAt(1)); // Constraints SRV
+            cmdList->SetComputeRoot32BitConstants(2, 1, &constraintCount, 0); // Pass constraint count
+
+            cmdList->Dispatch(instanceCount, 1, 1);
+            context.executeCommandList();
+            context.signalAndWaitForFence(fence, fenceValue);
+        
+
+
+       /* cmdList = context.initCommandList();
+        cmdList->SetPipelineState(velocityUpdatePipeline.getPSO());
+        cmdList->SetComputeRootSignature(velocityUpdatePipeline.getRootSignature());
+
+        ID3D12DescriptorHeap* updateVelocitiesDescriptorHeaps[] = { velocityUpdatePipeline.getDescriptorHeap()->Get() };
+        cmdList->SetDescriptorHeaps(_countof(updateVelocitiesDescriptorHeaps), updateVelocitiesDescriptorHeaps);
+
+        cmdList->SetComputeRootUnorderedAccessView(1, particleBuffer.getBuffer()->GetGPUVirtualAddress());
+        cmdList->SetComputeRoot32BitConstants(0, 2, &simParams, 0);
+        cmdList->Dispatch(instanceCount, 1, 1);
+        context.executeCommandList();
+        context.signalAndWaitForFence(fence, fenceValue);*/
+
+      
+
+
 
         //begin draw
         cmdList = context.initCommandList();
-
+        
         // Transition position buffer back to SRV for vertex shader use
         D3D12_RESOURCE_BARRIER SRVbarrier = {};
         SRVbarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
@@ -253,7 +279,7 @@ int main() {
         ID3D12DescriptorHeap* descriptorHeaps[] = { basicPipeline.getDescriptorHeap()->Get() };
         cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
-        cmdList->SetGraphicsRootDescriptorTable(1, particleBuffer.getSRVGPUHandle());
+        cmdList->SetGraphicsRootShaderResourceView(1, particleBuffer.getBuffer()->GetGPUVirtualAddress()); // Descriptor table slot 1 for Particles SRV
 
         auto viewMat = camera->getViewMat();
         auto projMat = camera->getProjMat();

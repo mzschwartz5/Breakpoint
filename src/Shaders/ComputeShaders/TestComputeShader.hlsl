@@ -14,6 +14,10 @@ struct DistanceConstraint {
 	float restLength;
 };
 
+cbuffer ConstraintParams : register(b0) {
+    uint constraintCount;
+};
+
 // RWStructuredBuffer for particle data
 RWStructuredBuffer<Particle> particles : register(u0);
 
@@ -36,28 +40,28 @@ StructuredBuffer<DistanceConstraint> constraints : register(t0);
 [numthreads(1, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID) {
     uint constraintIndex = DTid.x;
-
-    if (constraintIndex >= 10)
+    if (constraintIndex >= constraintCount)
         return;
 
+    // Process the single constraint
     DistanceConstraint dc = constraints[constraintIndex];
-    Particle pa = particles[dc.particleA];
-    Particle pb = particles[dc.particleB];
+    uint idxA = dc.particleA;
+    uint idxB = dc.particleB;
 
+    Particle pa = particles[idxA];
+    Particle pb = particles[idxB];
+
+    // Calculate correction
     float3 delta = pb.position - pa.position;
     float currentLength = length(delta);
-    float3 correctionVector = normalize(delta) * ((currentLength - dc.restLength) * 0.1);
+    float3 correction = normalize(delta) * (currentLength - dc.restLength) * 0.5f;
 
-    // Apply corrections inversely proportional to mass (invMass)
-    if (pa.invMass > 0.0f) {
-        pa.position -= correctionVector * pa.invMass;
-    }
-    if (pb.invMass > 0.0f) {
-        pb.position += correctionVector * pb.invMass;
-    }
+    // Apply correction
+    pa.position += correction;
+    pb.position -= correction;
 
-    // Write back corrected positions
-    particles[dc.particleA] = pa;
-    particles[dc.particleB] = pb;
+    // Write back updated particles
+    particles[idxA] = pa;
+    particles[idxB] = pb;
 
 }
