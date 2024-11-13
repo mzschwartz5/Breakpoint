@@ -10,9 +10,22 @@ void ObjectScene::constructScene()
 {
 	pipeline->createPSOD();
 	pipeline->createPipelineState(context->getDevice());
+
 	inputStrings.push_back("objs\\wolf.obj");
-	for (auto string : inputStrings) {
-		Mesh newMesh = Mesh((std::filesystem::current_path() / string).string(), context, pipeline->getCommandList(), pipeline);
+    inputStrings.push_back("objs\\saulgoodman.obj");
+
+    XMFLOAT4X4 m1;
+    XMStoreFloat4x4(&m1, XMMatrixTranslation(0, 0, 0));
+    modelMatrices.push_back(m1);
+
+    XMFLOAT4X4 m2;
+    XMStoreFloat4x4(&m2, XMMatrixScaling(0.2, 0.2, 0.2) * XMMatrixTranslation(-10, -8, 0));
+    modelMatrices.push_back(m2);
+
+    for (int i = 0; i < inputStrings.size(); i++) {
+        auto string = inputStrings.at(i);
+        auto m = modelMatrices.at(i);
+		Mesh newMesh = Mesh((std::filesystem::current_path() / string).string(), context, pipeline->getCommandList(), pipeline, m);
 		meshes.push_back(newMesh);
 		sceneSize += newMesh.getNumTriangles();
 	}
@@ -40,6 +53,8 @@ void ObjectScene::draw(Camera* camera) {
         auto projMat = camera->getProjMat();
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
+        //model mat for this mesh
+        cmdList->SetGraphicsRoot32BitConstants(0, 16, m.getModelMatrix(), 32);
 
         cmdList->DrawIndexedInstanced(m.getNumTriangles() * 3, 1, 0, 0, 0);
     }

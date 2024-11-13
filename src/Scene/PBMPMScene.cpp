@@ -90,8 +90,9 @@ void PBMPMScene::compute() {
 
 	cmdList->SetComputeRoot32BitConstants(0, 9, &constants, 0);
 
-	//// Set compute root descriptor table
-	cmdList->SetComputeRootDescriptorTable(1, computePipeline->getDescriptorHeap()->GetGPUHandleAt(0));
+	// Uses position's descriptor handle instead of velocity since it was allocated first
+	// The descriptor table is looking for two buffers so it will give the consecutive one after position (velocity) 
+	cmdList->SetComputeRootDescriptorTable(1, positionBuffer.getGPUDescriptorHandle());
 
 	//// Dispatch
 	cmdList->Dispatch(instanceCount, 1, 1);

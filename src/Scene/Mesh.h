@@ -27,12 +27,13 @@ struct Vertex {
 class Mesh {
 public:
 	Mesh() = delete;
-	Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList6* cmdList, RenderPipeline* pipeline);
+	Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList6* cmdList, RenderPipeline* pipeline, XMFLOAT4X4 modelMatrix);
 	void loadMesh(std::string fileLocation);
 
 	D3D12_INDEX_BUFFER_VIEW* getIBV();
 	D3D12_VERTEX_BUFFER_VIEW* getVBV();
-	StructuredBuffer* getMMB();
+
+	XMFLOAT4X4* getModelMatrix();
 
 	void releaseResources();
 
@@ -42,13 +43,12 @@ private:
 	std::vector<Vertex> vertices;
 	std::vector<XMFLOAT3> vertexPositions;
 	std::vector<unsigned int> indices;
-	std::vector<XMFLOAT4X4> modelMatrices;
-	int numInstances;
 	size_t numTriangles;
 
 	VertexBuffer vertexBuffer;
 	IndexBuffer indexBuffer;
-	StructuredBuffer modelMatrixBuffer;
 	D3D12_VERTEX_BUFFER_VIEW vbv;
 	D3D12_INDEX_BUFFER_VIEW ibv;
+
+	XMFLOAT4X4 modelMatrix;
 };

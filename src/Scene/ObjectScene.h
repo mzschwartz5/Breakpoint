@@ -18,6 +18,7 @@ public:
 private:
 	std::vector<std::string> inputStrings;
 	std::vector<Mesh> meshes;
+	std::vector<XMFLOAT4X4> modelMatrices;
 
 	size_t sceneSize{ 0 };
 };

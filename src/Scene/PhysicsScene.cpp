@@ -79,17 +79,19 @@ void PhysicsScene::compute() {
 	cmdList->SetPipelineState(computePipeline->getPSO());
 	cmdList->SetComputeRootSignature(computePipeline->getRootSignature());
 
-	//// Set descriptor heap
+	// Set descriptor heap
 	ID3D12DescriptorHeap* computeDescriptorHeaps[] = { computePipeline->getDescriptorHeap()->Get() };
 	cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
 
-	//// Set compute root constants
+	// Set compute root constants
 	Constants constants = { 9.81f, 1.0f, 0.0f, 0.0005f };
 
 	cmdList->SetComputeRoot32BitConstants(0, 4, &constants, 0);
 
-	//// Set compute root descriptor table
-	cmdList->SetComputeRootDescriptorTable(1, computePipeline->getDescriptorHeap()->GetGPUHandleAt(0));
+	// Set compute root descriptor table
+	// Uses position's descriptor handle instead of velocity since it was allocated first
+	// The descriptor table is looking for two buffers so it will give the consecutive one after position (velocity) 
+	cmdList->SetComputeRootDescriptorTable(1, positionBuffer.getGPUDescriptorHandle());
 
 	//// Dispatch
 	cmdList->Dispatch(instanceCount, 1, 1);
