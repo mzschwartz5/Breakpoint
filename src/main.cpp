@@ -1,7 +1,7 @@
 #include "main.h"
 
 // Base Object Scene = 0, Bouncing Ball Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3
-#define SCENE 1
+#define SCENE 0
 
 // This should probably go somewhere else
 void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
