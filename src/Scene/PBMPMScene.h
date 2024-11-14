@@ -12,6 +12,13 @@ const unsigned int GridDispatchSize = 8;
 const unsigned int BukkitSize = 6;
 const unsigned int BukkitHaloSize = 1;
 
+const unsigned int maxParticles = 1000000;
+const unsigned int maxTimestampCount = 2048;
+
+
+
+
+
 struct PBMPMConstants {
 	XMFLOAT2 gridSize;
 	float deltaTime;
@@ -114,4 +121,13 @@ private:
 	UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
 	unsigned int indexCount = 0;
+
+	// Scene Buffers
+	StructuredBuffer particleBuffer;
+	StructuredBuffer particleFreeIndicesBuffer;
+	unsigned int particleCount = 0;
+	int particleCountStaging = 0;
+	int particleFreeCountStaging = 0;
+	int particleRenderDispatch[4] = { 6, 0, 0, 0 };
+	int particleSimDispatch[4] = { 0, 1, 1, 0 };
 };
