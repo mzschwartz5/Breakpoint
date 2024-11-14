@@ -66,7 +66,7 @@ int main() {
     std::vector<DistanceConstraint> constraints(1);
     constraints[0].particleA = 0;
     constraints[0].particleB = 1;
-    constraints[0].restLength = 0.2f;
+    constraints[0].restLength = 2.0f;
   
 
 
@@ -82,9 +82,9 @@ int main() {
     ComputePipeline velocityUpdatePipeline("VelocitySignature.cso", "VelocityUpdate.cso", context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
     
     SimulationParams simParams = {};
-    simParams.deltaTime = 0.016f; //60 FPS
+    simParams.deltaTime = 0.033f; //60 FPS
     simParams.count = instanceCount;
-    simParams.gravity = { 0.0f, 0.0f, 0.0f };
+    simParams.gravity = { 0.0f, -9.81f, 0.0f };
     int constraintCount = constraints.size();
     simParams.constraintCount = constraintCount;
 
@@ -94,6 +94,7 @@ int main() {
     // Pass constraint data to GPU as SRV
     constraintBuffer.passSRVDataToGPU(context, computePipeline.getDescriptorHeap()->GetCPUHandleAt(1), cmdList);
 
+    particleBuffer.passUAVDataToGPU(context, applyForcesPipeline.getDescriptorHeap()->GetCPUHandleAt(0), cmdList);
 
     // Create circle geometry
     auto circleData = generateCircle(0.05f, 32);
@@ -198,35 +199,35 @@ int main() {
         cmdList->ResourceBarrier(1, &UAVbarrier);
 
         
-       /* cmdList->SetPipelineState(applyForcesPipeline.getPSO());
+        cmdList->SetPipelineState(applyForcesPipeline.getPSO());
         cmdList->SetComputeRootSignature(applyForcesPipeline.getRootSignature());
 
         ID3D12DescriptorHeap* applyForcesDescriptorHeaps[] = { applyForcesPipeline.getDescriptorHeap()->Get() };
         cmdList->SetDescriptorHeaps(_countof(applyForcesDescriptorHeaps), applyForcesDescriptorHeaps);
 
-        cmdList->SetComputeRootUnorderedAccessView(1, particleBuffer.getBuffer()->GetGPUVirtualAddress());
+        cmdList->SetComputeRootDescriptorTable(1, applyForcesPipeline.getDescriptorHeap()->GetGPUHandleAt(0));
         cmdList->SetComputeRoot32BitConstants(0, 5, &simParams, 0);
         cmdList->Dispatch(instanceCount, 1, 1);
         context.executeCommandList();
-        context.signalAndWaitForFence(fence, fenceValue);*/
+        context.signalAndWaitForFence(fence, fenceValue);
 
 
         
             
+        cmdList = context.initCommandList();
+        cmdList->SetPipelineState(computePipeline.getPSO());
+        cmdList->SetComputeRootSignature(computePipeline.getRootSignature());
 
-            cmdList->SetPipelineState(computePipeline.getPSO());
-            cmdList->SetComputeRootSignature(computePipeline.getRootSignature());
+        ID3D12DescriptorHeap* constraintsDescriptorHeaps[] = { computePipeline.getDescriptorHeap()->Get() };
+        cmdList->SetDescriptorHeaps(_countof(constraintsDescriptorHeaps), constraintsDescriptorHeaps);
 
-            ID3D12DescriptorHeap* constraintsDescriptorHeaps[] = { computePipeline.getDescriptorHeap()->Get() };
-            cmdList->SetDescriptorHeaps(_countof(constraintsDescriptorHeaps), constraintsDescriptorHeaps);
+        cmdList->SetComputeRootDescriptorTable(0, computePipeline.getDescriptorHeap()->GetGPUHandleAt(0)); // Particles UAV
+        cmdList->SetComputeRootDescriptorTable(1, computePipeline.getDescriptorHeap()->GetGPUHandleAt(1)); // Constraints SRV
+        cmdList->SetComputeRoot32BitConstants(2, 1, &constraintCount, 0); // Pass constraint count
 
-            cmdList->SetComputeRootDescriptorTable(0, computePipeline.getDescriptorHeap()->GetGPUHandleAt(0)); // Particles UAV
-            cmdList->SetComputeRootDescriptorTable(1, computePipeline.getDescriptorHeap()->GetGPUHandleAt(1)); // Constraints SRV
-            cmdList->SetComputeRoot32BitConstants(2, 1, &constraintCount, 0); // Pass constraint count
-
-            cmdList->Dispatch(instanceCount, 1, 1);
-            context.executeCommandList();
-            context.signalAndWaitForFence(fence, fenceValue);
+        cmdList->Dispatch(instanceCount, 1, 1);
+        context.executeCommandList();
+        context.signalAndWaitForFence(fence, fenceValue);
         
 
 
