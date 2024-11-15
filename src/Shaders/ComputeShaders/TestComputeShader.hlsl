@@ -45,8 +45,8 @@ void main(uint3 DTid : SV_DispatchThreadID) {
     float2 correction = normalize(delta) * (currentLength - dc.restLength) * 0.5f;
 
     // Apply correction
-    pa.position.xy += correction;
-    pb.position.xy -= correction;
+    pa.position += float3(correction.xy, 0);
+    pb.position -= float3(correction.xy, 0);
 
     // Write back updated particles
     particles[idxA] = pa;

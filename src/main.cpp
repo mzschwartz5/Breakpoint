@@ -66,7 +66,7 @@ int main() {
     std::vector<DistanceConstraint> constraints(1);
     constraints[0].particleA = 0;
     constraints[0].particleB = 1;
-    constraints[0].restLength = 2.0f;
+    constraints[0].restLength = 1.5f;
   
 
 
@@ -95,6 +95,8 @@ int main() {
     constraintBuffer.passSRVDataToGPU(context, computePipeline.getDescriptorHeap()->GetCPUHandleAt(1), cmdList);
 
     particleBuffer.passUAVDataToGPU(context, applyForcesPipeline.getDescriptorHeap()->GetCPUHandleAt(0), cmdList);
+
+    particleBuffer.passUAVDataToGPU(context, velocityUpdatePipeline.getDescriptorHeap()->GetCPUHandleAt(0), cmdList);
 
     // Create circle geometry
     auto circleData = generateCircle(0.05f, 32);
@@ -225,24 +227,24 @@ int main() {
         cmdList->SetComputeRootDescriptorTable(1, computePipeline.getDescriptorHeap()->GetGPUHandleAt(1)); // Constraints SRV
         cmdList->SetComputeRoot32BitConstants(2, 1, &constraintCount, 0); // Pass constraint count
 
-        cmdList->Dispatch(instanceCount, 1, 1);
+        cmdList->Dispatch(constraintCount, 1, 1);
         context.executeCommandList();
         context.signalAndWaitForFence(fence, fenceValue);
         
 
 
-       /* cmdList = context.initCommandList();
+        cmdList = context.initCommandList();
         cmdList->SetPipelineState(velocityUpdatePipeline.getPSO());
         cmdList->SetComputeRootSignature(velocityUpdatePipeline.getRootSignature());
 
         ID3D12DescriptorHeap* updateVelocitiesDescriptorHeaps[] = { velocityUpdatePipeline.getDescriptorHeap()->Get() };
         cmdList->SetDescriptorHeaps(_countof(updateVelocitiesDescriptorHeaps), updateVelocitiesDescriptorHeaps);
 
-        cmdList->SetComputeRootUnorderedAccessView(1, particleBuffer.getBuffer()->GetGPUVirtualAddress());
-        cmdList->SetComputeRoot32BitConstants(0, 2, &simParams, 0);
+        cmdList->SetComputeRootDescriptorTable(1, velocityUpdatePipeline.getDescriptorHeap()->GetGPUHandleAt(0));
+        cmdList->SetComputeRoot32BitConstants(0, 5, &simParams, 0);
         cmdList->Dispatch(instanceCount, 1, 1);
         context.executeCommandList();
-        context.signalAndWaitForFence(fence, fenceValue);*/
+        context.signalAndWaitForFence(fence, fenceValue);
 
       
 

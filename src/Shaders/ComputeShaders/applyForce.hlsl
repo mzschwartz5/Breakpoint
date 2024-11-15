@@ -34,19 +34,23 @@ void main(uint3 DTid : SV_DispatchThreadID) {
     p.prevPosition = p.position;
 
     // Update velocity with gravity
-    p.velocity += float3(0, - 9.81f * 0.001f * 0.33, 0);
+    p.velocity += float3(0, - 9.81f * 0.1f * 0.33, 0);
 
     // Predict new position
-    p.position.xy += p.velocity * 0.33;
+    p.position += float3(p.velocity.xy * 0.33, 0);
 
     if (abs(p.position.y) > 0.365f) {
         p.position.y = sign(p.position.y) * 0.365f;
-        
+        p.velocity.y = -p.velocity.y;
+       
+        p.velocity.x += Random(p.position) - 0.5;
     }
 
     if (abs(p.position.x) > 0.72f) {
         p.position.x = sign(p.position.x) * 0.72f;
-        
+        p.velocity.x = -p.velocity.x * 0.9;
+        // Randomize the y-velocity a bit
+        p.velocity.y += Random(p.position) - 0.5;
     }
 
     particles[particleIndex] = p;

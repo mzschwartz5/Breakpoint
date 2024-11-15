@@ -25,7 +25,7 @@ void main(uint3 DTid : SV_DispatchThreadID) {
     Particle p = particles[particleIndex];
 
     // Update velocity based on position change
-    p.velocity = (p.position - p.previousPosition) / deltaTime;
+    p.velocity = (p.position - p.previousPosition) / 0.33f;
 
     particles[particleIndex] = p;
 }
