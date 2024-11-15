@@ -82,6 +82,21 @@
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Mesh</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.5</ShaderModel>
     </FxCompile>
+    <FxCompile Include="Shaders\pbmpmShaders\g2p2gShaders\g2p2gComputeShader.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.0</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.6</ShaderModel>
+      <DisableOptimizations Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</DisableOptimizations>
+    </FxCompile>
+    <FxCompile Include="Shaders\pbmpmShaders\g2p2gShaders\g2p2gRootSignature.hlsl">
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ROOTSIG</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">RootSignature</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">rootsig_1.1</ShaderModel>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">RootSignature</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">rootsig_1.1</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ROOTSIG</EntryPointName>
+    </FxCompile>
     <FxCompile Include="Shaders\pbmpmShaders\PBMPMVertexRootSignature.hlsl">
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ROOTSIG</EntryPointName>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">RootSignature</ShaderType>
@@ -120,7 +135,7 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.0</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.0</ShaderModel>
     </FxCompile>
-	<FxCompile Include="Shaders\VertexShader.hlsl">
+    <FxCompile Include="Shaders\VertexShader.hlsl">
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Vertex</ShaderType>
       <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Vertex</ShaderType>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.0</ShaderModel>

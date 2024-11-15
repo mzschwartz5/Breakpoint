@@ -11,6 +11,7 @@ const unsigned int ParticleDispatchSize = 64;
 const unsigned int GridDispatchSize = 8;
 const unsigned int BukkitSize = 6;
 const unsigned int BukkitHaloSize = 1;
+const unsigned int GuardianSize = 1;
 
 const unsigned int maxParticles = 1000000;
 const unsigned int maxTimestampCount = 2048;
@@ -20,7 +21,7 @@ const unsigned int maxTimestampCount = 2048;
 
 
 struct PBMPMConstants {
-	XMFLOAT2 gridSize;
+	XMUINT2 gridSize;
 	float deltaTime;
 	float gravityStrength;
 
@@ -61,8 +62,8 @@ struct ShapeFactory {
 struct PBMPMParticle {
 	XMFLOAT2 position;
 	XMFLOAT2 displacement;
-	XMFLOAT3X3 deformationGradient;
-	XMFLOAT3X3 deformationDisplacement;
+	XMFLOAT4 deformationGradient;
+	XMFLOAT4 deformationDisplacement;
 
 	float liquidDensity;
 	float mass;
@@ -82,9 +83,9 @@ struct BukkitSystem {
 	StructuredBuffer countBuffer2;
 	StructuredBuffer particleData;
 	StructuredBuffer threadData;
-	std::array<int, 4> dispatch{ 0, 1, 1, 0 };
-	std::array<int, 4> blankDispatch{ 0, 1, 1, 0 };
-	std::array<int, 4> particleAllocator{ 0, 0, 0, 0 };
+	StructuredBuffer dispatch;
+	StructuredBuffer blankDispatch;
+	StructuredBuffer particleAllocator;
 	StructuredBuffer indexStart;
 };
 
@@ -125,9 +126,9 @@ private:
 	// Scene Buffers
 	StructuredBuffer particleBuffer;
 	StructuredBuffer particleFreeIndicesBuffer;
-	unsigned int particleCount = 0;
-	int particleCountStaging = 0;
-	int particleFreeCountStaging = 0;
-	int particleRenderDispatch[4] = { 6, 0, 0, 0 };
-	int particleSimDispatch[4] = { 0, 1, 1, 0 };
+	StructuredBuffer particleCount;
+	StructuredBuffer particleCountStaging;
+	StructuredBuffer particleFreeCountStaging;
+	StructuredBuffer particleRenderDispatch;
+	StructuredBuffer particleSimDispatch;
 };

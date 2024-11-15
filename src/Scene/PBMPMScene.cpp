@@ -12,11 +12,17 @@ void PBMPMScene::constructScene() {
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	float radius = 0.01;
+	float radius = 0.001;
+	float spacing = radius * 2.5;
+
+	int particlesPerRow = (int)sqrt(instanceCount);
+	int particlesPerCol = (instanceCount - 1) / particlesPerRow + 1;
 
 	// Create position and velocity data
 	for (int i = 0; i < instanceCount; ++i) {
-		positions.push_back({ -0.76f + radius * 2.5f * i, 0.f, 0.f });
+		positions.push_back({ (i % particlesPerRow) * spacing - (particlesPerRow - 1) * spacing / 2.f,
+							  (i / particlesPerRow) * spacing - (particlesPerCol - 1) * spacing / 2.f, 
+							  0.f});
 	}
 
 	for (int i = 0; i < instanceCount; ++i) {
