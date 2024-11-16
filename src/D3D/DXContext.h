@@ -4,9 +4,8 @@
 #include <stdexcept>
 #include <array>
 
-#define NUM_CMDLISTS 7
+#define NUM_CMDLISTS 6
 enum CommandListID {
-    GENERAL_ID,
     OBJECT_RENDER_ID,
     PBMPM_RENDER_ID,
     PBMPM_COMPUTE_ID,
