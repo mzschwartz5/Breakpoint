@@ -7,7 +7,7 @@
 
 class Drawable {
 public:
-	Drawable();
+	Drawable() = delete;
 	Drawable(DXContext* context, RenderPipeline* pipeline);
 	Drawable(DXContext* context, MeshPipeline* pipeline);
 
