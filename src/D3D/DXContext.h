@@ -4,11 +4,14 @@
 #include <stdexcept>
 #include <array>
 
-#define NUM_CMDLISTS 4
+#define NUM_CMDLISTS 7
 enum CommandListID {
     PAPA_ID,
     RENDER_ID,
-    PBMPM_COMPUTE_ID,
+    PBMPM_G2P2G_COMPUTE_ID,
+    PBMPM_BUKKITCOUNT_COMPUTE_ID,
+    PBMPM_BUKKITALLOCATE_COMPUTE_ID,
+    PBMPM_BUKKITINSERT_COMPUTE_ID,
     MESH_ID,
 };
 

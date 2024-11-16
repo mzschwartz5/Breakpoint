@@ -6,6 +6,7 @@
 #include "../D3D/IndexBuffer.h"
 #include "../D3D/Pipeline/ComputePipeline.h"
 #include "Geometry.h"
+#include <math.h>
 
 const unsigned int ParticleDispatchSize = 64;
 const unsigned int GridDispatchSize = 8;
@@ -15,10 +16,6 @@ const unsigned int GuardianSize = 1;
 
 const unsigned int maxParticles = 1000000;
 const unsigned int maxTimestampCount = 2048;
-
-
-
-
 
 struct PBMPMConstants {
 	XMUINT2 gridSize;
@@ -89,9 +86,16 @@ struct BukkitSystem {
 	StructuredBuffer indexStart;
 };
 
+struct BukkitThreadData {
+	unsigned int rangeStart;
+	unsigned int rangeCount;
+	unsigned int bukkitX;
+	unsigned int bukkitY;
+};
+
 class PBMPMScene : public Scene {
 public:
-	PBMPMScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* compPipeline, unsigned int instanceCount);
+	PBMPMScene(DXContext* context, RenderPipeline* pipeline, unsigned int instanceCount);
 
 	void constructScene();
 
@@ -102,18 +106,20 @@ public:
 	void releaseResources();
 
 private:
-
-
-
-private:
 	DXContext* context;
 	RenderPipeline* pipeline;
-	ComputePipeline* computePipeline;
+
+	ComputePipeline g2p2gPipeline;
+	ComputePipeline bukkitCountPipeline;
+	ComputePipeline bukkitAllocatePipeline;
+	ComputePipeline bukkitInsertPipeline;
+
+	PBMPMConstants constants;
+	BukkitSystem bukkitSystem;
+
 	XMMATRIX modelMat;
 	std::vector<XMFLOAT3> positions;
-	std::vector<XMFLOAT3> velocities;
 	StructuredBuffer positionBuffer;
-	StructuredBuffer velocityBuffer;
 	D3D12_VERTEX_BUFFER_VIEW vbv;
 	D3D12_INDEX_BUFFER_VIEW ibv;
 	VertexBuffer vertexBuffer;
@@ -129,6 +135,11 @@ private:
 	StructuredBuffer particleCount;
 	StructuredBuffer particleCountStaging;
 	StructuredBuffer particleFreeCountStaging;
-	StructuredBuffer particleRenderDispatch;
 	StructuredBuffer particleSimDispatch;
+
+	std::array<StructuredBuffer, 3> gridBuffers;
+
+	void createBukkitSystem();
+
+	void bukkitizeParticles();
 };
