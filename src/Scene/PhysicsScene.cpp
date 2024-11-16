@@ -1,7 +1,7 @@
 #include "PhysicsScene.h"
 
 PhysicsScene::PhysicsScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* compPipeline, unsigned int instances)
-	: Scene(context, pipeline), context(context), pipeline(pipeline), 
+	: Drawable(context, pipeline), context(context), pipeline(pipeline), 
 	computePipeline(compPipeline), instanceCount(instances),
 	modelMat(XMMatrixIdentity())
 {

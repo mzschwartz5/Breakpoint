@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Scene.h"
+#include "Drawable.h"
 #include "../D3D/StructuredBuffer.h"
 #include "../D3D/VertexBuffer.h"
 #include "../D3D/IndexBuffer.h"
@@ -81,7 +81,7 @@ struct BukkitSystem {
 	StructuredBuffer indexStart;
 };
 
-class PBMPMScene : public Scene {
+class PBMPMScene : public Drawable {
 public:
 	PBMPMScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* compPipeline, unsigned int instanceCount);
 
