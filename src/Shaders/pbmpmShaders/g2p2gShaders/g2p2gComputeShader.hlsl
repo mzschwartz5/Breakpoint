@@ -1,8 +1,4 @@
-﻿#define HLSL_ENABLE_ATOMIC_INTRINSICS
-#define HLSL_ENABLE_16_BIT
-#pragma target cs_6_0
-
-#include "g2p2gRootSignature.hlsl"  // Includes the ROOTSIG definition
+﻿#include "g2p2gRootSignature.hlsl"  // Includes the ROOTSIG definition
 #include "../../pbmpmShaders/PBMPMCommon.hlsl"  // Includes the TileDataSize definition
 
 // Taken from https://github.com/electronicarts/pbmpm
@@ -267,7 +263,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 for (int j = 0; j < 3; j++)
                 {
                     // Weight corresponding to this neighborhood cell
-                    float2 weight = weightInfo.weights[i].x * weightInfo.weights[j].y;
+                    float weight = weightInfo.weights[i].x * weightInfo.weights[j].y;
                     
                     // Grid vertex index
                     int2 neighborCellIndex = int2(weightInfo.cellIndex) + int2(i, j);

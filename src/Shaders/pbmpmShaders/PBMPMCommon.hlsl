@@ -139,3 +139,20 @@ CubicWeightInfo cubicWeightInit(float2 position)
 
     return result;
 }
+
+// Bukkit and Dispatch helpers 
+
+uint bukkitAddressToIndex(uint2 bukkitAddress, uint bukkitCountX)
+{
+    return bukkitAddress.y * bukkitCountX + bukkitAddress.x;
+}
+
+int2 positionToBukkitId(float2 position)
+{
+    return int2(position / float(BukkitSize));
+}
+
+uint divUp(uint threadCount, uint groupSize)
+{
+    return (threadCount + groupSize - 1) / groupSize;
+}

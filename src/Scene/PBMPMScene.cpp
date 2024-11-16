@@ -12,8 +12,8 @@ void PBMPMScene::constructScene() {
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	float radius = 0.001;
-	float spacing = radius * 2.5;
+	float radius = 0.0005;
+	float spacing = radius * 2.1;
 
 	int particlesPerRow = (int)sqrt(instanceCount);
 	int particlesPerCol = (instanceCount - 1) / particlesPerRow + 1;
