@@ -23,6 +23,7 @@
     <ClCompile Include="Debug\DebugLayer.cpp" />
     <ClCompile Include="Scene\ObjectScene.cpp" />
     <ClCompile Include="Scene\PBMPMScene.cpp" />
+    <ClCompile Include="Scene\FluidScene.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Scene\Camera.cpp" />
     <ClCompile Include="Scene\Geometry.cpp" />
@@ -46,6 +47,7 @@
     <ClInclude Include="Debug\DebugLayer.h" />
     <ClInclude Include="Scene\ObjectScene.h" />
     <ClInclude Include="Scene\PBMPMScene.h" />
+    <ClInclude Include="Scene\FluidScene.h" />
     <ClInclude Include="Scene\PhysicsScene.h" />
     <ClInclude Include="main.h" />
     <ClInclude Include="Scene\Camera.h" />

@@ -17,34 +17,36 @@ StructuredBuffer<float3> positionsBuffer : register(t0);
 RWStructuredBuffer<Cell> cells : register(u0);
 RWStructuredBuffer<Block> blocks : register(u1);
 
-cbuffer BilevelUniformGridConstants : register(b0) {
+struct BilevelUniformGridConstants {
     uint3 dimensions;
     float3 minBounds;
     float resolution;
     float numParticles;
 };
 
+ConstantBuffer<BilevelUniformGridConstants> cb : register(b0);
+
 uint3 getCellIndex(float3 particlePosition) {
-    int cellIdxX = floor(particlePosition.x - minBounds.x) / resolution;
-    int cellIdxY = floor(particlePosition.y - minBounds.y) / resolution;
-    int cellIdxZ = floor(particlePosition.z - minBounds.z) / resolution;
+    int cellIdxX = floor(particlePosition.x - cb.minBounds.x) / cb.resolution;
+    int cellIdxY = floor(particlePosition.y - cb.minBounds.y) / cb.resolution;
+    int cellIdxZ = floor(particlePosition.z - cb.minBounds.z) / cb.resolution;
 
     return uint3(cellIdxX, cellIdxY, cellIdxZ);
 }
 
 [numthreads(BILEVEL_UNIFORM_GRID_THREADS_X, 1, 1)]
 void main(uint3 globalThreadId : SV_DispatchThreadID) {
-    if (globalThreadId.x >= numParticles) {
+    if (globalThreadId.x >= cb.numParticles) {
         return;
     }
 
     float3 position = positionsBuffer[globalThreadId.x];
     uint3 cellIndices = getCellIndex(position);
-    int cellIndex1D = cellIndices.x + cellIndices.y * dimensions.x + cellIndices.z * dimensions.x * dimensions.y;
+    int cellIndex1D = cellIndices.x + cellIndices.y * cb.dimensions.x + cellIndices.z * cb.dimensions.x * cb.dimensions.y;
 
     uint3 blockIndices = cellIndices / CELLS_PER_BLOCK_EDGE;
-    float3 blockCenterPos = float3(blockIndices.x, blockIndices.y, blockIndices.z) * resolution * CELLS_PER_BLOCK_EDGE 
-                            + (resolution * CELLS_PER_BLOCK_EDGE / 2.0f);
+    float3 blockCenterPos = float3(blockIndices.x, blockIndices.y, blockIndices.z) * cb.resolution * CELLS_PER_BLOCK_EDGE 
+                            + (cb.resolution * CELLS_PER_BLOCK_EDGE / 2.0f);
 
     // (±1 or 0, ±1 or 0, ±1 or 0)
     int3 octant = int3(sign(position - blockCenterPos));
@@ -69,15 +71,15 @@ void main(uint3 globalThreadId : SV_DispatchThreadID) {
                 for (uint k = 0; k <= 1; ++k) {
                     uint3 neighborBlockIndices = blockIndices + uint3(i, j, k) * octant;
 
-                    if (neighborBlockIndices.x >= dimensions.x / CELLS_PER_BLOCK_EDGE ||
-                        neighborBlockIndices.y >= dimensions.y / CELLS_PER_BLOCK_EDGE ||
-                        neighborBlockIndices.z >= dimensions.z / CELLS_PER_BLOCK_EDGE) {
+                    if (neighborBlockIndices.x >= cb.dimensions.x / CELLS_PER_BLOCK_EDGE ||
+                        neighborBlockIndices.y >= cb.dimensions.y / CELLS_PER_BLOCK_EDGE ||
+                        neighborBlockIndices.z >= cb.dimensions.z / CELLS_PER_BLOCK_EDGE) {
                         continue;
                     }
 
                     uint neighborBlockIndex1D = neighborBlockIndices.x 
-                                            + neighborBlockIndices.y * dimensions.x / CELLS_PER_BLOCK_EDGE
-                                            + neighborBlockIndices.z * dimensions.x / CELLS_PER_BLOCK_EDGE * dimensions.y / CELLS_PER_BLOCK_EDGE;
+                                            + neighborBlockIndices.y * cb.dimensions.x / CELLS_PER_BLOCK_EDGE
+                                            + neighborBlockIndices.z * cb.dimensions.x / CELLS_PER_BLOCK_EDGE * cb.dimensions.y / CELLS_PER_BLOCK_EDGE;
                     InterlockedAdd(blocks[neighborBlockIndex1D].nonEmptyCellCount, 1);
                 }
             }

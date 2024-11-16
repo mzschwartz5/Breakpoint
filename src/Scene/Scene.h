@@ -3,6 +3,7 @@
 #include "ObjectScene.h"
 #include "PBMPMScene.h"
 #include "PhysicsScene.h"
+#include "FluidScene.h"
 #include "../D3D/Pipeline/RenderPipeline.h"
 #include "../D3D/Pipeline/ComputePipeline.h"
 #include "../D3D/Pipeline/MeshPipeline.h"
@@ -10,7 +11,8 @@
 enum RenderScene {
 	Object,
 	PBMPM,
-	Physics
+	Physics,
+	Fluid
 };
 
 class Scene {
@@ -27,9 +29,6 @@ public:
 	void releaseResources();
 
 private:
-	RenderPipeline* currentRP;
-	ComputePipeline* currentCP;
-
 	Camera* camera;
 
 	RenderPipeline objectRP;
@@ -45,5 +44,12 @@ private:
 	unsigned int physicsIC;
 	PhysicsScene physicsScene;
 
+	RenderPipeline fluidRP;
+	ComputePipeline bilevelUniformGridCP;
+	FluidScene fluidScene;
+
 	RenderScene scene;
+
+	RenderPipeline* currentRP;
+	ComputePipeline* currentCP;
 };
