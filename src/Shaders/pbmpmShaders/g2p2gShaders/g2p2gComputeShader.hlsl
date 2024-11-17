@@ -9,23 +9,23 @@ ConstantBuffer<PBMPMConstants> g_simConstants : register(b0);
 // Structured Buffer for particles (read-write UAV)
 RWStructuredBuffer<Particle> g_particles : register(u0);
 
-// Structured Buffer for grid source data (read-only SRV)
-StructuredBuffer<int> g_gridSrc : register(t0);
+// Structured Buffer for free indices with atomic access (read-write UAV)
+RWStructuredBuffer<int> g_freeIndices : register(u1);
 
-// Structured Buffer for grid destination data (read-write UAV with atomic support)
-RWStructuredBuffer<int> g_gridDst : register(u1);
-
-// Structured Buffer for grid cells to be cleared (read-write UAV)
-RWStructuredBuffer<int> g_gridToBeCleared : register(u2);
+// Structured Buffer for bukkit particle indices (read-only SRV)
+StructuredBuffer<uint> g_bukkitParticleData : register(t0);
 
 // Structured Buffer for bukkit thread data (read-only SRV)
 StructuredBuffer<BukkitThreadData> g_bukkitThreadData : register(t1);
 
-// Structured Buffer for bukkit particle indices (read-only SRV)
-StructuredBuffer<uint> g_bukkitParticleData : register(t2);
+// Structured Buffer for grid source data (read-only SRV)
+StructuredBuffer<int> g_gridSrc : register(t2);
 
-// Structured Buffer for free indices with atomic access (read-write UAV)
-RWStructuredBuffer<int> g_freeIndices : register(u3);
+// Structured Buffer for grid destination data (read-write UAV with atomic support)
+RWStructuredBuffer<int> g_gridDst : register(u8);
+
+// Structured Buffer for grid cells to be cleared (read-write UAV)
+RWStructuredBuffer<int> g_gridToBeCleared : register(u9);
 
 groupshared int s_tileData[TileDataSize];
 groupshared int s_tileDataDst[TileDataSize];

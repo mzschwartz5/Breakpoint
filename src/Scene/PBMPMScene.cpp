@@ -1,7 +1,8 @@
 #include "PBMPMScene.h"
 
-PBMPMScene::PBMPMScene(DXContext* context, RenderPipeline* pipeline, unsigned int instances)
-	: Scene(context, pipeline), context(context), pipeline(pipeline), instanceCount(instances),
+PBMPMScene::PBMPMScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* g2p2g,
+	ComputePipeline* bukkitCount, ComputePipeline* bukkitAllocate, ComputePipeline* bukkitInsert, unsigned int instances)
+	: Scene(context, pipeline), context(context), renderPipeline(pipeline), instanceCount(instances),
 	modelMat(XMMatrixIdentity()),
 	g2p2gPipeline("g2p2gRootSignature.cso", "g2p2gComputeShader.cso", *context, CommandListID::PBMPM_G2P2G_COMPUTE_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
@@ -21,32 +22,32 @@ void PBMPMScene::createBukkitSystem() {
 
 	std::vector<int> count;
 	count.resize(bukkitCountX * bukkitCountY);
-	bukkitSystem.countBuffer = StructuredBuffer(count.data(), count.size(), sizeof(int), bukkitCountPipeline.getDescriptorHeap());
+	bukkitSystem.countBuffer = StructuredBuffer(count.data(), count.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
 
 	std::vector<int> count2;
 	count2.resize(bukkitCountX * bukkitCountY);
-	bukkitSystem.countBuffer2 = StructuredBuffer(count2.data(), count2.size(), sizeof(int), bukkitInsertPipeline.getDescriptorHeap());
+	bukkitSystem.countBuffer2 = StructuredBuffer(count2.data(), count2.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
 
 	std::vector<int> particleData;
-	particleData.resize(bukkitCountX * bukkitCountY);
-	bukkitSystem.countBuffer2 = StructuredBuffer(particleData.data(), particleData.size(), sizeof(int), bukkitInsertPipeline.getDescriptorHeap());
+	particleData.resize(maxParticles);
+	bukkitSystem.particleData = StructuredBuffer(particleData.data(), particleData.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
 
-	std::vector<int> dispatch = { 0, 1, 1, 0 };
-	bukkitSystem.dispatch = StructuredBuffer(dispatch.data(), dispatch.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
-
-	std::vector<int> blankDispatch = { 0, 1, 1, 0 };
-	bukkitSystem.blankDispatch = StructuredBuffer(blankDispatch.data(), blankDispatch.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
-
-	std::vector<int> allocator = { 0, 0, 0, 0 };
-	bukkitSystem.particleAllocator = StructuredBuffer(allocator.data(), allocator.size(), sizeof(int), bukkitAllocatePipeline.getDescriptorHeap());
+	std::vector<BukkitThreadData> threadData;
+	threadData.resize(40 * bukkitCountX * bukkitCountY);
+	bukkitSystem.threadData = StructuredBuffer(threadData.data(), threadData.size(), sizeof(BukkitThreadData), g2p2gPipeline.getDescriptorHeap());
 
 	std::vector<int> indexStart;
 	indexStart.resize(bukkitCountX * bukkitCountY);
-	bukkitSystem.indexStart = StructuredBuffer(indexStart.data(), indexStart.size(), sizeof(int), bukkitAllocatePipeline.getDescriptorHeap());
+	bukkitSystem.indexStart = StructuredBuffer(indexStart.data(), indexStart.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
 
-	std::vector<BukkitThreadData> threadData;
-	threadData.resize(10 * bukkitCountX * bukkitCountY);
-	bukkitSystem.indexStart = StructuredBuffer(threadData.data(), threadData.size(), sizeof(BukkitThreadData), bukkitAllocatePipeline.getDescriptorHeap());
+	XMUINT4 allocator = { 0, 0, 0, 0 };
+	bukkitSystem.particleAllocator = StructuredBuffer(&allocator, 1, sizeof(XMUINT4), g2p2gPipeline.getDescriptorHeap());
+
+	XMUINT4 dispatch = { 0, 1, 1, 0 };
+	bukkitSystem.dispatch = StructuredBuffer(&dispatch, 1, sizeof(XMUINT4), g2p2gPipeline.getDescriptorHeap());
+
+	XMUINT4 blankDispatch = { 0, 1, 1, 0 };
+	bukkitSystem.blankDispatch = StructuredBuffer(&blankDispatch, 1, sizeof(XMUINT4), g2p2gPipeline.getDescriptorHeap());
 
 	bukkitSystem.countX = bukkitCountX;
 	bukkitSystem.countY = bukkitCountY;
@@ -54,17 +55,70 @@ void PBMPMScene::createBukkitSystem() {
 	bukkitSystem.countBuffer.passUAVDataToGPU(*context, bukkitCountPipeline.getCommandList(), bukkitCountPipeline.getCommandListID());
 	bukkitSystem.countBuffer2.passUAVDataToGPU(*context, bukkitInsertPipeline.getCommandList(), bukkitInsertPipeline.getCommandListID());
 	bukkitSystem.particleData.passUAVDataToGPU(*context, bukkitInsertPipeline.getCommandList(), bukkitInsertPipeline.getCommandListID());
+	bukkitSystem.threadData.passUAVDataToGPU(*context, bukkitAllocatePipeline.getCommandList(), bukkitAllocatePipeline.getCommandListID());
+	bukkitSystem.indexStart.passUAVDataToGPU(*context, bukkitAllocatePipeline.getCommandList(), bukkitAllocatePipeline.getCommandListID());
+	bukkitSystem.particleAllocator.passUAVDataToGPU(*context, bukkitAllocatePipeline.getCommandList(), bukkitAllocatePipeline.getCommandListID());
 	bukkitSystem.dispatch.passCBVDataToGPU(*context);
 	bukkitSystem.blankDispatch.passCBVDataToGPU(*context);
-	bukkitSystem.particleAllocator.passCBVDataToGPU(*context);
-	bukkitSystem.indexStart.passUAVDataToGPU(*context, bukkitAllocatePipeline.getCommandList(), bukkitAllocatePipeline.getCommandListID());
-	bukkitSystem.threadData.passUAVDataToGPU(*context, bukkitAllocatePipeline.getCommandList(), bukkitAllocatePipeline.getCommandListID());
+}
+
+void PBMPMScene::updateSimUniforms(unsigned int iteration) {
+	// DO MOUSE UPDATING HERE
+	constants.simFrame = substepIndex;
+	constants.bukkitCount = bukkitSystem.count;
+	constants.bukkitCountX = bukkitSystem.countX;
+	constants.bukkitCountY = bukkitSystem.countY;
+	constants.iteration = iteration;
+}
+
+void PBMPMScene::resetBuffers(bool resetGrids) {
+	// Using all bukkitPipelines to try to multithread the process
+
+	//clear buffers (Make sure each one is a UAV)
+	UINT clearValues[4] = { 0, 0, 0, 0 };
+	bukkitCountPipeline.getCommandList()->ClearUnorderedAccessViewUint(bukkitSystem.countBuffer.getGPUDescriptorHandle(),
+		bukkitSystem.countBuffer.getCPUDescriptorHandle(), bukkitSystem.countBuffer.getBuffer(), clearValues, 0, nullptr);
+	bukkitCountPipeline.getCommandList()->ClearUnorderedAccessViewUint(bukkitSystem.countBuffer2.getGPUDescriptorHandle(),
+		bukkitSystem.countBuffer2.getCPUDescriptorHandle(), bukkitSystem.countBuffer2.getBuffer(), clearValues, 0, nullptr);
+	bukkitAllocatePipeline.getCommandList()->ClearUnorderedAccessViewUint(bukkitSystem.particleData.getGPUDescriptorHandle(),
+		bukkitSystem.particleData.getCPUDescriptorHandle(), bukkitSystem.particleData.getBuffer(), clearValues, 0, nullptr);
+	bukkitAllocatePipeline.getCommandList()->ClearUnorderedAccessViewUint(bukkitSystem.threadData.getGPUDescriptorHandle(),
+		bukkitSystem.threadData.getCPUDescriptorHandle(), bukkitSystem.threadData.getBuffer(), clearValues, 0, nullptr);
+	bukkitInsertPipeline.getCommandList()->ClearUnorderedAccessViewUint(bukkitSystem.particleAllocator.getGPUDescriptorHandle(),
+		bukkitSystem.particleAllocator.getCPUDescriptorHandle(), bukkitSystem.particleAllocator.getBuffer(), clearValues, 0, nullptr);
+
+	// Copy blank dispatch to dispatch (reset dispatch)
+	bukkitInsertPipeline.getCommandList()->CopyBufferRegion(bukkitSystem.dispatch.getBuffer(), 0, bukkitSystem.blankDispatch.getBuffer(), 0, sizeof(XMUINT4));
+
+
+	// Reset grid buffers
+	if (resetGrids) {
+		bukkitCountPipeline.getCommandList()->ClearUnorderedAccessViewUint(gridBuffers[0].getGPUDescriptorHandle(),
+			gridBuffers[0].getCPUDescriptorHandle(), gridBuffers[0].getBuffer(), clearValues, 0, nullptr);
+		bukkitAllocatePipeline.getCommandList()->ClearUnorderedAccessViewUint(gridBuffers[1].getGPUDescriptorHandle(),
+			gridBuffers[1].getCPUDescriptorHandle(), gridBuffers[1].getBuffer(), clearValues, 0, nullptr);
+		bukkitInsertPipeline.getCommandList()->ClearUnorderedAccessViewUint(gridBuffers[2].getGPUDescriptorHandle(),
+			gridBuffers[2].getCPUDescriptorHandle(), gridBuffers[2].getBuffer(), clearValues, 0, nullptr);
+	}
+
+	// execute
+	context->executeCommandList(bukkitCountPipeline.getCommandListID());
+	context->executeCommandList(bukkitAllocatePipeline.getCommandListID());
+	context->executeCommandList(bukkitInsertPipeline.getCommandListID());
+
+	// Use a fence to synchronize the completion of the command lists
+	context->signalAndWaitForFence(fence, fenceValue);
+
+	// Reset the command lists
+	context->resetCommandList(bukkitCountPipeline.getCommandListID());
+	context->resetCommandList(bukkitAllocatePipeline.getCommandListID());
+	context->resetCommandList(bukkitInsertPipeline.getCommandListID());
 }
 
 void PBMPMScene::bukkitizeParticles() {
-	//clear buffers
-
-	//copy blank dispatch to dispatch (reset dispatch)
+	
+	// Reset Buffers
+	resetBuffers(false);
 
 	bukkitCountPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 18, &constants, 0);
 	bukkitCountPipeline.getCommandList()->SetComputeRootConstantBufferView(1, particleCount.getGPUVirtualAddress());
@@ -98,6 +152,11 @@ void PBMPMScene::bukkitizeParticles() {
 void PBMPMScene::constructScene() {
 	auto computeId = g2p2gPipeline.getCommandListID();
 
+	// Create Constant Data
+	constants = { {10, 10}, 0.0005, 9.81, 1.5, 0.05,
+		(unsigned int)std::ceil(std::pow(10, 7)),
+		1, 2, 30, 0, 0,  0, 0, 0, 0, 5, 0 };
+
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
@@ -107,44 +166,35 @@ void PBMPMScene::constructScene() {
 	int particlesPerRow = (int)sqrt(instanceCount);
 	int particlesPerCol = (instanceCount - 1) / particlesPerRow + 1;
 
-	// Create position and velocity data
-	for (int i = 0; i < instanceCount; ++i) {
-		positions.push_back({ (i % particlesPerRow) * spacing - (particlesPerRow - 1) * spacing / 2.f,
-							  (i / particlesPerRow) * spacing - (particlesPerCol - 1) * spacing / 2.f, 
-							  0.f});
-	}
-
-	// Create Structured Buffers
-	positionBuffer = StructuredBuffer(positions.data(), instanceCount, sizeof(XMFLOAT3), g2p2gPipeline.getDescriptorHeap());
-
 	std::vector<PBMPMParticle> particles;
 	particles.resize(maxParticles);
+	// Uniform for each particle for now
+	const float density = 1.f;
+	const float volume = 1.f / float(constants.particlesPerCellAxis * constants.particlesPerCellAxis);
+	// Create initial particle data
+	for (int i = 0; i < instanceCount; ++i) {
+		XMFLOAT2 position ={ (i % particlesPerRow) * spacing - (particlesPerRow - 1) * spacing / 2.f,
+							  (i / particlesPerRow) * spacing - (particlesPerCol - 1) * spacing / 2.f, };
+		particles[i] = { position, {0.f, 0.f}, {1.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f, 0.f}, 
+						1.0, density*volume, 0, volume, 0.0, 1.0, 1.0};
+	}
+
 	particleBuffer = StructuredBuffer(particles.data(), particles.size(), sizeof(PBMPMParticle), g2p2gPipeline.getDescriptorHeap());
 	
 	std::vector<int> freeIndices;
 	freeIndices.resize(1 + maxParticles); //maybe four maybe one idk
 	particleFreeIndicesBuffer = StructuredBuffer(freeIndices.data(), freeIndices.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
 
-	std::vector<int> count = { 0, 0, 0, 0 };
-	particleCount = StructuredBuffer(count.data(), count.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
-
-	//we prob dont need this
-	std::vector<int> countStaging = { 0, 0, 0, 0 };
-	particleCountStaging = StructuredBuffer(countStaging.data(), countStaging.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
+	XMUINT4 count = { 0, 0, 0, 0 };
+	particleCount = StructuredBuffer(&count, 1, sizeof(XMUINT4), g2p2gPipeline.getDescriptorHeap());
 	
-	std::vector<int> simDispatch = { 0, 1, 1, 0 };
-	particleSimDispatch = StructuredBuffer(simDispatch.data(), simDispatch.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
-
-	//we prob dont need this
-	std::vector<int> freeCountStaging = { 0, 0, 0, 0 };
-	particleFreeCountStaging = StructuredBuffer(freeCountStaging.data(), freeCountStaging.size(), sizeof(int), g2p2gPipeline.getDescriptorHeap());
+	XMUINT4 simDispatch = { 0, 1, 1, 0 };
+	particleSimDispatch = StructuredBuffer(&simDispatch, 1, sizeof(XMUINT4), g2p2gPipeline.getDescriptorHeap());
 
 	// Pass Structured Buffers to Compute Pipeline
-	positionBuffer.passUAVDataToGPU(*context, g2p2gPipeline.getCommandList(), computeId);
 
 	particleBuffer.passUAVDataToGPU(*context, g2p2gPipeline.getCommandList(), computeId);
 	particleFreeIndicesBuffer.passUAVDataToGPU(*context, g2p2gPipeline.getCommandList(), computeId);
-
 	particleCount.passCBVDataToGPU(*context);
 	particleSimDispatch.passCBVDataToGPU(*context);
 
@@ -203,9 +253,7 @@ void PBMPMScene::compute() {
 
 	int bufferIdx = 0;
 	
-	//update bukkit system
-
-	//update grid buffers
+	resetBuffers(true);
 
 	int substepCount = 20;
 	for (int substepIdx = 0; substepIdx < substepCount; substepIdx++) {
@@ -241,7 +289,6 @@ void PBMPMScene::compute() {
 	cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
 
 	//// Set compute root constants
-	constants = { {10, 10}, 0.0005, 9.81, 1.5, 0.05, 5, 1, 90, 0 };
 
 	cmdList->SetComputeRoot32BitConstants(0, 9, &constants, 0);
 
@@ -324,9 +371,8 @@ void PBMPMScene::draw(Camera* cam) {;
 
 void PBMPMScene::releaseResources() {
 	positionBuffer.releaseResources();
-	velocityBuffer.releaseResources();
 	vertexBuffer.releaseResources();
 	indexBuffer.releaseResources();
-	g2p2gPipeline->releaseResources();
+	g2p2gPipeline.releaseResources();
 	pipeline->releaseResources();
 }

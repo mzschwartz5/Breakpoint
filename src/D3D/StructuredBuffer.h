@@ -25,6 +25,8 @@ public:
 
 	ComPointer<ID3D12Resource1>& getBuffer();
 
+	CD3DX12_CPU_DESCRIPTOR_HANDLE getCPUDescriptorHandle();
+
 	CD3DX12_GPU_DESCRIPTOR_HANDLE getGPUDescriptorHandle();
 
 	D3D12_GPU_VIRTUAL_ADDRESS getGPUVirtualAddress();

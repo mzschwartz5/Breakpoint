@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Scene.h"
+#include "../D3D/DXContext.h"
 #include "../D3D/StructuredBuffer.h"
 #include "../D3D/VertexBuffer.h"
 #include "../D3D/IndexBuffer.h"
@@ -95,7 +96,9 @@ struct BukkitThreadData {
 
 class PBMPMScene : public Scene {
 public:
-	PBMPMScene(DXContext* context, RenderPipeline* pipeline, unsigned int instanceCount);
+	PBMPMScene(DXContext* context, RenderPipeline* renderPipeline, ComputePipeline* g2p2gPipeline,
+		ComputePipeline* bukkitCountPipeline, ComputePipeline* bukkitAllocatePipeline,
+		ComputePipeline* bukkitInsertPipeline, unsigned int instanceCount);
 
 	void constructScene();
 
@@ -107,7 +110,7 @@ public:
 
 private:
 	DXContext* context;
-	RenderPipeline* pipeline;
+	RenderPipeline* renderPipeline;
 
 	ComputePipeline g2p2gPipeline;
 	ComputePipeline bukkitCountPipeline;
@@ -118,8 +121,6 @@ private:
 	BukkitSystem bukkitSystem;
 
 	XMMATRIX modelMat;
-	std::vector<XMFLOAT3> positions;
-	StructuredBuffer positionBuffer;
 	D3D12_VERTEX_BUFFER_VIEW vbv;
 	D3D12_INDEX_BUFFER_VIEW ibv;
 	VertexBuffer vertexBuffer;
@@ -129,17 +130,21 @@ private:
 	ComPointer<ID3D12Fence> fence;
 	unsigned int indexCount = 0;
 
+	unsigned int substepIndex = 0;
+
 	// Scene Buffers
 	StructuredBuffer particleBuffer;
 	StructuredBuffer particleFreeIndicesBuffer;
 	StructuredBuffer particleCount;
-	StructuredBuffer particleCountStaging;
-	StructuredBuffer particleFreeCountStaging;
 	StructuredBuffer particleSimDispatch;
 
 	std::array<StructuredBuffer, 3> gridBuffers;
 
 	void createBukkitSystem();
+
+	void updateSimUniforms(unsigned int iteration);
+
+	void resetBuffers(bool resetGrids = false);
 
 	void bukkitizeParticles();
 };

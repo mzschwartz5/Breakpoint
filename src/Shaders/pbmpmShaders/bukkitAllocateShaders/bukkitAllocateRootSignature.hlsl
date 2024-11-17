@@ -4,5 +4,5 @@
 "UAV(u0),"                                      /* UAV for g_bukkitIndirectDispatch */ \
 "UAV(u1),"                                      /* UAV for g_bukkitParticleAllocator*/ \
 "DescriptorTable(SRV(t0)),"                      /* SRV for g_bukkitCounts */ \
-"DescriptorTable(UAV(u2, numDescriptors=1))" \    /* UAVs for g_bukkitThreadData, g_bukkitIndexStart */
+"DescriptorTable(UAV(u2, numDescriptors=1)),"    /* UAVs for g_bukkitThreadData, g_bukkitIndexStart */ \
 "DescriptorTable(UAV(u3, numDescriptors=1))"

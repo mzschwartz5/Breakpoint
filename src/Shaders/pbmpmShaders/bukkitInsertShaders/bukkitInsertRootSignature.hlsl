@@ -4,5 +4,5 @@
 "CBV(b1),"     /* Root CBV for g_particleCount */ \
 "DescriptorTable(SRV(t0, numDescriptors=1)),"    /* SRVs for g_particles, g_bukkitIndexStart */ \
 "DescriptorTable(SRV(t1, numDescriptors=1))," \
-"DescriptorTable(UAV(u0, numDescriptors=1))"  \   /* UAVs for g_particleInsertCounters and g_particleData */
+"DescriptorTable(UAV(u0, numDescriptors=1)),"   /* UAVs for g_particleInsertCounters and g_particleData */ \
 "DescriptorTable(UAV(u1, numDescriptors=1))"

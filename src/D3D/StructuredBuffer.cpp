@@ -12,6 +12,11 @@ void StructuredBuffer::findFreeHandle() {
 	gpuHandle = descriptorHeap->GetGPUHandleAt(index);
 }
 
+CD3DX12_CPU_DESCRIPTOR_HANDLE StructuredBuffer::getCPUDescriptorHandle()
+{
+	return cpuHandle;
+}
+
 CD3DX12_GPU_DESCRIPTOR_HANDLE StructuredBuffer::getGPUDescriptorHandle()
 {
 	return gpuHandle;

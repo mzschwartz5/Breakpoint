@@ -67,18 +67,31 @@ int main() {
     // TODO: Make a Scene Class for Mesh Shading?
 #endif
 #if SCENE == 3
-    RenderPipeline basicPipeline("PBMPMVertexShader.cso", "PixelShader.cso", "PBMPMVertexRootSignature.cso", context, CommandListID::RENDER_ID,
+    RenderPipeline renderPipeline("PBMPMVertexShader.cso", "PixelShader.cso", "PBMPMVertexRootSignature.cso", context, CommandListID::RENDER_ID,
 	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
-    // Create compute pipeline
-    ComputePipeline computePipeline("PBMPMComputeRootSignature.cso", "PBMPMComputeShader.cso", context, CommandListID::PBMPM_COMPUTE_ID,
+    // Create compute pipelines
+    ComputePipeline g2p2gPipeline("g2p2gRootSignature.cso", "g2p2gComputeShader.cso", context, CommandListID::PBMPM_G2P2G_COMPUTE_ID,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+    ComputePipeline bukkitCountPipeline("bukkitCountRootSignature.cso", "bukkitCountComputeShader.cso", context,
+        CommandListID::PBMPM_BUKKITCOUNT_COMPUTE_ID, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+	ComputePipeline bukkitAllocatePipeline("bukkitAllocateRootSignature.cso", "bukkitAllocateComputeShader.cso", context,
+		CommandListID::PBMPM_BUKKITALLOCATE_COMPUTE_ID, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+
+	ComputePipeline bukkitInsertPipeline("bukkitInsertRootSignature.cso", "bukkitInsertComputeShader.cso", context, 
+		CommandListID::PBMPM_BUKKITINSERT_COMPUTE_ID, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     // Initialize command lists
     context.resetCommandList(CommandListID::RENDER_ID);
-    context.resetCommandList(CommandListID::PBMPM_COMPUTE_ID);
+    context.resetCommandList(CommandListID::PBMPM_G2P2G_COMPUTE_ID);
+	context.resetCommandList(CommandListID::PBMPM_BUKKITCOUNT_COMPUTE_ID);
+	context.resetCommandList(CommandListID::PBMPM_BUKKITALLOCATE_COMPUTE_ID);
+	context.resetCommandList(CommandListID::PBMPM_BUKKITINSERT_COMPUTE_ID);
 
-    PBMPMScene scene{ &context, &basicPipeline, &computePipeline, 500000 };
+    PBMPMScene scene{ &context, &renderPipeline, &g2p2gPipeline, &bukkitCountPipeline, 
+        &bukkitAllocatePipeline, &bukkitInsertPipeline, 5000 };
 #endif
 
     while (!Window::get().getShouldClose()) {
@@ -130,18 +143,18 @@ int main() {
         scene.compute();
 #endif
         //draw to window
-        Window::get().beginFrame(basicPipeline.getCommandList());
+        Window::get().beginFrame(renderPipeline.getCommandList());
         D3D12_VIEWPORT vp;
-        createDefaultViewport(vp, basicPipeline.getCommandList());
+        createDefaultViewport(vp, renderPipeline.getCommandList());
 
         scene.draw(camera.get());
         
-        Window::get().endFrame(basicPipeline.getCommandList());
+        Window::get().endFrame(renderPipeline.getCommandList());
 
         //finish draw, present, reset
-        context.executeCommandList(basicPipeline.getCommandListID());
+        context.executeCommandList(renderPipeline.getCommandListID());
         Window::get().present();
-		context.resetCommandList(basicPipeline.getCommandListID());
+		context.resetCommandList(renderPipeline.getCommandListID());
     }
 
     // Close
