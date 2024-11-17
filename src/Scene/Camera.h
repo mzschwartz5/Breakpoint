@@ -5,6 +5,8 @@
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
+#define MOVE_SCALAR 0.05f
+
 using namespace DirectX;
 
 class Camera {

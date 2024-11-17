@@ -11,7 +11,7 @@ class ComputePipeline : public Pipeline
 {
 public:
 	ComputePipeline() = delete;
-	ComputePipeline(std::string rootSignatureShaderName, const std::string shaderFilePath, DXContext& context,
+	ComputePipeline(std::string rootSignatureShaderName, const std::string shaderFilePath, DXContext& context, CommandListID cmdID,
 		D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags);
 
 	Shader& getComputeShader() { return computeShader; }

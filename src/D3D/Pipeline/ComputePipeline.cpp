@@ -1,8 +1,8 @@
 #include "ComputePipeline.h"
 
 ComputePipeline::ComputePipeline(std::string rootSignatureShaderName, const std::string shaderFilePath, DXContext& context,
-	D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
-	: Pipeline(rootSignatureShaderName, context, type, numberOfDescriptors, flags),
+	CommandListID cmdID, D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
+	: Pipeline(rootSignatureShaderName, context, cmdID, type, numberOfDescriptors, flags),
 	computeShader(shaderFilePath)
 {
 	createPSOD();

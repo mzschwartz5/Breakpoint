@@ -9,27 +9,45 @@
 
 using namespace DirectX;
 
+// Create Enum for CBV, SRV, UAV
+enum class BufferType {
+	CBV,
+	SRV,
+	UAV
+};
+
 class StructuredBuffer {
 public:
-	StructuredBuffer() = delete;
-	StructuredBuffer(const void* data, unsigned int numEle, size_t eleSize);
+	StructuredBuffer() = default;
+	StructuredBuffer(const void* data, unsigned int numEle, size_t eleSize, DescriptorHeap* heap);
 
-	void passCBVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle);
-	void passSRVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5* cmdList);
-	void passUAVDataToGPU(DXContext& context, D3D12_CPU_DESCRIPTOR_HANDLE descriptorHandle, ID3D12GraphicsCommandList5 *cmdList);
-	void copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList5* cmdList, D3D12_RESOURCE_STATES state);
+	void copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES state, CommandListID cmdId);
 
 	ComPointer<ID3D12Resource1>& getBuffer();
+
+	CD3DX12_GPU_DESCRIPTOR_HANDLE getGPUDescriptorHandle();
+
+	D3D12_GPU_VIRTUAL_ADDRESS getGPUVirtualAddress();
 
 	unsigned int getNumElements() { return numElements; }
 
 	size_t getElementSize() { return elementSize; }
 
+
+	void passCBVDataToGPU(DXContext& context);
+	void passSRVDataToGPU(DXContext& context, ID3D12GraphicsCommandList6* cmdList, CommandListID id);
+	void passUAVDataToGPU(DXContext& context, ID3D12GraphicsCommandList6* cmdList, CommandListID id);
+
 	void releaseResources();
 
 private:
-	ComPointer<ID3D12Resource1> buffer;
+	void findFreeHandle();
 
+private:
+	ComPointer<ID3D12Resource1> buffer;
+	CD3DX12_CPU_DESCRIPTOR_HANDLE cpuHandle;
+	CD3DX12_GPU_DESCRIPTOR_HANDLE gpuHandle;
+	DescriptorHeap* descriptorHeap = nullptr;
 	const void* data;
 	unsigned int numElements;
 	size_t elementSize;

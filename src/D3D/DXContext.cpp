@@ -33,20 +33,26 @@ DXContext::DXContext() {
         throw std::runtime_error("Could not create fence event");
     }
 
-    if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAllocator)))) {
-        //handle cannot create cmd allocator
-        throw std::runtime_error("Could not create command allocator");
-    }
+	for (int i = 0; i < NUM_CMDLISTS; i++) {
+		ComPointer<ID3D12CommandAllocator> cmdAllocator;
+        if (FAILED(device->CreateCommandAllocator(D3D12_COMMAND_LIST_TYPE_DIRECT, IID_PPV_ARGS(&cmdAllocator)))) {
+			//handle cannot create cmd allocator
+			throw std::runtime_error("Could not create command allocator");
+		}
+		cmdAllocators[i] = cmdAllocator;
+	}
 
-    if (FAILED(device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList)))) {
-        //handle could not create cmd list
-        throw std::runtime_error("Could not create command list");
-    }
 }
 
 DXContext::~DXContext() {
-    cmdList.Release();
-    cmdAllocator.Release();
+    for (auto& cmdList : cmdLists) {
+        cmdList.Release();
+    }
+
+    for (auto& cmdAllocator : cmdAllocators) {
+        cmdAllocator.Release();
+    }
+
     if (fenceEvent)
     {
         CloseHandle(fenceEvent);
@@ -68,19 +74,19 @@ void DXContext::signalAndWait() {
     }
 }
 
-ID3D12GraphicsCommandList6* DXContext::initCommandList()
+void DXContext::resetCommandList(CommandListID id)
 {
-    cmdAllocator->Reset();
-    cmdList->Reset(cmdAllocator, nullptr);
-    return cmdList;
+    cmdAllocators[id]->Reset();
+    
+	cmdLists[id]->Reset(cmdAllocators[id], nullptr);
 }
 
-void DXContext::executeCommandList() {
-    if (SUCCEEDED(cmdList->Close())) {
-        ID3D12CommandList* lists[] = { cmdList };
-        cmdQueue->ExecuteCommandLists(1, lists);
-        signalAndWait();
-    }
+void DXContext::executeCommandList(CommandListID id) {
+	if (SUCCEEDED(cmdLists[id]->Close())) {
+		ID3D12CommandList* lists[] = { cmdLists[id] };
+		cmdQueue->ExecuteCommandLists(1, lists);
+		signalAndWait();
+	}
 }
 
 void DXContext::flush(size_t count) {
@@ -117,4 +123,16 @@ ComPointer<ID3D12Device6>& DXContext::getDevice() {
 
 ComPointer<ID3D12CommandQueue>& DXContext::getCommandQueue() {
     return cmdQueue;
+}
+
+ID3D12GraphicsCommandList6* DXContext::createCommandList(CommandListID id)
+{
+    ComPointer<ID3D12GraphicsCommandList6> cmdList;
+    if (FAILED(device->CreateCommandList1(0, D3D12_COMMAND_LIST_TYPE_DIRECT, D3D12_COMMAND_LIST_FLAG_NONE, IID_PPV_ARGS(&cmdList)))) {
+        //handle could not create cmd list
+        throw std::runtime_error("Could not create command list");
+    }
+
+    cmdLists[id] = cmdList;
+    return cmdList.Get();
 }

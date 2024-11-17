@@ -1,10 +1,10 @@
 #include "IndexBuffer.h"
 
-IndexBuffer::IndexBuffer(std::vector<unsigned int> &indexData, const size_t indexDataSize)
+IndexBuffer::IndexBuffer(std::vector<unsigned int> indexData, const size_t indexDataSize)
     : indexData(indexData), indexDataSize(indexDataSize), uploadBuffer(), indexBuffer()
 {}
 
-D3D12_INDEX_BUFFER_VIEW IndexBuffer::passIndexDataToGPU(DXContext& context, ID3D12GraphicsCommandList5* cmdList) {
+D3D12_INDEX_BUFFER_VIEW IndexBuffer::passIndexDataToGPU(DXContext& context, ID3D12GraphicsCommandList6* cmdList) {
     D3D12_HEAP_PROPERTIES hpUpload{};
     hpUpload.Type = D3D12_HEAP_TYPE_UPLOAD;
     hpUpload.MemoryPoolPreference = D3D12_MEMORY_POOL_UNKNOWN;
