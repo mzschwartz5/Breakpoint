@@ -21,7 +21,7 @@ struct BilevelUniformGridConstants {
     uint3 dimensions;
     float3 minBounds;
     float resolution;
-    float numParticles;
+    int numParticles;
 };
 
 ConstantBuffer<BilevelUniformGridConstants> cb : register(b0);
@@ -43,18 +43,14 @@ void main(uint3 globalThreadId : SV_DispatchThreadID) {
     float3 position = positionsBuffer[globalThreadId.x];
     uint3 cellIndices = getCellIndex(position);
     int cellIndex1D = cellIndices.x + cellIndices.y * cb.dimensions.x + cellIndices.z * cb.dimensions.x * cb.dimensions.y;
-
     uint3 blockIndices = cellIndices / CELLS_PER_BLOCK_EDGE;
-    float3 blockCenterPos = float3(blockIndices.x, blockIndices.y, blockIndices.z) * cb.resolution * CELLS_PER_BLOCK_EDGE 
-                            + (cb.resolution * CELLS_PER_BLOCK_EDGE / 2.0f);
+    uint3 localCellIndices = cellIndices - (blockIndices * CELLS_PER_BLOCK_EDGE); // could be done with modulo, but this is faster
 
     // (±1 or 0, ±1 or 0, ±1 or 0)
-    int3 octant = int3(sign(position - blockCenterPos));
-    // The case where sign(x) = 0 is both annoying to deal with and frankly inconsequential to the simulation
-    // so just set to 1 in this case to avoid slow if-conditions in the nested loop below.
-    octant = int3(octant.x == 0 ? 1 : octant.x, 
-                  octant.y == 0 ? 1 : octant.y, 
-                  octant.z == 0 ? 1 : octant.z);
+    // 1 indicates cell is on a positive edge of a block, -1 indicates cell is on a negative edge, 0 indicates cell is not on an edge
+    // This should work for both even and odd CELLS_PER_BLOCK_EDGE
+    float halfCellsPerBlockEdge = (CELLS_PER_BLOCK_EDGE / 2.0);
+    int3 edge = int3(trunc((localCellIndices - halfCellsPerBlockEdge) / halfCellsPerBlockEdge));
 
     // Add this particle to the cell
     int particleIndexInCell;
@@ -63,13 +59,14 @@ void main(uint3 globalThreadId : SV_DispatchThreadID) {
         cells[cellIndex1D].particleIndices[particleIndexInCell] = globalThreadId.x;
     }
 
-    // Do this only once per cell
+    // Do this only once per cell, when the first particle is added to the cell
     if (particleIndexInCell == 0) {
-        // Need to iterate over neighboring blocks and increment the nonEmptyCellCount
-        for (uint i = 0; i <= 1; ++i) {
-            for (uint j = 0; j <= 1; ++j) {
-                for (uint k = 0; k <= 1; ++k) {
-                    uint3 neighborBlockIndices = blockIndices + uint3(i, j, k) * octant;
+        // Increment the nonEmptyCellCount of the block, and any blocks for which this cell borders on (which can be a maximum of 8)
+        // `edge` is carefully calculated so that these nested loops will exactly iterate over each abutting neighbor block.
+        for (uint i = 0; i <= abs(edge.x); ++i) {
+            for (uint j = 0; j <= abs(edge.y); ++j) {
+                for (uint k = 0; k <= abs(edge.z); ++k) {
+                    uint3 neighborBlockIndices = blockIndices + uint3(i, j, k) * edge;
 
                     if (neighborBlockIndices.x >= cb.dimensions.x / CELLS_PER_BLOCK_EDGE ||
                         neighborBlockIndices.y >= cb.dimensions.y / CELLS_PER_BLOCK_EDGE ||
