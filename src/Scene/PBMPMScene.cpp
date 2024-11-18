@@ -170,9 +170,10 @@ void PBMPMScene::resetBuffers(bool resetGrids) {
 
 void PBMPMScene::bukkitizeParticles() {
 	
-	// Reset Buffers
+	// Reset Buffers, but not the grid
 	resetBuffers(false);
 
+	// Properly set the Descriptors & Resource Transitions
 	bukkitCountPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 18, &constants, 0);
 	bukkitCountPipeline.getCommandList()->SetComputeRootConstantBufferView(1, particleCount.getGPUVirtualAddress());
 	bukkitCountPipeline.getCommandList()->SetComputeRootDescriptorTable(0, particleBuffer.getSRVGPUDescriptorHandle());
@@ -183,6 +184,7 @@ void PBMPMScene::bukkitizeParticles() {
 	auto bukkitDispatchSizeX = std::floor((bukkitSystem.countX + GridDispatchSize - 1) / GridDispatchSize);
 	auto bukkitDispatchSizeY = std::floor((bukkitSystem.countY + GridDispatchSize - 1) / GridDispatchSize);
 
+	// Properly set the Descriptors & Resource Transitions
 	bukkitAllocatePipeline.getCommandList()->SetComputeRoot32BitConstants(0, 18, &constants, 0);
 	bukkitAllocatePipeline.getCommandList()->SetComputeRootUnorderedAccessView(0, bukkitSystem.countBuffer.getGPUVirtualAddress());
 	bukkitAllocatePipeline.getCommandList()->SetComputeRootUnorderedAccessView(1, bukkitSystem.dispatch.getGPUVirtualAddress());
@@ -190,8 +192,9 @@ void PBMPMScene::bukkitizeParticles() {
 	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(1, bukkitSystem.particleAllocator.getUAVGPUDescriptorHandle());
 	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(2, bukkitSystem.indexStart.getUAVGPUDescriptorHandle());
 
-	//execute
+	//execute directly
 
+	// Properly set the Descriptors & Resource Transitions
 	bukkitInsertPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 18, &constants, 0);
 	bukkitInsertPipeline.getCommandList()->SetComputeRootConstantBufferView(1, particleCount.getGPUVirtualAddress());
 	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(0, bukkitSystem.countBuffer2.getUAVGPUDescriptorHandle());
@@ -199,7 +202,7 @@ void PBMPMScene::bukkitizeParticles() {
 	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(2, bukkitSystem.particleData.getUAVGPUDescriptorHandle());
 	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(3, bukkitSystem.indexStart.getSRVGPUDescriptorHandle());
 
-	//execute
+	//execute indirectly again
 }
 
 void PBMPMScene::constructScene() {
@@ -339,7 +342,7 @@ void PBMPMScene::compute() {
 	resetBuffers(true);
 
 	// Could be 20?
-	int substepCount = 5;
+	int substepCount = 20;
 	for (int substepIdx = 0; substepIdx < substepCount; substepIdx++) {
 
 		D3D12_RESOURCE_BARRIER barriers[] = {
@@ -401,6 +404,11 @@ void PBMPMScene::compute() {
 			// Reinitialize command list
 			context->resetCommandList(g2p2gPipeline.getCommandListID());
 		}
+
+		// TODO: Add Emission function
+		//bukkitizeParticles();
+
+		substepIndex++;
 	}
 }
 
