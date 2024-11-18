@@ -11,7 +11,7 @@ enum CommandListID {
     PBMPM_COMPUTE_ID,
     PHYSICS_RENDER_ID,
     PHYSICS_COMPUTE_ID,
-    MESH_ID,
+    FLUID_ID,
 };
 
 class DXContext

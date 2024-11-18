@@ -162,6 +162,8 @@ void StructuredBuffer::passSRVDataToGPU(DXContext& context, ID3D12GraphicsComman
         CloseHandle(eventHandle);
     }
 
+    context.resetCommandList(cmdId);
+
     // Step 6: Create the SRV in the descriptor heap
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
@@ -357,7 +359,6 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
     // Execute the command list to perform the copy operation
     context.executeCommandList(cmdId);
     context.getCommandQueue()->Signal(fence.Get(), fenceValue);
-    context.flush(1);
 
     if (fence->GetCompletedValue() < fenceValue) {
         HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -372,6 +373,8 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
         WaitForSingleObject(eventHandle, INFINITE);
         CloseHandle(eventHandle);
     }
+
+    context.resetCommandList(cmdId);
 
     // Map the readback buffer to access the data on the CPU
     void* mappedData = nullptr;

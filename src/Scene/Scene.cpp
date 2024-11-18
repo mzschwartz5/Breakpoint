@@ -17,6 +17,11 @@ Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context)
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	physicsIC(10),
 	physicsScene(context, &physicsRP, &physicsCP, physicsIC),
+	fluidRP("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", *context, CommandListID::FLUID_ID,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
+	bilevelUniformGridCP("BilevelUniformGridRootSig.cso", "BilevelUniformGrid.cso", *context, CommandListID::FLUID_ID, 
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 3, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
+	fluidScene(context, &fluidRP, &bilevelUniformGridCP),
 	currentRP(&objectRP),
 	currentCP(nullptr)
 {}
@@ -37,6 +42,10 @@ void Scene::setRenderScene(RenderScene renderScene) {
 		currentRP = &physicsRP;
 		currentCP = &physicsCP;
 		break;
+	case Fluid:
+		currentRP = &fluidRP;
+		currentCP = &bilevelUniformGridCP;
+		break;
 	case Object:
 	default:
 		currentRP = &objectRP;
@@ -53,6 +62,9 @@ void Scene::compute() {
 	case Physics:
 		physicsScene.compute();
 		break;
+	case Fluid:
+		fluidScene.compute();
+		break;
 	default:
 		break;
 	}
@@ -66,6 +78,9 @@ void Scene::draw() {
 	case PBMPM:
 		pbmpmScene.draw(camera);
 		break;
+	case Fluid:
+		fluidScene.draw(camera);
+		break;
 	default:
 	case Object:
 		objectScene.draw(camera);
@@ -77,4 +92,5 @@ void Scene::releaseResources() {
 	objectScene.releaseResources();
 	pbmpmScene.releaseResources();
 	physicsScene.releaseResources();
+	fluidScene.releaseResources();
 }
