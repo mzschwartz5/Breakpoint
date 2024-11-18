@@ -5,13 +5,10 @@
 
 // Root constants bound to b0
 ConstantBuffer<PBMPMConstants> g_simConstants : register(b0);
-// UAVs and SRVs
-cbuffer g_particleCount : register(b1)
-{
-    uint g_particleCount[4];
-};
+// UAVs and SRVs;
 StructuredBuffer<Particle> g_particles : register(t0);
-StructuredBuffer<uint> g_bukkitIndexStart : register(t1);
+StructuredBuffer<uint> g_particleCount : register(t1);
+StructuredBuffer<uint> g_bukkitIndexStart : register(t2);
 RWStructuredBuffer<uint> g_particleInsertCounters : register(u0);
 RWStructuredBuffer<uint> g_particleData : register(u1);
 

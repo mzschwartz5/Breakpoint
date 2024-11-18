@@ -173,36 +173,133 @@ void PBMPMScene::bukkitizeParticles() {
 	// Reset Buffers, but not the grid
 	resetBuffers(false);
 
+	// Bind the PSO and Root Signature
+	bukkitCountPipeline.getCommandList()->SetPipelineState(bukkitCountPipeline.getPSO());
+	bukkitCountPipeline.getCommandList()->SetComputeRootSignature(bukkitCountPipeline.getRootSignature());
+
+	// Bind the descriptor heap
+	ID3D12DescriptorHeap* descriptorHeaps[] = { g2p2gPipeline.getDescriptorHeap()->Get() };
+	bukkitCountPipeline.getCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+	// Transition particle buffer to srv
+	D3D12_RESOURCE_BARRIER particleBufferBarrier = CD3DX12_RESOURCE_BARRIER::Transition(particleBuffer.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	bukkitCountPipeline.getCommandList()->ResourceBarrier(1, &particleBufferBarrier);
+
 	// Properly set the Descriptors & Resource Transitions
 	bukkitCountPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 18, &constants, 0);
 	bukkitCountPipeline.getCommandList()->SetComputeRootConstantBufferView(1, particleCount.getGPUVirtualAddress());
-	bukkitCountPipeline.getCommandList()->SetComputeRootDescriptorTable(0, particleBuffer.getSRVGPUDescriptorHandle());
-	bukkitCountPipeline.getCommandList()->SetComputeRootDescriptorTable(1, bukkitSystem.countBuffer.getUAVGPUDescriptorHandle());
+	bukkitCountPipeline.getCommandList()->SetComputeRootDescriptorTable(2, particleBuffer.getSRVGPUDescriptorHandle());
+	bukkitCountPipeline.getCommandList()->SetComputeRootDescriptorTable(3, bukkitSystem.countBuffer.getUAVGPUDescriptorHandle());
 
-	//execute indirectly <3
+	// Transition particleSimDispatch to indirect dispatch
+	D3D12_RESOURCE_BARRIER particleSimDispatchBarrier = CD3DX12_RESOURCE_BARRIER::Transition(particleSimDispatch.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+	bukkitCountPipeline.getCommandList()->ResourceBarrier(1, &particleSimDispatchBarrier);
+
+	//dispatch indirectly <3
+	bukkitCountPipeline.getCommandList()->ExecuteIndirect(commandSignature, 1, particleSimDispatch.getBuffer(), 0, nullptr, 0);
+
+	// Transition particleSimDispatch back to unordered access
+	D3D12_RESOURCE_BARRIER particleSimDispatchBarrierEnd = CD3DX12_RESOURCE_BARRIER::Transition(particleSimDispatch.getBuffer(), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	bukkitCountPipeline.getCommandList()->ResourceBarrier(1, &particleSimDispatchBarrierEnd);
+
+	// Transition particle buffer back to UAV
+	D3D12_RESOURCE_BARRIER particleBufferBarrierEnd = CD3DX12_RESOURCE_BARRIER::Transition(particleBuffer.getBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	bukkitCountPipeline.getCommandList()->ResourceBarrier(1, &particleBufferBarrierEnd);
+
+	// execute
+	context->executeCommandList(bukkitCountPipeline.getCommandListID());
+
+	// Use a fence to synchronize the completion of the command lists
+	context->signalAndWaitForFence(fence, fenceValue);
+
+	// Reset the command lists
+	context->resetCommandList(bukkitCountPipeline.getCommandListID());
 
 	auto bukkitDispatchSizeX = std::floor((bukkitSystem.countX + GridDispatchSize - 1) / GridDispatchSize);
 	auto bukkitDispatchSizeY = std::floor((bukkitSystem.countY + GridDispatchSize - 1) / GridDispatchSize);
 
+	// Bind the PSO and Root Signature
+	bukkitAllocatePipeline.getCommandList()->SetPipelineState(bukkitAllocatePipeline.getPSO());
+	bukkitAllocatePipeline.getCommandList()->SetComputeRootSignature(bukkitAllocatePipeline.getRootSignature());
+
+	// Bind the descriptor heap
+	bukkitAllocatePipeline.getCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+	// Transition bukkitCount to srv
+	D3D12_RESOURCE_BARRIER bukkitCountBarrier = CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.countBuffer.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	bukkitAllocatePipeline.getCommandList()->ResourceBarrier(1, &bukkitCountBarrier);
+
 	// Properly set the Descriptors & Resource Transitions
 	bukkitAllocatePipeline.getCommandList()->SetComputeRoot32BitConstants(0, 18, &constants, 0);
-	bukkitAllocatePipeline.getCommandList()->SetComputeRootUnorderedAccessView(0, bukkitSystem.countBuffer.getGPUVirtualAddress());
-	bukkitAllocatePipeline.getCommandList()->SetComputeRootUnorderedAccessView(1, bukkitSystem.dispatch.getGPUVirtualAddress());
-	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(0, bukkitSystem.threadData.getUAVGPUDescriptorHandle());
-	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(1, bukkitSystem.particleAllocator.getUAVGPUDescriptorHandle());
-	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(2, bukkitSystem.indexStart.getUAVGPUDescriptorHandle());
+	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(1, bukkitSystem.countBuffer.getSRVGPUDescriptorHandle());
+	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(2, bukkitSystem.threadData.getUAVGPUDescriptorHandle());
 
-	//execute directly
+	//dispatch directly
+	bukkitAllocatePipeline.getCommandList()->Dispatch(bukkitDispatchSizeX, bukkitDispatchSizeY, 1);
 
-	// Properly set the Descriptors & Resource Transitions
+	// Transition bukkitCount back to UAV
+	D3D12_RESOURCE_BARRIER bukkitCountBarrierEnd = CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.countBuffer.getBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	bukkitAllocatePipeline.getCommandList()->ResourceBarrier(1, &bukkitCountBarrierEnd);
+
+	// execute
+	context->executeCommandList(bukkitAllocatePipeline.getCommandListID());
+
+	// Use a fence to synchronize the completion of the command lists
+	context->signalAndWaitForFence(fence, fenceValue);
+
+	// Reset the command lists
+	context->resetCommandList(bukkitAllocatePipeline.getCommandListID());
+
+	// Bind the PSO and Root Signature
+	bukkitInsertPipeline.getCommandList()->SetPipelineState(bukkitInsertPipeline.getPSO());
+	bukkitInsertPipeline.getCommandList()->SetComputeRootSignature(bukkitInsertPipeline.getRootSignature());
+
+	// Bind the descriptor heap
+	bukkitInsertPipeline.getCommandList()->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
+
+	// Transition particleBuffer, particleCount, and indexStart to SRV
+	D3D12_RESOURCE_BARRIER particleBufferBarrier2 = CD3DX12_RESOURCE_BARRIER::Transition(particleBuffer.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	D3D12_RESOURCE_BARRIER particleCountBarrier = CD3DX12_RESOURCE_BARRIER::Transition(particleCount.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	D3D12_RESOURCE_BARRIER indexStartBarrier = CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.indexStart.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+	// Transition particle sim dispatch to indirect dispatch
+	D3D12_RESOURCE_BARRIER particleSimDispatchBarrier2 = CD3DX12_RESOURCE_BARRIER::Transition(particleSimDispatch.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+
+	// Create an array of barriers
+	D3D12_RESOURCE_BARRIER barriers[4] = { particleBufferBarrier2, particleCountBarrier, indexStartBarrier, particleSimDispatchBarrier2};
+
+	// Transition the resources
+	bukkitInsertPipeline.getCommandList()->ResourceBarrier(3, barriers);
+
+	// Properly set the Descriptors
 	bukkitInsertPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 18, &constants, 0);
-	bukkitInsertPipeline.getCommandList()->SetComputeRootConstantBufferView(1, particleCount.getGPUVirtualAddress());
-	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(0, bukkitSystem.countBuffer2.getUAVGPUDescriptorHandle());
-	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(1, particleBuffer.getSRVGPUDescriptorHandle());
-	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(2, bukkitSystem.particleData.getUAVGPUDescriptorHandle());
-	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(3, bukkitSystem.indexStart.getSRVGPUDescriptorHandle());
+	bukkitInsertPipeline.getCommandList()->SetComputeRootDescriptorTable(1, particleBuffer.getSRVGPUDescriptorHandle());
+	bukkitInsertPipeline.getCommandList()->SetComputeRootDescriptorTable(2, bukkitSystem.countBuffer2.getUAVGPUDescriptorHandle());
+	bukkitInsertPipeline.getCommandList()->SetComputeRootDescriptorTable(3, bukkitSystem.indexStart.getSRVGPUDescriptorHandle());
 
-	//execute indirectly again
+	// Dispatch indirectly again
+	bukkitInsertPipeline.getCommandList()->ExecuteIndirect(commandSignature, 1, particleSimDispatch.getBuffer(), 0, nullptr, 0);
+
+	// Transition particleBuffer, particleCount, and indexStart back to UAV
+	D3D12_RESOURCE_BARRIER particleBufferBarrierEnd2 = CD3DX12_RESOURCE_BARRIER::Transition(particleBuffer.getBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	D3D12_RESOURCE_BARRIER particleCountBarrierEnd = CD3DX12_RESOURCE_BARRIER::Transition(particleCount.getBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	D3D12_RESOURCE_BARRIER indexStartBarrierEnd = CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.indexStart.getBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+	// Transition particle sim dispatch back to unordered access
+	D3D12_RESOURCE_BARRIER particleSimDispatchBarrierEnd2 = CD3DX12_RESOURCE_BARRIER::Transition(particleSimDispatch.getBuffer(), D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+
+	// Create an array of barriers
+	D3D12_RESOURCE_BARRIER barriersEnd[4] = { particleBufferBarrierEnd2, particleCountBarrierEnd, indexStartBarrierEnd, particleSimDispatchBarrierEnd2 };
+
+	// Transition the resources
+	bukkitInsertPipeline.getCommandList()->ResourceBarrier(3, barriersEnd);
+
+	// execute
+	context->executeCommandList(bukkitInsertPipeline.getCommandListID());
+
+	// Use a fence to synchronize the completion of the command lists
+	context->signalAndWaitForFence(fence, fenceValue);
+
+	// Reset the command lists
+	context->resetCommandList(bukkitInsertPipeline.getCommandListID());
 }
 
 void PBMPMScene::constructScene() {
@@ -244,7 +341,8 @@ void PBMPMScene::constructScene() {
 	XMUINT4 count = { 0, 0, 0, 0 };
 	particleCount = StructuredBuffer(&count, 1, sizeof(XMUINT4));
 	
-	XMUINT4 simDispatch = { 0, 1, 1, 0 };
+	// Set it based on instance size
+	XMUINT4 simDispatch = { (instanceCount + ParticleDispatchSize - 1) / ParticleDispatchSize, 1, 1, 0};
 	particleSimDispatch = StructuredBuffer(&simDispatch, 1, sizeof(XMUINT4));
 
 	// Pass Structured Buffers to Compute Pipeline
@@ -344,69 +442,85 @@ void PBMPMScene::compute() {
 	// Could be 20?
 	int substepCount = 20;
 	for (int substepIdx = 0; substepIdx < substepCount; substepIdx++) {
-
-		D3D12_RESOURCE_BARRIER barriers[] = {
-		CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.particleData.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE),
-		CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.threadData.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
-		};
-		g2p2gPipeline.getCommandList()->ResourceBarrier(_countof(barriers), barriers);
 		
-		for (int iterationIdx = 0; iterationIdx < constants.iterationCount; iterationIdx++) {
-			constants.iteration = iterationIdx;
+		if (substepIndex != 0) {
+			for (int iterationIdx = 0; iterationIdx < constants.iterationCount; iterationIdx++) {
+				constants.iteration = iterationIdx;
 
-			auto currentGrid = gridBuffers[bufferIdx];
-			auto nextGrid = gridBuffers[(bufferIdx + 1) % 3];
-			auto nextNextGrid = gridBuffers[(bufferIdx + 2) % 3];
-			bufferIdx = (bufferIdx + 1) % 3;
+				auto currentGrid = gridBuffers[bufferIdx];
+				auto nextGrid = gridBuffers[(bufferIdx + 1) % 3];
+				auto nextNextGrid = gridBuffers[(bufferIdx + 2) % 3];
+				bufferIdx = (bufferIdx + 1) % 3;
 
-			auto cmdList = g2p2gPipeline.getCommandList();
+				auto cmdList = g2p2gPipeline.getCommandList();
 
-			auto currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid.getBuffer(),
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
-			cmdList->ResourceBarrier(1, &currGridBarrier);
+				D3D12_RESOURCE_BARRIER barriers[] = {
+				CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.particleData.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE),
+				CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.threadData.getBuffer(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE)
+				};
+				cmdList->ResourceBarrier(_countof(barriers), barriers);
 
-			cmdList->SetPipelineState(g2p2gPipeline.getPSO());
-			cmdList->SetComputeRootSignature(g2p2gPipeline.getRootSignature());
+				auto currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid.getBuffer(),
+					D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
+				cmdList->ResourceBarrier(1, &currGridBarrier);
 
-			g2p2gPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 18, &constants, 0);
+				cmdList->SetPipelineState(g2p2gPipeline.getPSO());
+				cmdList->SetComputeRootSignature(g2p2gPipeline.getRootSignature());
 
-			ID3D12DescriptorHeap* computeDescriptorHeaps[] = { g2p2gPipeline.getDescriptorHeap()->Get() };
-			cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
+				g2p2gPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 18, &constants, 0);
 
-			cmdList->SetComputeRootDescriptorTable(1, particleBuffer.getUAVGPUDescriptorHandle());
-			cmdList->SetComputeRootDescriptorTable(2, bukkitSystem.particleData.getSRVGPUDescriptorHandle());
-			cmdList->SetComputeRootDescriptorTable(3, currentGrid.getSRVGPUDescriptorHandle());
-			cmdList->SetComputeRootDescriptorTable(4, nextGrid.getUAVGPUDescriptorHandle());
-			cmdList->SetComputeRootDescriptorTable(5, nextNextGrid.getUAVGPUDescriptorHandle());
+				ID3D12DescriptorHeap* computeDescriptorHeaps[] = { g2p2gPipeline.getDescriptorHeap()->Get() };
+				cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
 
-			// Transition dispatch buffer to an indirect argument
-			auto dispatchBarrier = CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.dispatch.getBuffer(),
-				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
-			cmdList->ResourceBarrier(1, &dispatchBarrier);
+				cmdList->SetComputeRootDescriptorTable(1, particleBuffer.getUAVGPUDescriptorHandle());
+				cmdList->SetComputeRootDescriptorTable(2, bukkitSystem.particleData.getSRVGPUDescriptorHandle());
+				cmdList->SetComputeRootDescriptorTable(3, currentGrid.getSRVGPUDescriptorHandle());
+				cmdList->SetComputeRootDescriptorTable(4, nextGrid.getUAVGPUDescriptorHandle());
+				cmdList->SetComputeRootDescriptorTable(5, nextNextGrid.getUAVGPUDescriptorHandle());
 
-			// Indirect Dispatch
-			cmdList->ExecuteIndirect(commandSignature, 1, bukkitSystem.dispatch.getBuffer(), 0, nullptr, 0);
+				// Transition dispatch buffer to an indirect argument
+				auto dispatchBarrier = CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.dispatch.getBuffer(),
+					D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT);
+				cmdList->ResourceBarrier(1, &dispatchBarrier);
 
-			// Transition dispatch buffer back to a UAV
-			dispatchBarrier = CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.dispatch.getBuffer(),
-				D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			cmdList->ResourceBarrier(1, &dispatchBarrier);
+				//if (substepIndex <= 1000) {
+					// Create a particle array to copy from gpu
+					//std::vector<int> dispatch;
+					//dispatch.resize(4);
+					//bukkitSystem.dispatch.copyDataFromGPU(*context, dispatch.data(), cmdList, D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, pipeline->getCommandListID());
+				//}
 
-			// Transition currentGrid to UAV
-			currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid.getBuffer(),
-				D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
-			cmdList->ResourceBarrier(1, &currGridBarrier);
+				// Indirect Dispatch
+				cmdList->ExecuteIndirect(commandSignature, 1, bukkitSystem.dispatch.getBuffer(), 0, nullptr, 0);
 
-			//// Execute command list
-			context->executeCommandList(g2p2gPipeline.getCommandListID());
-			context->signalAndWaitForFence(fence, fenceValue);
+				// Transition dispatch buffer back to a UAV
+				dispatchBarrier = CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.dispatch.getBuffer(),
+					D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+				cmdList->ResourceBarrier(1, &dispatchBarrier);
 
-			// Reinitialize command list
-			context->resetCommandList(g2p2gPipeline.getCommandListID());
+				// Transition currentGrid to UAV
+				currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid.getBuffer(),
+					D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
+				cmdList->ResourceBarrier(1, &currGridBarrier);
+
+				// Transition particleData and threadData to UAV
+				D3D12_RESOURCE_BARRIER endBarriers[] = {
+					CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.particleData.getBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS),
+					CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.threadData.getBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS)
+				};
+				cmdList->ResourceBarrier(_countof(endBarriers), endBarriers);
+
+				//// Execute command list
+				context->executeCommandList(g2p2gPipeline.getCommandListID());
+				context->signalAndWaitForFence(fence, fenceValue);
+
+				// Reinitialize command list
+				context->resetCommandList(g2p2gPipeline.getCommandListID());
+			}
 		}
 
 		// TODO: Add Emission function
-		//bukkitizeParticles();
+		bukkitizeParticles();
 
 		substepIndex++;
 	}
@@ -415,6 +529,14 @@ void PBMPMScene::compute() {
 void PBMPMScene::draw(Camera* cam) {;
 
 	auto cmdList = pipeline->getCommandList();
+
+	// Check if we're on the 1000th substep
+	//if (substepIndex == 1000) {
+	//	// Create a particle array to copy from gpu
+	//	std::vector<PBMPMParticle> particles;
+	//	particles.resize(maxParticles);
+	//	particleBuffer.copyDataFromGPU(*context, particles.data(), cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, pipeline->getCommandListID());
+	//}
 
 	// IA
 	cmdList->IASetVertexBuffers(0, 1, &vbv);
@@ -480,6 +602,6 @@ void PBMPMScene::releaseResources() {
 	bukkitSystem.particleAllocator.releaseResources();
 	bukkitSystem.indexStart.releaseResources();
 
-	fence->Release();
+	//fence->Release();
 	commandSignature->Release();
 }

@@ -6,11 +6,11 @@
 // Root constants bound to b0
 ConstantBuffer<PBMPMConstants> g_simConstants : register(b0);
 // UAVs and SRVs
-RWStructuredBuffer<uint> g_bukkitIndirectDispatch : register(u0);
+RWStructuredBuffer<uint> g_bukkitIndirectDispatch : register(u3);
 RWStructuredBuffer<uint> g_bukkitParticleAllocator : register(u1);
 StructuredBuffer<uint> g_bukkitCounts : register(t0);
-RWStructuredBuffer<BukkitThreadData> g_bukkitThreadData : register(u2);
-RWStructuredBuffer<uint> g_bukkitIndexStart : register(u3);
+RWStructuredBuffer<BukkitThreadData> g_bukkitThreadData : register(u0);
+RWStructuredBuffer<uint> g_bukkitIndexStart : register(u2);
 
 // Compute Shader Entry Point
 [numthreads(GridDispatchSize, GridDispatchSize, 1)]
