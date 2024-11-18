@@ -96,9 +96,7 @@ struct BukkitThreadData {
 
 class PBMPMScene : public Scene {
 public:
-	PBMPMScene(DXContext* context, RenderPipeline* renderPipeline, ComputePipeline* g2p2gPipeline,
-		ComputePipeline* bukkitCountPipeline, ComputePipeline* bukkitAllocatePipeline,
-		ComputePipeline* bukkitInsertPipeline, unsigned int instanceCount);
+	PBMPMScene(DXContext* context, RenderPipeline* renderPipeline, unsigned int instanceCount);
 
 	void constructScene();
 
@@ -116,6 +114,7 @@ private:
 	ComputePipeline bukkitCountPipeline;
 	ComputePipeline bukkitAllocatePipeline;
 	ComputePipeline bukkitInsertPipeline;
+	ComputePipeline bufferClearPipeline;
 
 	PBMPMConstants constants;
 	BukkitSystem bukkitSystem;
@@ -126,6 +125,7 @@ private:
 	VertexBuffer vertexBuffer;
 	IndexBuffer indexBuffer;
 	unsigned int instanceCount;
+	ID3D12CommandSignature* commandSignature = nullptr;
 	UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
 	unsigned int indexCount = 0;

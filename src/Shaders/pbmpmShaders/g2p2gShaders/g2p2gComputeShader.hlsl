@@ -22,10 +22,10 @@ StructuredBuffer<BukkitThreadData> g_bukkitThreadData : register(t1);
 StructuredBuffer<int> g_gridSrc : register(t2);
 
 // Structured Buffer for grid destination data (read-write UAV with atomic support)
-RWStructuredBuffer<int> g_gridDst : register(u8);
+RWStructuredBuffer<int> g_gridDst : register(u2);
 
 // Structured Buffer for grid cells to be cleared (read-write UAV)
-RWStructuredBuffer<int> g_gridToBeCleared : register(u9);
+RWStructuredBuffer<int> g_gridToBeCleared : register(u3);
 
 groupshared int s_tileData[TileDataSize];
 groupshared int s_tileDataDst[TileDataSize];

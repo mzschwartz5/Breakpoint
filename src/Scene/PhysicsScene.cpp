@@ -22,14 +22,16 @@ void PhysicsScene::constructScene() {
 	}
 
 	// Create Structured Buffers
-	positionBuffer = StructuredBuffer(positions.data(), instanceCount, sizeof(XMFLOAT3), computePipeline->getDescriptorHeap());
-	velocityBuffer = StructuredBuffer(velocities.data(), instanceCount, sizeof(XMFLOAT3), computePipeline->getDescriptorHeap());
+	positionBuffer = StructuredBuffer(positions.data(), instanceCount, sizeof(XMFLOAT3));
+	velocityBuffer = StructuredBuffer(velocities.data(), instanceCount, sizeof(XMFLOAT3));
 
 	auto computeId = computePipeline->getCommandListID();
 
 	// Pass Structured Buffers to Compute Pipeline
-	positionBuffer.passUAVDataToGPU(*context, computePipeline->getCommandList(), computeId);
-	velocityBuffer.passUAVDataToGPU(*context, computePipeline->getCommandList(), computeId);
+	positionBuffer.passDataToGPU(*context, computePipeline->getCommandList(), computeId);
+	positionBuffer.createUAV(*context, computePipeline->getDescriptorHeap());
+	velocityBuffer.passDataToGPU(*context, computePipeline->getCommandList(), computeId);
+	velocityBuffer.createUAV(*context, computePipeline->getDescriptorHeap());
 
 	// Create Vertex & Index Buffer
 	auto circleData = generateCircle(0.05f, 32);
@@ -91,7 +93,7 @@ void PhysicsScene::compute() {
 	// Set compute root descriptor table
 	// Uses position's descriptor handle instead of velocity since it was allocated first
 	// The descriptor table is looking for two buffers so it will give the consecutive one after position (velocity) 
-	cmdList->SetComputeRootDescriptorTable(1, positionBuffer.getGPUDescriptorHandle());
+	cmdList->SetComputeRootDescriptorTable(1, positionBuffer.getUAVGPUDescriptorHandle());
 
 	//// Dispatch
 	cmdList->Dispatch(instanceCount, 1, 1);
