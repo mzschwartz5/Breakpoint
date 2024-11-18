@@ -36,7 +36,7 @@ int main() {
     context.resetCommandList(CommandListID::GENERAL_ID);
 
     Scene scene{Object, camera.get(), &context};
-    scene.setRenderScene(Physics);
+    scene.setRenderScene(Fluid);
 
     while (!Window::get().getShouldClose()) {
         //update window
