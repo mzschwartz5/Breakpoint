@@ -19,7 +19,7 @@ enum class BufferType {
 class StructuredBuffer {
 public:
 	StructuredBuffer() = default;
-	StructuredBuffer(const void* data, unsigned int numEle, size_t eleSize, DescriptorHeap* heap);
+	StructuredBuffer(const void* data, unsigned int numEle, UINT eleSize, DescriptorHeap* heap);
 
 	void copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES state, CommandListID cmdId);
 
@@ -50,5 +50,5 @@ private:
 	DescriptorHeap* descriptorHeap = nullptr;
 	const void* data;
 	unsigned int numElements;
-	size_t elementSize;
+	UINT elementSize;
 };
