@@ -18,4 +18,5 @@
 #include "Scene/ObjectScene.h"
 #include "Scene/PhysicsScene.h"
 #include "Scene/PBMPMScene.h"
+#include "Scene/PBD.h"
 

@@ -1,8 +1,8 @@
 #include "main.h"
 
 
-// Base Object Scene = 0, Bouncing Ball Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3
-#define SCENE 0
+// Base Object Scene = 0, Bouncing Ball Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3, PBD = 4
+#define SCENE 4
 
 // This should probably go somewhere else
 void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
@@ -86,7 +86,52 @@ int main() {
 
     PBMPMScene scene{ &context, &basicPipeline, &computePipeline, 50 };
 #endif
+#if SCENE == 4
+    RenderPipeline basicPipeline("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", context, CommandListID::RENDER_ID,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, CommandListID::PBD_ID,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
+    ComputePipeline applyForcesPipeline(
+        "VelocitySignature.cso",        // Root signature for force application
+        "applyForce.cso",               // Compute shader for force application
+        context,
+        CommandListID::apply_force_ID,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+        1,                              // Single descriptor for particle data UAV
+        D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
+    );
+    ComputePipeline velocityUpdatePipeline(
+        "VelocitySignature.cso",        // Root signature for velocity updates
+        "VelocityUpdate.cso",           // Compute shader for velocity updates
+        context,
+        CommandListID::velocity_update_ID,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+        1,                              // Single descriptor for particle data UAV
+        D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
+    );
+
+
+    context.resetCommandList(CommandListID::RENDER_ID);
+    context.resetCommandList(CommandListID::PBD_ID);
+    context.resetCommandList(CommandListID::apply_force_ID);
+    context.resetCommandList(CommandListID::velocity_update_ID);
+
+
+
+   
+
+    constexpr UINT numParticles = 2;  // Number of particles in the simulation
+    PBDScene scene{
+        &context,
+        &basicPipeline,
+        &computePipeline,
+        &applyForcesPipeline,
+        &velocityUpdatePipeline,
+        numParticles
+    };
+
+#endif
     while (!Window::get().getShouldClose()) {
         //update window
         Window::get().update();
@@ -132,7 +177,7 @@ int main() {
         //update camera
         camera->updateViewMat();
 
-#if SCENE == 1 || SCENE == 3
+#if SCENE == 1 || SCENE == 3 || SCENE == 4
 		// Dispatch compute shader for physics scene
         scene.compute();
 #endif

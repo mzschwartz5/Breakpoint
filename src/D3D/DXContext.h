@@ -4,12 +4,16 @@
 #include <stdexcept>
 #include <array>
 
-#define NUM_CMDLISTS 4
+#define NUM_CMDLISTS 7
 enum CommandListID {
     PAPA_ID,
     RENDER_ID,
     PBMPM_COMPUTE_ID,
     MESH_ID,
+    PBD_ID,
+    apply_force_ID,
+    velocity_update_ID,
+
 };
 
 class DXContext
