@@ -32,11 +32,8 @@ int main() {
 
     mouse->SetWindow(Window::get().getHWND());
 
-    context.createCommandList(CommandListID::GENERAL_ID);
-    context.resetCommandList(CommandListID::GENERAL_ID);
-
     Scene scene{Object, camera.get(), &context};
-    scene.setRenderScene(Fluid);
+    scene.setRenderScene(PBMPM);
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -67,6 +64,15 @@ int main() {
         }
         if (kState.LeftControl) {
             camera->translate({ 0.f, -1.0f, 0.f });
+        }
+        if (kState.D1) {
+            scene.setRenderScene(Object);
+        }
+        if (kState.D2) {
+            scene.setRenderScene(PBMPM);
+        }
+        if (kState.D3) {
+            scene.setRenderScene(Physics);
         }
 
         //check mouse state

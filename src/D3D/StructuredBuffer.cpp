@@ -1,6 +1,6 @@
 #include "StructuredBuffer.h"
 
-StructuredBuffer::StructuredBuffer(const void* inputData, unsigned int numEle, size_t eleSize, DescriptorHeap* heap)
+StructuredBuffer::StructuredBuffer(const void* inputData, unsigned int numEle, UINT eleSize, DescriptorHeap* heap)
 	: data(inputData), descriptorHeap(heap), numElements(numEle), elementSize(eleSize)
 {
 	findFreeHandle();

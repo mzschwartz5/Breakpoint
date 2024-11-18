@@ -19,7 +19,7 @@ void ObjectScene::constructScene()
     modelMatrices.push_back(m1);
 
     XMFLOAT4X4 m2;
-    XMStoreFloat4x4(&m2, XMMatrixScaling(0.2, 0.2, 0.2) * XMMatrixTranslation(-10, -8, 0));
+    XMStoreFloat4x4(&m2, XMMatrixScaling(0.2f, 0.2f, 0.2f) * XMMatrixTranslation(-10, -8, 0));
     modelMatrices.push_back(m2);
 
     for (int i = 0; i < inputStrings.size(); i++) {

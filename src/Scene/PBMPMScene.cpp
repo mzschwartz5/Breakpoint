@@ -12,14 +12,14 @@ void PBMPMScene::constructScene() {
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	float radius = 0.01;
+	float radius = 0.01f;
 
 	// Create position and velocity data
-	for (int i = 0; i < instanceCount; ++i) {
+	for (unsigned int i = 0; i < instanceCount; ++i) {
 		positions.push_back({ -0.76f + radius * 2.5f * i, 0.f, 0.f });
 	}
 
-	for (int i = 0; i < instanceCount; ++i) {
+	for (unsigned int i = 0; i < instanceCount; ++i) {
 		velocities.push_back({ 0.0f, 0.0f, 0.0f });
 	}
 
@@ -35,12 +35,12 @@ void PBMPMScene::constructScene() {
 
 	// Create Vertex & Index Buffer
 	auto circleData = generateCircle(radius, 32);
-	indexCount = circleData.second.size();
+	indexCount = (unsigned int)circleData.second.size();
 
-	vertexBuffer = VertexBuffer(circleData.first, circleData.first.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
+	vertexBuffer = VertexBuffer(circleData.first, (UINT)(circleData.first.size() * sizeof(XMFLOAT3)), (UINT)sizeof(XMFLOAT3));
 	vbv = vertexBuffer.passVertexDataToGPU(*context, pipeline->getCommandList());
 
-	indexBuffer = IndexBuffer(circleData.second, circleData.second.size() * sizeof(unsigned int));
+	indexBuffer = IndexBuffer(circleData.second, (UINT)(circleData.second.size() * sizeof(unsigned int)));
 	ibv = indexBuffer.passIndexDataToGPU(*context, pipeline->getCommandList());
 
 	//Transition both buffers to their usable states
@@ -86,7 +86,7 @@ void PBMPMScene::compute() {
 	cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
 
 	//// Set compute root constants
-	PBMPMConstants constants = { {10, 10}, 0.0005, 9.81, 1.5, 0.05, 5, 1, 90, 0 };
+	PBMPMConstants constants = { {10, 10}, 0.0005f, 9.81f, 1.5f, 0.05f, 5, 1, 90, 0 };
 
 	cmdList->SetComputeRoot32BitConstants(0, 9, &constants, 0);
 
