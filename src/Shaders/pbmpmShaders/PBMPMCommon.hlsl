@@ -4,7 +4,7 @@
 #define GridDispatchSize 8
 #define BukkitSize 6
 #define BukkitHaloSize 1
-#define GuardianSize 1
+#define GuardianSize 3
 
 #define MaterialLiquid 0
 #define MaterialElastic 1

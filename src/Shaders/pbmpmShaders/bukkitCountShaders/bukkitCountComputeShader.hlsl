@@ -6,17 +6,15 @@
 // Root constants bound to b0
 ConstantBuffer<PBMPMConstants> g_simConstants : register(b0);
 // CBV, UAVs and SRVs
-cbuffer g_particleCount : register(b1)
-{
-    uint g_particleCount[4];
-};
-StructuredBuffer<Particle> g_particles : register(t0);
+StructuredBuffer<uint> g_particleCount : register(t0);
+StructuredBuffer<Particle> g_particles : register(t1);
 RWStructuredBuffer<uint> g_bukkitCounts : register(u0);
 
 // Compute Shader Entry Point
 [numthreads(ParticleDispatchSize, 1, 1)]
 void main(uint3 id : SV_DispatchThreadID)
 {
+ 
     // Check if the particle index is out of bounds
     if (id.x >= g_particleCount[0])
     {
@@ -37,7 +35,9 @@ void main(uint3 id : SV_DispatchThreadID)
 
     // Calculate the bukkit ID for this particle
     int2 particleBukkit = positionToBukkitId(position);
-
+    
+    g_bukkitCounts[id.x] = particleBukkit[0];
+    
     // Check if the particle is out of bounds
     if (any(particleBukkit < int2(0, 0)) ||
         uint(particleBukkit.x) >= g_simConstants.bukkitCountX ||
@@ -48,6 +48,7 @@ void main(uint3 id : SV_DispatchThreadID)
 
     // Calculate the linear bukkit index
     uint bukkitIndex = bukkitAddressToIndex(uint2(particleBukkit), g_simConstants.bukkitCountX);
+    
 
     // Atomically increment the bukkit count
     InterlockedAdd(g_bukkitCounts[bukkitIndex], 1);
