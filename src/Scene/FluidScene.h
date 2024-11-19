@@ -3,12 +3,22 @@
 #include "Drawable.h"
 #include "../D3D/Pipeline/ComputePipeline.h"
 #include "../D3D/StructuredBuffer.h"
+#include "../Shaders/constants.h"
 
 struct GridConstants {
+    unsigned int numParticles;
     XMINT3 gridDim;
     XMFLOAT3 minBounds;
     float resolution;
-    unsigned int numParticles;
+};
+
+struct Cell {
+    int particleCount;
+    int particleIndices[MAX_PARTICLES_PER_CELL];
+};
+
+struct Block {
+    int nonEmptyCellCount;
 };
 
 class FluidScene : public Drawable {

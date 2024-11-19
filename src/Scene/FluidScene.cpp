@@ -1,5 +1,4 @@
 #include "FluidScene.h"
-#include "../Shaders/constants.h"
 
 FluidScene::FluidScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* bilevelUniformGridCP)
     : Drawable(context, pipeline), bilevelUniformGridCP(bilevelUniformGridCP)
@@ -16,12 +15,11 @@ float getRandomFloatInRange(float min, float max) {
 }
 
 void FluidScene::constructScene() {
-	renderPipeline->createPSOD();
-	renderPipeline->createPipelineState(context->getDevice());
+    unsigned int numParticles = 3 * CELLS_PER_BLOCK_EDGE * 3 * CELLS_PER_BLOCK_EDGE * 3 * CELLS_PER_BLOCK_EDGE;
+    gridConstants = { numParticles, {3 * CELLS_PER_BLOCK_EDGE, 3 * CELLS_PER_BLOCK_EDGE, 3 * CELLS_PER_BLOCK_EDGE}, {0.f, 0.f, 0.f}, 0.1f };
 
-    gridConstants = { {10, 10, 10}, {0.f, 0.f, 0.f}, 0.1f, 1000 };
-
-    // Populate position data. 1000 partices in a 10x10x10 block of cells, each at a random position in a cell.
+    // Populate position data. 1000 partices in a 12x12x12 block of cells, each at a random position in a cell.
+    // (Temporary, eventually, position data will come from simulation)
     for (int i = 0; i < gridConstants.gridDim.x; ++i) {
         for (int j = 0; j < gridConstants.gridDim.y; ++j) {
             for (int k = 0; k < gridConstants.gridDim.z; ++k) {
@@ -41,14 +39,14 @@ void FluidScene::constructScene() {
     int numCells = gridConstants.gridDim.x * gridConstants.gridDim.y * gridConstants.gridDim.z;
     int numBlocks = numCells / (CELLS_PER_BLOCK_EDGE * CELLS_PER_BLOCK_EDGE * CELLS_PER_BLOCK_EDGE);
     
-    std::vector<int> cells(numCells, 0);
-    std::vector<int> blocks(numBlocks, 0);
+    std::vector<Cell> cells(numCells);
+    std::vector<Block> blocks(numBlocks);
     
-    cellsBuffer = StructuredBuffer(&cells, numCells, 2 * sizeof(int), bilevelUniformGridCP->getDescriptorHeap());
-    cellsBuffer.passUAVDataToGPU(*context, bilevelUniformGridCP->getCommandList(), bilevelUniformGridCP->getCommandListID());
-
-    blocksBuffer = StructuredBuffer(&blocks, numBlocks, 2 * sizeof(int), bilevelUniformGridCP->getDescriptorHeap());
+    blocksBuffer = StructuredBuffer(blocks.data(), numBlocks, sizeof(Block), bilevelUniformGridCP->getDescriptorHeap());
     blocksBuffer.passUAVDataToGPU(*context, bilevelUniformGridCP->getCommandList(), bilevelUniformGridCP->getCommandListID());
+
+    cellsBuffer = StructuredBuffer(cells.data(), numCells, sizeof(Cell), bilevelUniformGridCP->getDescriptorHeap());
+    cellsBuffer.passUAVDataToGPU(*context, bilevelUniformGridCP->getCommandList(), bilevelUniformGridCP->getCommandListID());
 
     // Create fence
     context->getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
@@ -71,7 +69,8 @@ void FluidScene::compute() {
     cmdList->SetComputeRoot32BitConstants(3, 8, &gridConstants, 0);
 
     // Dispatch
-    cmdList->Dispatch(gridConstants.numParticles, 1, 1);
+    int workgroupSize = (gridConstants.numParticles + BILEVEL_UNIFORM_GRID_THREADS_X - 1) / BILEVEL_UNIFORM_GRID_THREADS_X;
+    cmdList->Dispatch(workgroupSize, 1, 1);
 
     // Execute command list
     context->executeCommandList(bilevelUniformGridCP->getCommandListID());

@@ -33,7 +33,6 @@ int main() {
     mouse->SetWindow(Window::get().getHWND());
 
     Scene scene{Object, camera.get(), &context};
-    scene.setRenderScene(PBMPM);
 
     while (!Window::get().getShouldClose()) {
         //update window
