@@ -24,7 +24,7 @@ struct Block {
 class FluidScene : public Drawable {
 public:
     FluidScene() = delete;
-    FluidScene(DXContext* context, RenderPipeline *pipeline, ComputePipeline* bilevelUniformGridCP);
+    FluidScene(DXContext* context, RenderPipeline *pipeline, ComputePipeline* bilevelUniformGridCP, ComputePipeline* surfaceBlockDetectionCP);
 
     void compute();
     void draw(Camera* camera);
@@ -35,6 +35,7 @@ private:
     GridConstants gridConstants;
     
     ComputePipeline* bilevelUniformGridCP;
+    ComputePipeline* surfaceBlockDetectionCP;
     std::vector<XMFLOAT3> positions;
 	StructuredBuffer positionBuffer;
     UINT64 fenceValue = 1;
@@ -42,4 +43,6 @@ private:
 
     StructuredBuffer cellsBuffer;
     StructuredBuffer blocksBuffer;
+    StructuredBuffer surfaceBlockIndicesBuffer;
+    StructuredBuffer surfaceBlockCount;
 };

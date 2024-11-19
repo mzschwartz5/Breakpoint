@@ -4,14 +4,15 @@
 #include <stdexcept>
 #include <array>
 
-#define NUM_CMDLISTS 6
+#define NUM_CMDLISTS 7
 enum CommandListID {
     OBJECT_RENDER_ID,
     PBMPM_RENDER_ID,
     PBMPM_COMPUTE_ID,
     PHYSICS_RENDER_ID,
     PHYSICS_COMPUTE_ID,
-    FLUID_ID,
+    BILEVEL_UNIFORM_GRID_COMPUTE_ID,
+    SURFACE_BLOCK_DETECTION_COMPUTE_ID
 };
 
 class DXContext
