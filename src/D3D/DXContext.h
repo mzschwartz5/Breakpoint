@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <array>
 
-#define NUM_CMDLISTS 7
+#define NUM_CMDLISTS 8
 enum CommandListID {
     PAPA_ID,
     RENDER_ID,

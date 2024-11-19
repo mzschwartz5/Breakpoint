@@ -162,6 +162,8 @@ void StructuredBuffer::passSRVDataToGPU(DXContext& context, ID3D12GraphicsComman
         CloseHandle(eventHandle);
     }
 
+    context.resetCommandList(cmdId);
+
     // Step 6: Create the SRV in the descriptor heap
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
