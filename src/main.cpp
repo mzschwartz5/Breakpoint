@@ -87,7 +87,7 @@ int main() {
 
         Window::get().beginFrame(renderPipeline->getCommandList());
         D3D12_VIEWPORT vp;
-        context.createAndSetDefaultViewport(vp, renderPipeline->getCommandList());
+        Window::get().createAndSetDefaultViewport(vp, renderPipeline->getCommandList());
 
         scene.draw();
 
@@ -102,7 +102,7 @@ int main() {
             startTime = endTime;
         }
 
-        std::string fpsStr = "FPS: " + std::to_string(fps);
+        std::wstring fpsStr = L"Breakpoint - FPS: " + std::to_wstring(fps);
         Window::get().renderText(renderPipeline->getCommandList(), fpsStr);
         
         Window::get().endFrame(renderPipeline->getCommandList());
@@ -111,8 +111,6 @@ int main() {
         context.executeCommandList(renderPipeline->getCommandListID());
         Window::get().present();
 		context.resetCommandList(renderPipeline->getCommandListID());
-
-        
     }
 
     // Close

@@ -48,7 +48,10 @@ public:
 
 	void shutdown();
 
-	void renderText(ID3D12GraphicsCommandList6* cmdList, std::string text);
+	void renderText(ID3D12GraphicsCommandList6* cmdList, std::wstring text);
+
+	static void createAndSetDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList);
+	static void getViewport(D3D12_VIEWPORT& vp);
 
 private:
 	Window() = default;
