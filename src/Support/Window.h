@@ -2,6 +2,7 @@
 
 #include "../Support/WinInclude.h"
 #include "../Support/ComPointer.h"
+#include "../D3D/DescriptorHeap.h"
 #include "../D3D/DXContext.h"
 
 #define FRAME_COUNT 2
@@ -46,6 +47,10 @@ public:
 	void endFrame(ID3D12GraphicsCommandList6* cmdList);
 
 	void shutdown();
+
+	void updateTitle(std::wstring text);
+
+	static void createAndSetDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList);
 
 private:
 	Window() = default;
