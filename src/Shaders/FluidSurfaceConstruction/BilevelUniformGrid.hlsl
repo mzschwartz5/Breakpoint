@@ -79,6 +79,7 @@ void main(uint3 globalThreadId : SV_DispatchThreadID) {
                                               + neighborBlockIndices.y * gridBlockDimensions.x
                                               + neighborBlockIndices.z * gridBlockDimensions.x * gridBlockDimensions.y;
 
+                    // TODO: test if its faster to atomic add first to a shared memory variable, then add to the buffer at the end
                     InterlockedAdd(blocks[neighborBlockIndex1D].nonEmptyCellCount, 1);
                 }
             }
