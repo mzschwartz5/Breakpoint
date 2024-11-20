@@ -103,7 +103,7 @@ int main() {
         }
 
         std::wstring fpsStr = L"Breakpoint - FPS: " + std::to_wstring(fps);
-        Window::get().renderText(renderPipeline->getCommandList(), fpsStr);
+        Window::get().updateTitle(fpsStr);
         
         Window::get().endFrame(renderPipeline->getCommandList());
 

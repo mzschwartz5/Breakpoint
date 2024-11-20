@@ -48,10 +48,9 @@ public:
 
 	void shutdown();
 
-	void renderText(ID3D12GraphicsCommandList6* cmdList, std::wstring text);
+	void updateTitle(std::wstring text);
 
 	static void createAndSetDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList);
-	static void getViewport(D3D12_VIEWPORT& vp);
 
 private:
 	Window() = default;
@@ -77,11 +76,6 @@ private:
 
 	bool getBuffers();
 	void releaseBuffers();
-
-	std::unique_ptr<DescriptorHeap> fontDH;
-	std::unique_ptr<DirectX::SpriteFont> font;
-	std::unique_ptr<DirectX::SpriteBatch> spriteBatch;
-	DirectX::XMVECTOR fontPos;
 
 #ifdef _DEBUG
 	ComPointer<ID3D12Debug3> d3d12Debug;

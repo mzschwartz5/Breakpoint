@@ -96,25 +96,6 @@ bool Window::init(DXContext* contextPtr, int w, int h) {
         return false;
     }
 
-    fontDH = std::make_unique<DescriptorHeap>(*contextPtr, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    DirectX::ResourceUploadBatch resourceUpload(contextPtr->getDevice());
-
-    resourceUpload.Begin();
-    font = std::make_unique<DirectX::SpriteFont>(contextPtr->getDevice(), resourceUpload, L"myfile.spritefont", fontDH->GetCPUHandleAt(0), fontDH->GetGPUHandleAt(0));
-    
-    DirectX::RenderTargetState rtState(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN);
-    DirectX::SpriteBatchPipelineStateDescription pd(rtState);
-    spriteBatch = std::make_unique<DirectX::SpriteBatch>(contextPtr->getDevice(), resourceUpload, pd);
-
-    auto uploadResourcesFinished = resourceUpload.End(contextPtr->getCommandQueue());
-    uploadResourcesFinished.wait();
-
-    D3D12_VIEWPORT vp;
-    getViewport(vp);
-    spriteBatch->SetViewport(vp);
-    DirectX::XMVectorSetX(fontPos, 0.f);
-    DirectX::XMVectorSetY(fontPos, 0.f);
-
     return true;
 }
 
@@ -193,26 +174,12 @@ void Window::shutdown() {
     }
 }
 
-void Window::renderText(ID3D12GraphicsCommandList6* cmdList, std::wstring text) {
-    /*ID3D12DescriptorHeap* heaps[] = {fontDH->Get()};
-    cmdList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
-
-    spriteBatch->Begin(cmdList);
-
-    const wchar_t* output = L"Hello World";
-    DirectX::XMVECTOR origin = font->MeasureString(output);
-    DirectX::XMVECTOR halfVec{ 2.f, 2.f };
-    DirectX::XMVectorDivide(origin, halfVec);
-
-    font->DrawString(spriteBatch.get(), output,
-        fontPos, DirectX::Colors::White, 0.f, origin);
-
-    spriteBatch->End();*/
+void Window::updateTitle(std::wstring text) {
     SetWindowTextW(window, text.c_str());
 }
 
 bool Window::getBuffers() {
-    for (size_t i = 0; i < FRAME_COUNT; i++) {
+    for (UINT i = 0; i < FRAME_COUNT; i++) {
         if (FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&swapChainBuffers[i])))) {
             return false;
         }
@@ -298,12 +265,4 @@ void Window::createAndSetDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsComma
     scRect.right = Window::get().getWidth();
     scRect.bottom = Window::get().getHeight();
     cmdList->RSSetScissorRects(1, &scRect);
-}
-
-void Window::getViewport(D3D12_VIEWPORT& vp) {
-    vp.TopLeftX = vp.TopLeftY = 0;
-    vp.Width = (float)Window::get().getWidth();
-    vp.Height = (float)Window::get().getHeight();
-    vp.MinDepth = 1.f;
-    vp.MaxDepth = 0.f;
 }
