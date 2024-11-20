@@ -11,6 +11,11 @@
 #include <DirectXMath.h>
 #include "./includes/d3dx12.h"
 
+#include <SpriteBatch.h>
+#include <SpriteFont.h>
+#include <SimpleMath.h>
+#include "ResourceUploadBatch.h"
+
 #include <Keyboard.h>
 #include <Mouse.h>
 

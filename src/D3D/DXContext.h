@@ -1,6 +1,7 @@
 #pragma once
 #include "../Support/WinInclude.h"
 #include "../Support/ComPointer.h"
+#include "../Support/Window.h"
 #include <stdexcept>
 #include <array>
 
@@ -32,6 +33,9 @@ public:
     ComPointer<ID3D12CommandQueue>& getCommandQueue();
     ComPointer<ID3D12CommandAllocator>& getCommandAllocator(CommandListID id) { return cmdAllocators[id]; };
     ID3D12GraphicsCommandList6* createCommandList(CommandListID id);
+
+    void createAndSetDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList);
+    D3D12_VIEWPORT getViewport(D3D12_VIEWPORT& vp);
 
 private:
     ComPointer<IDXGIFactory7> dxgiFactory;

@@ -2,6 +2,7 @@
 
 #include "../Support/WinInclude.h"
 #include "../Support/ComPointer.h"
+#include "../D3D/DescriptorHeap.h"
 #include "../D3D/DXContext.h"
 
 #define FRAME_COUNT 2
@@ -47,6 +48,8 @@ public:
 
 	void shutdown();
 
+	void renderText(ID3D12GraphicsCommandList6* cmdList, std::string text);
+
 private:
 	Window() = default;
 
@@ -71,6 +74,11 @@ private:
 
 	bool getBuffers();
 	void releaseBuffers();
+
+	std::unique_ptr<DescriptorHeap> fontDH;
+	std::unique_ptr<DirectX::SpriteFont> font;
+	std::unique_ptr<DirectX::SpriteBatch> spriteBatch;
+	DirectX::XMVECTOR fontPos;
 
 #ifdef _DEBUG
 	ComPointer<ID3D12Debug3> d3d12Debug;

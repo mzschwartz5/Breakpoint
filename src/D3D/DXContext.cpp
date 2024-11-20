@@ -136,3 +136,25 @@ ID3D12GraphicsCommandList6* DXContext::createCommandList(CommandListID id)
     cmdLists[id] = cmdList;
     return cmdList.Get();
 }
+
+void DXContext::createAndSetDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
+    vp.TopLeftX = vp.TopLeftY = 0;
+    vp.Width = (float)Window::get().getWidth();
+    vp.Height = (float)Window::get().getHeight();
+    vp.MinDepth = 1.f;
+    vp.MaxDepth = 0.f;
+    cmdList->RSSetViewports(1, &vp);
+    RECT scRect;
+    scRect.left = scRect.top = 0;
+    scRect.right = Window::get().getWidth();
+    scRect.bottom = Window::get().getHeight();
+    cmdList->RSSetScissorRects(1, &scRect);
+}
+
+D3D12_VIEWPORT DXContext::getViewport(D3D12_VIEWPORT& vp) {
+    vp.TopLeftX = vp.TopLeftY = 0;
+    vp.Width = (float)Window::get().getWidth();
+    vp.Height = (float)Window::get().getHeight();
+    vp.MinDepth = 1.f;
+    vp.MaxDepth = 0.f;
+}

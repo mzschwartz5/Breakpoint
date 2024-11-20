@@ -1,20 +1,5 @@
 #include "main.h"
 
-// This should probably go somewhere else
-void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
-    vp.TopLeftX = vp.TopLeftY = 0;
-    vp.Width = (float)Window::get().getWidth();
-    vp.Height = (float)Window::get().getHeight();
-    vp.MinDepth = 1.f;
-    vp.MaxDepth = 0.f;
-    cmdList->RSSetViewports(1, &vp);
-    RECT scRect;
-    scRect.left = scRect.top = 0;
-    scRect.right = Window::get().getWidth();
-    scRect.bottom = Window::get().getHeight();
-    cmdList->RSSetScissorRects(1, &scRect);
-}
-
 int main() {
     //set up DX, window, keyboard mouse
     DebugLayer debugLayer = DebugLayer();
@@ -29,6 +14,14 @@ int main() {
         Window::get().shutdown();
         return false;
     }
+
+    //initialize FPS counter variables
+    LARGE_INTEGER timeFrequency, startTime, endTime;
+    float fps = 0.0f;
+    int frameCount = 0;
+
+    QueryPerformanceFrequency(&timeFrequency);
+    QueryPerformanceCounter(&startTime);
 
     mouse->SetWindow(Window::get().getHWND());
 
@@ -94,9 +87,23 @@ int main() {
 
         Window::get().beginFrame(renderPipeline->getCommandList());
         D3D12_VIEWPORT vp;
-        createDefaultViewport(vp, renderPipeline->getCommandList());
+        context.createAndSetDefaultViewport(vp, renderPipeline->getCommandList());
 
         scene.draw();
+
+        //measure FPS
+        QueryPerformanceCounter(&endTime);
+        float elapsedTime = (float)(endTime.QuadPart - startTime.QuadPart) / (float)timeFrequency.QuadPart;
+        frameCount++;
+
+        if (elapsedTime >= 1.0f) {
+            fps = (float)frameCount / elapsedTime;
+            frameCount = 0;
+            startTime = endTime;
+        }
+
+        std::string fpsStr = "FPS: " + std::to_string(fps);
+        Window::get().renderText(renderPipeline->getCommandList(), fpsStr);
         
         Window::get().endFrame(renderPipeline->getCommandList());
 
@@ -104,6 +111,8 @@ int main() {
         context.executeCommandList(renderPipeline->getCommandListID());
         Window::get().present();
 		context.resetCommandList(renderPipeline->getCommandListID());
+
+        
     }
 
     // Close

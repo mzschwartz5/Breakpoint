@@ -96,6 +96,22 @@ bool Window::init(DXContext* contextPtr, int w, int h) {
         return false;
     }
 
+    DirectX::ResourceUploadBatch resourceUpload(contextPtr->getDevice());
+
+    resourceUpload.Begin();
+    font = std::make_unique<DirectX::SpriteFont>(contextPtr->getDevice(), resourceUpload, L"myfile.spritefont", fontDH->GetCPUHandleAt(0), fontDH->GetGPUHandleAt(0));
+
+    auto uploadResourcesFinished = resourceUpload.End(contextPtr->getCommandQueue());
+    uploadResourcesFinished.wait();
+    
+    DirectX::RenderTargetState rtState(DXGI_FORMAT_R8G8B8A8_UNORM, DXGI_FORMAT_UNKNOWN);
+    DirectX::SpriteBatchPipelineStateDescription pd(rtState);
+    spriteBatch = std::make_unique<DirectX::SpriteBatch>(contextPtr->getDevice(), resourceUpload, pd);
+    D3D12_VIEWPORT vp;
+    spriteBatch->SetViewport(contextPtr->getViewport(vp));
+    DirectX::XMVectorSetX(fontPos, 0.f);
+    DirectX::XMVectorSetY(fontPos, 0.f);
+
     return true;
 }
 
@@ -172,6 +188,23 @@ void Window::shutdown() {
     if (wndClass) {
         UnregisterClassW((LPCWSTR)wndClass, GetModuleHandleW(nullptr));
     }
+}
+
+void Window::renderText(ID3D12GraphicsCommandList6* cmdList, std::string text) {
+    ID3D12DescriptorHeap* heaps[] = { fontDH->Get() };
+    cmdList->SetDescriptorHeaps(static_cast<UINT>(std::size(heaps)), heaps);
+
+    spriteBatch->Begin(cmdList);
+
+    const wchar_t* output = L"Hello World";
+    DirectX::XMVECTOR origin = font->MeasureString(output);
+    DirectX::XMVECTOR halfVec{ 2.f, 2.f };
+    DirectX::XMVectorDivide(origin, halfVec);
+
+    font->DrawString(spriteBatch.get(), output,
+        fontPos, DirectX::Colors::White, 0.f, origin);
+
+    spriteBatch->End();
 }
 
 bool Window::getBuffers() {
