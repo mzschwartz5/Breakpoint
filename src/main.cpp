@@ -102,7 +102,9 @@ int main() {
             startTime = endTime;
         }
 
-        std::wstring fpsStr = L"Breakpoint - FPS: " + std::to_wstring(fps);
+        std::wstringstream fpsStream;
+        fpsStream << std::fixed << std::setprecision(2) << fps;
+        std::wstring fpsStr = L"Breakpoint - FPS: " + fpsStream.str();
         Window::get().updateTitle(fpsStr);
         
         Window::get().endFrame(renderPipeline->getCommandList());
