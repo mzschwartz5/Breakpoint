@@ -245,6 +245,10 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     {
         // Load Particle
         uint myParticleIndex = g_bukkitParticleData[threadData.rangeStart + indexInGroup];
+
+        // TODO: Remove this line that makes things move bottom left
+        g_particles[myParticleIndex].position -= 80 * g_simConstants.deltaTime;
+        
         Particle particle = g_particles[myParticleIndex];
         
         float2 p = particle.position;
@@ -419,11 +423,16 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
         InterlockedAdd(s_tileDataDst[tileDataIndex + 3], 0, vi);
 
     // Atomic adds to the destination buffer
-        InterlockedAdd(g_gridDst[gridVertexAddress + 0], dxi);
-        InterlockedAdd(g_gridDst[gridVertexAddress + 1], dyi);
-        InterlockedAdd(g_gridDst[gridVertexAddress + 2], wi);
-        InterlockedAdd(g_gridDst[gridVertexAddress + 3], vi);
+        //InterlockedAdd(g_gridDst[gridVertexAddress + 0], dxi);
+        //InterlockedAdd(g_gridDst[gridVertexAddress + 1], dyi);
+        //InterlockedAdd(g_gridDst[gridVertexAddress + 2], wi);
+        //InterlockedAdd(g_gridDst[gridVertexAddress + 3], vi);
 
+        InterlockedAdd(g_gridDst[gridVertexAddress + 0], 10);
+        InterlockedAdd(g_gridDst[gridVertexAddress + 1], 10);
+        InterlockedAdd(g_gridDst[gridVertexAddress + 2], 10);
+        InterlockedAdd(g_gridDst[gridVertexAddress + 3], 10);
+    
     // Clear the entries in g_gridToBeCleared
         g_gridToBeCleared[gridVertexAddress + 0] = 0;
         g_gridToBeCleared[gridVertexAddress + 1] = 0;

@@ -47,12 +47,13 @@ void main(uint3 id : SV_DispatchThreadID)
 
     // Calculate the linear bukkit index
     uint bukkitIndex = bukkitAddressToIndex(uint2(particleBukkit), g_simConstants.bukkitCountX);
+    // Getting the first particle of this bucket
     uint bukkitIndexStart = g_bukkitIndexStart[bukkitIndex];
 
     // Atomically increment the particle insert counter
+    // (Adds how many particles are in each bukkit again?)
     uint particleInsertCounter;
     InterlockedAdd(g_particleInsertCounters[bukkitIndex], 1, particleInsertCounter);
-    particleInsertCounter++;
 
     // Write the particle index to the particle data buffer
     g_particleData[particleInsertCounter + bukkitIndexStart] = id.x;

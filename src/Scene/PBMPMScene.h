@@ -13,7 +13,7 @@ const unsigned int ParticleDispatchSize = 64;
 const unsigned int GridDispatchSize = 8;
 const unsigned int BukkitSize = 6;
 const unsigned int BukkitHaloSize = 1;
-const unsigned int GuardianSize = 1;
+const unsigned int GuardianSize = 0;
 
 const unsigned int maxParticles = 1000000;
 const unsigned int maxTimestampCount = 2048;

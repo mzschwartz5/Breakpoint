@@ -41,11 +41,9 @@ void main(uint3 id : SV_DispatchThreadID)
     // Update global dispatch and particle allocators atomically
     uint dispatchStartIndex;
     InterlockedAdd(g_bukkitIndirectDispatch[0], dispatchCount, dispatchStartIndex);
-    dispatchStartIndex += dispatchCount;
     
     uint particleStartIndex;
     InterlockedAdd(g_bukkitParticleAllocator[0], bukkitCount, particleStartIndex);
-    particleStartIndex += bukkitCount;
 
     // Record the start index for this bukkit
     g_bukkitIndexStart[bukkitIndex] = particleStartIndex;
