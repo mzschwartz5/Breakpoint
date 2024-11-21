@@ -44,7 +44,12 @@ private:
 	SimulationParams simParams = {};
 	unsigned int constraintCount = 0;
 	StructuredBuffer particleBuffer;
-	StructuredBuffer constraintBuffer;
+	//StructuredBuffer constraintBuffer;
 	std::vector<Particle> particles;
-	std::vector<DistanceConstraint> constraints;
+	std::vector<Voxel> voxels;
+	std::vector<uint32_t> indices;
+	//std::vector<DistanceConstraint> constraints;
+	StructuredBuffer voxelBuffer;
+	StructuredBuffer V_indexBuffer;
+
 };

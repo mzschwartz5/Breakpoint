@@ -16,30 +16,69 @@ void PBDScene::constructScene() {
 	
 
 	std::vector<XMFLOAT3> positions = {
-	{ -0.1f, 0.0f, 0.0f }, // Particle 0
-	{  0.1f, 0.0f, 0.0f }  // Particle 1
+	{ -0.25f, -0.25f, -0.25f }, // Particle 0
+	{  0.25f, -0.25f, -0.25f }, // Particle 1
+	{  0.25f,  0.25f, -0.25f }, // Particle 2
+	{ -0.25f,  0.25f, -0.25f }, // Particle 3
+	{ -0.25f, -0.25f,  0.25f }, // Particle 4
+	{  0.25f, -0.25f,  0.25f }, // Particle 5
+	{  0.25f,  0.25f,  0.25f }, // Particle 6
+	{ -0.25f,  0.25f,  0.25f },  // Particle 7
+
+		{ 0.35f, -0.25f, -0.25f }, // 8
+{ 0.85f, -0.25f, -0.25f }, // 9
+{ 0.85f,  0.25f, -0.25f }, // 10
+{ 0.35f,  0.25f, -0.25f }, // 11
+{ 0.35f, -0.25f,  0.25f }, // 12
+{ 0.85f, -0.25f,  0.25f }, // 13
+{ 0.85f,  0.25f,  0.25f }, // 14
+{ 0.35f,  0.25f,  0.25f }   // 15
 	};
 
-	particles = std::vector<Particle>(positions.size());
-	for (int i = 0; i < positions.size(); ++i) {
+	
+	particles.resize(positions.size());
+	for (size_t i = 0; i < positions.size(); ++i) {
 		particles[i].position = positions[i];
-		particles[i].prevPosition = particles[i].position;
+		particles[i].prevPosition = positions[i];
 		particles[i].velocity = { 0.0f, 0.0f, 0.0f };
 		particles[i].invMass = 1.0f; // Uniform mass
 	}
 
-	constraints = std::vector<DistanceConstraint>(1);
-	constraints[0].particleA = 0;
-	constraints[0].particleB = 1;
-	constraints[0].restLength = 1.5f;
+	// Voxel 0
+	Voxel voxel0;
+	for (int i = 0; i < 8; ++i) {
+		voxel0.particleIndices[i] = i; // Particles 0-7
+	}
+	voxel0.u = { 1.0f, 0.0f, 0.0f };
+	voxel0.v = { 0.0f, 1.0f, 0.0f };
+	voxel0.w = { 0.0f, 0.0f, 1.0f };
+	voxels.push_back(voxel0);
+	indices.push_back(0);
+
+	// Voxel 1
+	Voxel voxel1;
+	for (int i = 0; i < 8; ++i) {
+		voxel1.particleIndices[i] = i + 8; // Particles 8-15
+	}
+	voxel1.u = { 1.0f, 0.0f, 0.0f };
+	voxel1.v = { 0.0f, 1.0f, 0.0f };
+	voxel1.w = { 0.0f, 0.0f, 1.0f };
+	voxels.push_back(voxel1);
+	indices.push_back(1);
+
+	
+
+	
 
 
 	
+
+
 	simParams.deltaTime = 0.033f;
 	simParams.count = instanceCount;
 	simParams.gravity = { 0.0f, -9.81f, 0.0f };
-	constraintCount = constraints.size();
-	simParams.constraintCount = constraintCount;
+	simParams.constraintCount = static_cast<unsigned int>(voxels.size());
+	
 
 
 	
@@ -49,8 +88,11 @@ void PBDScene::constructScene() {
 
 	particleBuffer = StructuredBuffer(particles.data(), particles.size(),
 		sizeof(Particle), computePipeline->getDescriptorHeap());
-	constraintBuffer = StructuredBuffer(constraints.data(), constraints.size(),
-		sizeof(DistanceConstraint), computePipeline->getDescriptorHeap());
+	voxelBuffer = StructuredBuffer(voxels.data(), voxels.size(),
+		sizeof(Voxel), computePipeline->getDescriptorHeap());
+	V_indexBuffer = StructuredBuffer(indices.data(), indices.size(),
+		sizeof(uint32_t), computePipeline->getDescriptorHeap());
+
 
 	auto computeList = computePipeline->getCommandList();
 	auto forcesList = applyForcesPipeline->getCommandList();
@@ -59,16 +101,15 @@ void PBDScene::constructScene() {
 	
 
 	particleBuffer.passUAVDataToGPU(*context, computeList, computePipeline->getCommandListID());
-	constraintBuffer.passSRVDataToGPU(*context, computeList, computePipeline->getCommandListID());
 	
-	/*particleBuffer.passUAVDataToGPU(*context, forcesList, applyForcesPipeline->getCommandListID());
-	particleBuffer.passUAVDataToGPU(*context, velocityList, velocityUpdatePipeline->getCommandListID());*/
+	voxelBuffer.passUAVDataToGPU(*context, computeList, computePipeline->getCommandListID());
+	V_indexBuffer.passSRVDataToGPU(*context, computeList, computePipeline->getCommandListID());
 
 	//particleBuffer.passSRVDataToGPU(*context, computeList, computePipeline->getCommandListID());
 	
 
 	// Create Vertex & Index Buffer
-	auto circleData = generateCircle(0.05f, 32);
+	auto  circleData = generateSphere(0.05f, 16, 16);
 	indexCount = circleData.second.size();
 
 	vertexBuffer = VertexBuffer(circleData.first, circleData.first.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
@@ -142,24 +183,25 @@ void PBDScene::compute() {
 	constraintList->SetDescriptorHeaps(_countof(constraintHeaps), constraintHeaps);
 
 	constraintList->SetComputeRootDescriptorTable(0, computePipeline->getDescriptorHeap()->GetGPUHandleAt(0));
-	constraintList->SetComputeRootDescriptorTable(1, computePipeline->getDescriptorHeap()->GetGPUHandleAt(1));
-	constraintList->SetComputeRoot32BitConstants(2, 1, &constraintCount, 0);
+	//constraintList->SetComputeRootDescriptorTable(0, computePipeline->getDescriptorHeap()->GetGPUHandleAt(1));
+	constraintList->SetComputeRootDescriptorTable(2, computePipeline->getDescriptorHeap()->GetGPUHandleAt(2));
+	constraintList->SetComputeRoot32BitConstants(1, 1, &simParams.constraintCount, 0);
 
-	for (int i = 0; i < 4; ++i) { 
-		constraintList->Dispatch(constraintCount, 1, 1);
+	 
+		constraintList->Dispatch(simParams.constraintCount, 1, 1);
 
 		// Add UAV barrier between iterations
 		D3D12_RESOURCE_BARRIER iterationBarrier = {};
 		iterationBarrier.Type = D3D12_RESOURCE_BARRIER_TYPE_UAV;
 		iterationBarrier.UAV.pResource = particleBuffer.getBuffer();
 		constraintList->ResourceBarrier(1, &iterationBarrier);
-	}
+	
 	//constraintList->Close();
 	context->executeCommandList(computePipeline->getCommandListID());
 	context->signalAndWaitForFence(fence, ++fenceValue);
 
 	auto velocityList = velocityUpdatePipeline->getCommandList();
-	//context->resetCommandList(CommandListID::velocity_update_ID);
+	////context->resetCommandList(CommandListID::velocity_update_ID);
 
 	velocityList->SetPipelineState(velocityUpdatePipeline->getPSO());
 	velocityList->SetComputeRootSignature(velocityUpdatePipeline->getRootSignature());
@@ -175,7 +217,7 @@ void PBDScene::compute() {
 	velocityBarrier.UAV.pResource = particleBuffer.getBuffer();
 	velocityList->ResourceBarrier(1, &velocityBarrier);
 
-	//velocityList->Close();
+	////velocityList->Close();
 	context->executeCommandList(velocityUpdatePipeline->getCommandListID());
 	context->signalAndWaitForFence(fence, ++fenceValue);
 
@@ -232,7 +274,7 @@ void PBDScene::draw(Camera* cam) {
 	cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
 	cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 	cmdList->SetGraphicsRoot32BitConstants(0, 16, &modelMat, 32);
-	cmdList->SetGraphicsRootShaderResourceView(1, particleBuffer.getGPUVirtualAddress()); // Descriptor table slot 1 for position SRV
+	cmdList->SetGraphicsRootUnorderedAccessView(1, particleBuffer.getGPUVirtualAddress()); // Descriptor table slot 1 for position SRV
 
 	// Draw
 	cmdList->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
@@ -247,7 +289,7 @@ void PBDScene::draw(Camera* cam) {
 
 void PBDScene::releaseResources() {
 	particleBuffer.releaseResources();
-	constraintBuffer.releaseResources();
+	//constraintBuffer.releaseResources();
 	vertexBuffer.releaseResources();
 	indexBuffer.releaseResources();
 

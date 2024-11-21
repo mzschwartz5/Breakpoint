@@ -89,8 +89,8 @@ int main() {
 #if SCENE == 4
     RenderPipeline basicPipeline("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", context, CommandListID::RENDER_ID,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, CommandListID::PBD_ID,
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
+    ComputePipeline computePipeline("TestComputeRootSignature.cso", "Gram-SchmidtConstraint.cso", context, CommandListID::PBD_ID,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 3, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     ComputePipeline applyForcesPipeline(
         "VelocitySignature.cso",        // Root signature for force application
@@ -121,7 +121,7 @@ int main() {
 
    
 
-    constexpr UINT numParticles = 2;  // Number of particles in the simulation
+    constexpr UINT numParticles = 16;  // Number of particles in the simulation
     PBDScene scene{
         &context,
         &basicPipeline,

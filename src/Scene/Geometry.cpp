@@ -50,3 +50,47 @@ std::pair<std::vector<XMFLOAT3>, std::vector<unsigned int>> generateCircle(float
 
     return { vertices, indices };
 }
+
+
+std::pair<std::vector<XMFLOAT3>, std::vector<unsigned int>> generateSphere(float radius, int sliceCount, int stackCount) {
+    std::vector<XMFLOAT3> vertices;
+    std::vector<unsigned int> indices;
+
+    // Generate vertices
+    for (int i = 0; i <= stackCount; ++i) {
+        float phi = XM_PI * i / stackCount; // From 0 to PI
+
+        for (int j = 0; j <= sliceCount; ++j) {
+            float theta = 2.0f * XM_PI * j / sliceCount; // From 0 to 2PI
+
+            // Spherical to Cartesian coordinates
+            float x = radius * sinf(phi) * cosf(theta);
+            float y = radius * cosf(phi);
+            float z = radius * sinf(phi) * sinf(theta);
+
+            XMFLOAT3 position = XMFLOAT3(x, y, z);
+
+            vertices.push_back( position);
+        }
+    }
+
+    // Generate indices
+    for (int i = 0; i < stackCount; ++i) {
+        for (int j = 0; j < sliceCount; ++j) {
+            int first = i * (sliceCount + 1) + j;
+            int second = first + sliceCount + 1;
+
+            // First triangle of quad
+            indices.push_back(first);
+            indices.push_back(second);
+            indices.push_back(first + 1);
+
+            // Second triangle of quad
+            indices.push_back(first + 1);
+            indices.push_back(second);
+            indices.push_back(second + 1);
+        }
+    }
+
+    return { vertices, indices };
+}

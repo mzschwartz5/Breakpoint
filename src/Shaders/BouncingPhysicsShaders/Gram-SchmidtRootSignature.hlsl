@@ -3,6 +3,3 @@
 "DescriptorTable(UAV(u0, numDescriptors = 2))," \
 "RootConstants(num32BitConstants=32, b0)," \
 "DescriptorTable(SRV(t0))"
-
-   
-

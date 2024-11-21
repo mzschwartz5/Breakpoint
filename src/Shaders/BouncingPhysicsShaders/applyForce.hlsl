@@ -25,7 +25,7 @@ float Random(float2 seed) {
 [numthreads(1, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID) {
     uint particleIndex = DTid.x;
-    if (particleIndex >= 2)
+    if (particleIndex >= 16)
         return;
 
     Particle p = particles[particleIndex];
@@ -34,24 +34,34 @@ void main(uint3 DTid : SV_DispatchThreadID) {
     p.prevPosition = p.position;
 
     // Update velocity with gravity
-    p.velocity += float3(0, - 9.81f * 0.1f * 0.33, 0);
+    p.velocity += float3(0.0, -9.81f * 0.01f * 0.033, 0.0) ;
 
     // Predict new position
-    p.position += float3(p.velocity.xy * 0.33, 0);
+    p.position += float3(p.velocity.xy * 0.033, 0.0);
 
-    if (abs(p.position.y) > 0.365f) {
-        p.position.y = sign(p.position.y) * 0.365f;
-        p.velocity.y = -p.velocity.y;
-       
-        p.velocity.x += Random(p.position) - 0.5;
+    float boundaryX = 0.72f;
+    float boundaryY = 0.365f;
+    float restitution = 0.9f;
+
+    if (p.position.y < -boundaryY) {
+        p.position.y = -boundaryY;
+        p.velocity.y = -p.velocity.y * restitution;
+    }
+    else if (p.position.y > boundaryY) {
+        p.position.y = boundaryY;
+        p.velocity.y = -p.velocity.y * restitution;
     }
 
-    if (abs(p.position.x) > 0.72f) {
-        p.position.x = sign(p.position.x) * 0.72f;
-        p.velocity.x = -p.velocity.x * 0.9;
-        // Randomize the y-velocity a bit
-        p.velocity.y += Random(p.position) - 0.5;
+    // Collision with X boundaries
+    if (p.position.x < -boundaryX) {
+        p.position.x = -boundaryX;
+        p.velocity.x = -p.velocity.x * restitution;
     }
+    else if (p.position.x > boundaryX) {
+        p.position.x = boundaryX;
+        p.velocity.x = -p.velocity.x * restitution;
+    }
+
 
     particles[particleIndex] = p;
 }
