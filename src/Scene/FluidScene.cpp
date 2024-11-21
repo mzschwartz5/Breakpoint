@@ -4,11 +4,13 @@ FluidScene::FluidScene(DXContext* context,
                        RenderPipeline* pipeline, 
                        ComputePipeline* bilevelUniformGridCP, 
                        ComputePipeline* surfaceBlockDetectionCP,
-                       ComputePipeline* surfaceCellDetectionCP)
+                       ComputePipeline* surfaceCellDetectionCP,
+                       ComputePipeline* surfaceVertexCompactionCP)
     : Drawable(context, pipeline), 
       bilevelUniformGridCP(bilevelUniformGridCP), 
       surfaceBlockDetectionCP(surfaceBlockDetectionCP),
-      surfaceCellDetectionCP(surfaceCellDetectionCP)
+      surfaceCellDetectionCP(surfaceCellDetectionCP),
+      surfaceVertexCompactionCP(surfaceVertexCompactionCP)
 {
     constructScene();
 }
@@ -52,6 +54,8 @@ void FluidScene::constructScene() {
     std::vector<unsigned int> surfaceBlockIndices(numBlocks, 0);
     XMUINT3 surfaceBlockDispatchCPU = { 0, 0, 0 };
     std::vector<unsigned int> surfaceVertices(numVerts, 0);
+    std::vector<unsigned int> surfaceVertexIndices(numVerts, 0);
+    XMUINT3 surfaceVertexDispatchCPU = { 0, 0, 0 };
 
     blocksBuffer = StructuredBuffer(blocks.data(), numBlocks, sizeof(Block), bilevelUniformGridCP->getDescriptorHeap());
     blocksBuffer.passUAVDataToGPU(*context, bilevelUniformGridCP->getCommandList(), bilevelUniformGridCP->getCommandListID());
@@ -67,6 +71,12 @@ void FluidScene::constructScene() {
 
     surfaceVerticesBuffer = StructuredBuffer(surfaceVertices.data(), numVerts, sizeof(unsigned int), surfaceCellDetectionCP->getDescriptorHeap());
     surfaceVerticesBuffer.passUAVDataToGPU(*context, surfaceCellDetectionCP->getCommandList(), surfaceCellDetectionCP->getCommandListID());
+
+    surfaceVertexIndicesBuffer = StructuredBuffer(surfaceVertexIndices.data(), numVerts, sizeof(unsigned int), surfaceVertexCompactionCP->getDescriptorHeap());
+    surfaceVertexIndicesBuffer.passUAVDataToGPU(*context, surfaceVertexCompactionCP->getCommandList(), surfaceVertexCompactionCP->getCommandListID());
+
+    surfaceVertexDispatch = StructuredBuffer(&surfaceVertexDispatchCPU, 1, sizeof(XMUINT3), surfaceVertexCompactionCP->getDescriptorHeap());
+    surfaceVertexDispatch.passUAVDataToGPU(*context, surfaceVertexCompactionCP->getCommandList(), surfaceVertexCompactionCP->getCommandListID());
 
 	// Create Command Signature
 	// Describe the arguments for an indirect dispatch
@@ -92,6 +102,7 @@ void FluidScene::compute() {
     computeBilevelUniformGrid();
     computeSurfaceBlockDetection();
     computeSurfaceCellDetection();
+    compactSurfaceVertices();
 }
 
 void FluidScene::computeBilevelUniformGrid() {
@@ -220,7 +231,7 @@ void FluidScene::computeSurfaceCellDetection() {
     // Dispatch
     cmdList->ExecuteIndirect(commandSignature, 1, surfaceBlockDispatch.getBuffer(), 0, nullptr, 0);
 
-    // Transition surfaceBlockDispatch back to UAV for the next frame
+    // Transition surfaceBlockDispatch to an SRV for the next pass
     D3D12_RESOURCE_BARRIER surfaceBlockDispatchBarrier2 = CD3DX12_RESOURCE_BARRIER::Transition(
         surfaceBlockDispatch.getBuffer(),
         D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
@@ -255,6 +266,50 @@ void FluidScene::computeSurfaceCellDetection() {
     context->signalAndWaitForFence(fence, fenceValue);
 
     context->resetCommandList(surfaceCellDetectionCP->getCommandListID());
+}
+
+void FluidScene::compactSurfaceVertices() {
+    auto cmdList = surfaceVertexCompactionCP->getCommandList();
+
+    cmdList->SetPipelineState(surfaceVertexCompactionCP->getPSO());
+    cmdList->SetComputeRootSignature(surfaceVertexCompactionCP->getRootSignature());
+
+    // Set descriptor heap
+    ID3D12DescriptorHeap* computeDescriptorHeaps[] = { surfaceVertexCompactionCP->getDescriptorHeap()->Get() };
+    cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
+
+    // Set compute root descriptor table
+    cmdList->SetComputeRootDescriptorTable(0, surfaceVerticesBuffer.getGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(1, surfaceBlockDispatch.getGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(2, surfaceVertexIndicesBuffer.getGPUDescriptorHandle());
+    cmdList->SetComputeRootUnorderedAccessView(3, surfaceVertexDispatch.getGPUVirtualAddress());
+
+    // Transition surfaceBlockDispatch to indirect argument buffer
+    D3D12_RESOURCE_BARRIER surfaceBlockDispatchBarrier2 = CD3DX12_RESOURCE_BARRIER::Transition(
+        surfaceBlockDispatch.getBuffer(),
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+        D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT
+    );
+
+    cmdList->ResourceBarrier(1, &surfaceBlockDispatchBarrier2);
+
+    // Dispatch
+    cmdList->ExecuteIndirect(commandSignature, 1, surfaceBlockDispatch.getBuffer(), 0, nullptr, 0);
+
+    // Transition surfaceBlockDispatch back to UAV for the next frame
+    D3D12_RESOURCE_BARRIER surfaceBlockDispatchBarrier3 = CD3DX12_RESOURCE_BARRIER::Transition(
+        surfaceBlockDispatch.getBuffer(),
+        D3D12_RESOURCE_STATE_INDIRECT_ARGUMENT,
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
+    );
+
+    D3D12_RESOURCE_BARRIER barriers[1] = { surfaceBlockDispatchBarrier3 };
+    cmdList->ResourceBarrier(1, barriers);
+
+    context->executeCommandList(surfaceVertexCompactionCP->getCommandListID());
+    context->signalAndWaitForFence(fence, fenceValue);
+
+    context->resetCommandList(surfaceVertexCompactionCP->getCommandListID());
 }
 
 void FluidScene::releaseResources() {

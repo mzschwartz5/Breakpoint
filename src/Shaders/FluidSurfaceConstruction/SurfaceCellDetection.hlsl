@@ -2,6 +2,7 @@
 #include "../constants.h"
 #include "utils.hlsl"
 
+// TODO: should this be a constant? If not, what happens if we change it from frame to frame? Do we have to resize and reset buffers as well?
 struct Uniforms {
     uint3 gridCellDimensions;
 };
@@ -43,8 +44,20 @@ void setSharedMemSurfaceVerts(uint3 baseIndex3d, uint3 dimensions, uint value) {
     s_surfaceVertices[to1D(baseIndex3d + uint3(1, 1, 1), dimensions)] = value;
 }
 
+// Set the 8 vertices of a surface cell cube into the output buffer
+void setGlobalSurfaceVertsToValue(uint3 globalIndex3d, uint3 globalDims, uint value) {
+    surfaceVertices[to1D(globalIndex3d + uint3(0, 0, 0), globalDims)] = value;
+    surfaceVertices[to1D(globalIndex3d + uint3(0, 0, 1), globalDims)] = value;
+    surfaceVertices[to1D(globalIndex3d + uint3(0, 1, 0), globalDims)] = value;
+    surfaceVertices[to1D(globalIndex3d + uint3(0, 1, 1), globalDims)] = value;
+    surfaceVertices[to1D(globalIndex3d + uint3(1, 0, 0), globalDims)] = value;
+    surfaceVertices[to1D(globalIndex3d + uint3(1, 0, 1), globalDims)] = value;
+    surfaceVertices[to1D(globalIndex3d + uint3(1, 1, 0), globalDims)] = value;
+    surfaceVertices[to1D(globalIndex3d + uint3(1, 1, 1), globalDims)] = value;
+}
+
 // Set the 8 vertices of a surface cell cube into the output buffer, from shared memory.
-void setSurfaceVertsFromSharedMem(uint3 globalIndex3d, uint3 globalDims, uint3 sharedIndex3d, uint3 sharedDims) {
+void setGlobalSurfaceVertsFromSharedMem(uint3 globalIndex3d, uint3 globalDims, uint3 sharedIndex3d, uint3 sharedDims) {
     surfaceVertices[to1D(globalIndex3d + uint3(0, 0, 0), globalDims)] = s_surfaceVertices[to1D(sharedIndex3d + uint3(0, 0, 0), sharedDims)];
     surfaceVertices[to1D(globalIndex3d + uint3(0, 0, 1), globalDims)] = s_surfaceVertices[to1D(sharedIndex3d + uint3(0, 0, 1), sharedDims)];
     surfaceVertices[to1D(globalIndex3d + uint3(0, 1, 0), globalDims)] = s_surfaceVertices[to1D(sharedIndex3d + uint3(0, 1, 0), sharedDims)];
@@ -53,6 +66,14 @@ void setSurfaceVertsFromSharedMem(uint3 globalIndex3d, uint3 globalDims, uint3 s
     surfaceVertices[to1D(globalIndex3d + uint3(1, 0, 1), globalDims)] = s_surfaceVertices[to1D(sharedIndex3d + uint3(1, 0, 1), sharedDims)];
     surfaceVertices[to1D(globalIndex3d + uint3(1, 1, 0), globalDims)] = s_surfaceVertices[to1D(sharedIndex3d + uint3(1, 1, 0), sharedDims)];
     surfaceVertices[to1D(globalIndex3d + uint3(1, 1, 1), globalDims)] = s_surfaceVertices[to1D(sharedIndex3d + uint3(1, 1, 1), sharedDims)];
+}
+
+void setVertSharedMemory(uint index, uint value) {
+    s_surfaceVertices[index] = value;
+}
+
+void setVertGlobalMemory(uint index, uint value) {
+    surfaceVertices[index] = value;
 }
 
 // NOTE: the logic in this shader RELIES on the number of threads per workgroup equalling the number in a single block. 
@@ -68,6 +89,9 @@ void main(uint3 globalThreadId : SV_DispatchThreadID, uint3 localThreadId : SV_G
     uint3 surfaceBlockIdx3d = to3D(surfaceBlockIdx1d, cb.gridCellDimensions / CELLS_PER_BLOCK_EDGE);
     uint3 localCellIndex3d = to3D(localThreadId.x, CELLS_PER_BLOCK_EDGE * uint3(1, 1, 1));
     uint3 globalCellIndex3d = surfaceBlockIdx3d * CELLS_PER_BLOCK + localCellIndex3d;
+
+    // A quick aside: using the globalCellIndex3d, reset the surface vertices buffer (from last frame) to 0
+    setGlobalSurfaceVertsToValue(globalCellIndex3d, cb.gridCellDimensions + 1, 0);
 
     // Prefetch and store the particle count for this cell. Since shared memory will store (N + 2)^3 cells, not just N^3 cells, in order for all cells to be contiguous,
     // we need to offset the surface block cells themselves by 1 to leave room for the extra-surface cells.
@@ -151,6 +175,8 @@ void main(uint3 globalThreadId : SV_DispatchThreadID, uint3 localThreadId : SV_G
     }
     GroupMemoryBarrierWithGroupSync();
 
-    // Set surface vertices buffer (even the ones that are 0, which serves to reset the buffer)
-    setSurfaceVertsFromSharedMem(globalCellIndex3d, (cb.gridCellDimensions + 1), localCellIndex3d, (CELLS_PER_BLOCK_EDGE + 1));
+    // Set surface vertices buffer
+    if (isSurfaceCell) {
+        setGlobalSurfaceVertsFromSharedMem(globalCellIndex3d, (cb.gridCellDimensions + 1), localCellIndex3d, (CELLS_PER_BLOCK_EDGE + 1));
+    }
 }
