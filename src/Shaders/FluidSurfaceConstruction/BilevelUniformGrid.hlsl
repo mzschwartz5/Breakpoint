@@ -70,6 +70,8 @@ void main(uint3 globalThreadId : SV_DispatchThreadID) {
                 for (int k = 0; k <= abs(edge.z); ++k) {
                     int3 neighborBlockIndices = blockIndices + (int3(i, j, k) * edge);
 
+                    // TODO: can avoid checking this every loop by using min/max clamps
+                    // and looping over global indices (see SurfaceCellDetection.hlsl)
                     if (any(neighborBlockIndices >= gridBlockDimensions) || 
                         any(neighborBlockIndices < 0)) {
                         continue;

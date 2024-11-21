@@ -61,6 +61,7 @@
     <ClInclude Include="Support\Window.h" />
     <ClInclude Include="Support\WinInclude.h" />
     <ClInclude Include="Shaders\constants.h" />
+    <None Include="Shaders\FluidSurfaceConstruction\utils.hlsl" />
   </ItemGroup>
   <ItemGroup>
     <FxCompile Include="Shaders\BouncingPhysicsShaders\PhysicsVertexShader.hlsl">
@@ -172,6 +173,20 @@
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.0</ShaderModel>
     </FxCompile>
     <FxCompile Include="Shaders\FluidSurfaceConstruction\SurfaceBlockDetectionRootSig.hlsl">
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">rootsig_1.1</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">rootsig_1.1</ShaderModel>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ROOTSIG</EntryPointName>
+      <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Release|x64'">ROOTSIG</EntryPointName>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">RootSignature</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">RootSignature</ShaderType>
+    </FxCompile>
+    <FxCompile Include="Shaders\FluidSurfaceConstruction\SurfaceCellDetection.hlsl">
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Compute</ShaderType>
+      <ShaderType Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Compute</ShaderType>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">6.0</ShaderModel>
+      <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">6.0</ShaderModel>
+    </FxCompile>
+    <FxCompile Include="Shaders\FluidSurfaceConstruction\SurfaceCellDetectionRootSig.hlsl">
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">rootsig_1.1</ShaderModel>
       <ShaderModel Condition="'$(Configuration)|$(Platform)'=='Release|x64'">rootsig_1.1</ShaderModel>
       <EntryPointName Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">ROOTSIG</EntryPointName>
