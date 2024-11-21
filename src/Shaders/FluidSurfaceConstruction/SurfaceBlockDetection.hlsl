@@ -17,7 +17,7 @@ StructuredBuffer<Block> blocks : register(t0);
 // UAV for the surface block indices buffer (output buffer)
 RWStructuredBuffer<uint> surfaceBlockIndices : register(u0);
 
-RWStructuredBuffer<uint> surfaceBlockCount : register(u1);
+RWStructuredBuffer<uint3> surfaceBlockDispatch : register(u1);
 
 /*
     Rather than follow the paper directly, which uses an atomic add per-thread to get a write-index into the surfaceBlockIndices buffer,
@@ -39,7 +39,7 @@ void main(uint3 globalThreadId : SV_DispatchThreadID) {
     uint surfaceBlockGlobalStartIdx;
 
     if (WaveIsFirstLane()) {
-        InterlockedAdd(surfaceBlockCount[0], surfaceBlockWaveCount, surfaceBlockGlobalStartIdx);
+        InterlockedAdd(surfaceBlockDispatch[0].x, surfaceBlockWaveCount, surfaceBlockGlobalStartIdx);
         // No synchronziation is necessary, because we only care about the value within a wave.
     }
     surfaceBlockGlobalStartIdx = WaveReadLaneFirst(surfaceBlockGlobalStartIdx); // (its faster to use an intrinsic here than to write to a shared variable and sync)

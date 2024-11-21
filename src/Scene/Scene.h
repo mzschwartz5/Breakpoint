@@ -47,6 +47,7 @@ private:
 	RenderPipeline fluidRP;
 	ComputePipeline bilevelUniformGridCP;
 	ComputePipeline surfaceBlockDetectionCP;
+	ComputePipeline surfaceCellDetectionCP;
 	FluidScene fluidScene;
 
 	RenderScene scene;
