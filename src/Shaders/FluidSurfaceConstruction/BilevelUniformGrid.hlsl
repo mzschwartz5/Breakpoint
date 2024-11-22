@@ -17,13 +17,6 @@ StructuredBuffer<float3> positionsBuffer : register(t0);
 RWStructuredBuffer<Cell> cells : register(u0);
 RWStructuredBuffer<Block> blocks : register(u1);
 
-struct BilevelUniformGridConstants {
-    int numParticles;
-    uint3 dimensions;
-    float3 minBounds;
-    float resolution;
-};
-
 ConstantBuffer<BilevelUniformGridConstants> cb : register(b0);
 
 uint3 getCellIndex(float3 particlePosition) {

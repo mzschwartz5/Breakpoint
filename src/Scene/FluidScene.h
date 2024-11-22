@@ -29,7 +29,8 @@ public:
                ComputePipeline* bilevelUniformGridCP, 
                ComputePipeline* surfaceBlockDetectionCP,
                ComputePipeline* surfaceCellDetectionCP,
-               ComputePipeline* surfaceVertexCompactionCP);
+               ComputePipeline* surfaceVertexCompactionCP,
+               ComputePipeline* surfaceVertexDensityCP);
 
     void compute();
     void draw(Camera* camera);
@@ -38,6 +39,7 @@ public:
     void computeSurfaceBlockDetection();
     void computeSurfaceCellDetection();
     void compactSurfaceVertices();
+    void computeSurfaceVertexDensity();
     void releaseResources();
 
 private:
@@ -47,6 +49,7 @@ private:
     ComputePipeline* surfaceBlockDetectionCP;
     ComputePipeline* surfaceCellDetectionCP;
     ComputePipeline* surfaceVertexCompactionCP;
+    ComputePipeline* surfaceVertexDensityCP;
     
     UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
@@ -58,8 +61,9 @@ private:
     StructuredBuffer cellsBuffer;
     StructuredBuffer blocksBuffer;
     StructuredBuffer surfaceBlockIndicesBuffer;
-    StructuredBuffer surfaceBlockDispatch;
+    StructuredBuffer surfaceCellDispatch;
     StructuredBuffer surfaceVerticesBuffer;
     StructuredBuffer surfaceVertexIndicesBuffer;
-    StructuredBuffer surfaceVertexDispatch;
+    StructuredBuffer surfaceVertDensityDispatch;
+    StructuredBuffer surfaceVertDensityBuffer;
 };
