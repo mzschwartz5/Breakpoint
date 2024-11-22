@@ -76,7 +76,9 @@ void setVertGlobalMemory(uint index, uint value) {
     surfaceVertices[index] = value;
 }
 
-// NOTE: the logic in this shader RELIES on the number of threads per workgroup equalling the number in a single block. 
+// NOTE: the logic in this shader RELIES on the number of threads per workgroup equalling the number of cells in a single block. 
+// (it can be changed not to, but doing so avoids the use of a modulo operation)
+// TODO: should change dispatch to 3D for ease of indexing / avoid to3D call which use modulo
 [numthreads(SURFACE_CELL_DETECTION_THREADS_X, 1, 1)]
 void main(uint3 globalThreadId : SV_DispatchThreadID, uint3 localThreadId : SV_GroupThreadID) {
     if (globalThreadId.x >= surfaceBlockDispatch[0].x * CELLS_PER_BLOCK) {

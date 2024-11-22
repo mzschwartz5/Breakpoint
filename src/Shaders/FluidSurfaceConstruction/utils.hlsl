@@ -9,3 +9,7 @@ uint3 to3D(uint index, uint3 dimensions) {
     uint z = index / (dimensions.x * dimensions.y);
     return uint3(x, y, z);
 }
+
+float cubic(float x) {
+    return x * x * x;
+}
