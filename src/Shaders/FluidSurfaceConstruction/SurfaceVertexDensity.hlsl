@@ -15,7 +15,7 @@ StructuredBuffer<float3> positionsBuffer : register(t0);
 StructuredBuffer<Cell> cells : register(t1);
 // SRV for the surface vertex indices
 StructuredBuffer<uint> surfaceVertexIndices : register(t2);
-// SRV for dispatch params for this pass
+// Root SRV for dispatch params for this pass
 StructuredBuffer<uint3> surfaceVertDensityDispatch : register(t3);
 
 // Root constants

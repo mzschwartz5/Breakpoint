@@ -50,6 +50,7 @@ private:
 	ComputePipeline surfaceCellDetectionCP;
 	ComputePipeline surfaceVertexCompactionCP;
 	ComputePipeline surfaceVertexDensityCP;
+	ComputePipeline surfaceVertexNormalCP;
 	FluidScene fluidScene;
 
 	RenderScene scene;
