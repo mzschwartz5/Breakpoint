@@ -334,14 +334,14 @@ void PBMPMScene::constructScene() {
 	auto computeId = g2p2gPipeline.getCommandListID();
 
 	// Create Constant Data
-	constants = { {512, 512}, 0.005, 9.81, 1.5, 0.05,
+	constants = { {512, 512}, 0.01, 2.5, 1.5, 0.01,
 		(unsigned int)std::ceil(std::pow(10, 7)),
-		1, 2, 30, 0, 0,  0, 0, 0, 0, 5, 0 };
+		1, 4, 30, 0, 0,  0, 0, 0, 0, 5, 0.9 };
 
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	float radius = 0.005;
+	float radius = 0.002;
 	float spacing = radius * 2.1;
 
 	int particlesPerRow = (int)sqrt(instanceCount);

@@ -73,7 +73,7 @@ int main() {
     // Initialize command lists
     context.resetCommandList(CommandListID::RENDER_ID);
 
-    PBMPMScene scene{ &context, &renderPipeline, 5000 };
+    PBMPMScene scene{ &context, &renderPipeline, 10000 };
 #endif
 
     while (!Window::get().getShouldClose()) {

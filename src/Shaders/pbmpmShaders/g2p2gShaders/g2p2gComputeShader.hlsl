@@ -346,7 +346,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 
                 // Free count may be negative because of emission. So make sure it is at last zero before incrementing.
                 int originalMax; // Needed for InterlockedMax output parameter
-                InterlockedMax(g_freeIndices[0], 0, originalMax); // Note: In HLSL we don't need the 'i' suffix for integer literals
+                InterlockedMax(g_freeIndices[0], 0, originalMax); 
                 
                 particle.position = projectInsideGuardian(particle.position, g_simConstants.gridSize, GuardianSize);
             }
@@ -365,46 +365,45 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 float alpha = 0.5 * (1.0 / particle.liquidDensity - tr(particle.deformationDisplacement) - 1.0);
                 particle.deformationDisplacement += g_simConstants.liquidRelaxation * alpha * Identity;
             }
-        }
-        
-        // P2G
-        
-        // Iterate over local 3x3 neighborhood
-        for (int i = 0; i < 3; i++)
-        {
-            for (int j = 0; j < 3; j++)
+
+            // P2G
+
+            // Iterate over local 3x3 neighborhood
+            for (int i = 0; i < 3; i++)
             {
-                // Weight corresponding to this neighborhood cell
-                float weight = weightInfo.weights[i].x * weightInfo.weights[j].y;
-                
-                // Grid vertex index
-                int2 neighborCellIndex = int2(weightInfo.cellIndex) + int2(i, j);
-                
-                // 2D index relative to the corner of the local grid
-                int2 neighborCellIndexLocal = neighborCellIndex - localGridOrigin;
-                
-                // Linear Index in the local grid
-                uint gridVertexIdx = localGridIndex(uint2(neighborCellIndexLocal));
-                
-                // Update grid data
-                float2 offset = float2(neighborCellIndex) - p + 0.5;
-                
-                float weightedMass = weight * particle.mass;
-                float2 momentum = weightedMass * (particle.displacement + mul(particle.deformationDisplacement, offset));
-                
-                InterlockedAdd(s_tileDataDst[gridVertexIdx + 0], encodeFixedPoint(momentum.x, g_simConstants.fixedPointMultiplier));
-                InterlockedAdd(s_tileDataDst[gridVertexIdx + 1], encodeFixedPoint(momentum.y, g_simConstants.fixedPointMultiplier));
-                InterlockedAdd(s_tileDataDst[gridVertexIdx + 2], encodeFixedPoint(weightedMass, g_simConstants.fixedPointMultiplier));
-      
-
-                if (g_simConstants.useGridVolumeForLiquid != 0)
+                for (int j = 0; j < 3; j++)
                 {
-                    InterlockedAdd(s_tileDataDst[gridVertexIdx + 3], encodeFixedPoint(weight * particle.volume, g_simConstants.fixedPointMultiplier));
+                    // Weight corresponding to this neighborhood cell
+                    float weight = weightInfo.weights[i].x * weightInfo.weights[j].y;
+
+                    // Grid vertex index
+                    int2 neighborCellIndex = int2(weightInfo.cellIndex) + int2(i, j);
+
+                    // 2D index relative to the corner of the local grid
+                    int2 neighborCellIndexLocal = neighborCellIndex - localGridOrigin;
+
+                    // Linear Index in the local grid
+                    uint gridVertexIdx = localGridIndex(uint2(neighborCellIndexLocal));
+
+                    // Update grid data
+                    float2 offset = float2(neighborCellIndex) - p + 0.5;
+
+                    float weightedMass = weight * particle.mass;
+                    float2 momentum = weightedMass * (particle.displacement + mul(particle.deformationDisplacement, offset));
+
+                    InterlockedAdd(s_tileDataDst[gridVertexIdx + 0], encodeFixedPoint(momentum.x, g_simConstants.fixedPointMultiplier));
+                    InterlockedAdd(s_tileDataDst[gridVertexIdx + 1], encodeFixedPoint(momentum.y, g_simConstants.fixedPointMultiplier));
+                    InterlockedAdd(s_tileDataDst[gridVertexIdx + 2], encodeFixedPoint(weightedMass, g_simConstants.fixedPointMultiplier));
+
+
+                    if (g_simConstants.useGridVolumeForLiquid != 0)
+                    {
+                        InterlockedAdd(s_tileDataDst[gridVertexIdx + 3], encodeFixedPoint(weight * particle.volume, g_simConstants.fixedPointMultiplier));
+                    }
                 }
+
             }
-
         }
-
     }
     
     // Synchronize all threads in the group

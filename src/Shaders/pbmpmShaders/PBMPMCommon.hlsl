@@ -2,7 +2,7 @@
 
 #define ParticleDispatchSize 64
 #define GridDispatchSize 8
-#define BukkitSize 8
+#define BukkitSize 6
 #define BukkitHaloSize 1
 #define GuardianSize 3
 
@@ -36,7 +36,7 @@ struct PBMPMConstants {
 	unsigned int bukkitCountY;
 	unsigned int iteration;
 	unsigned int iterationCount;
-	unsigned int borderFriction;
+	float borderFriction;
 };
 
 struct Particle {

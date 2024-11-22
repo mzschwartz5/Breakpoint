@@ -9,13 +9,15 @@
 #include "Geometry.h"
 #include <math.h>
 
+// Keep consistent with PBMPMCommon.hlsl
+
 const unsigned int ParticleDispatchSize = 64;
 const unsigned int GridDispatchSize = 8;
-const unsigned int BukkitSize = 8;
+const unsigned int BukkitSize = 6;
 const unsigned int BukkitHaloSize = 1;
 const unsigned int GuardianSize = 3;
 
-const unsigned int maxParticles = 10000;
+const unsigned int maxParticles = 50000;
 const unsigned int maxTimestampCount = 2048;
 
 struct PBMPMConstants {
@@ -39,7 +41,7 @@ struct PBMPMConstants {
 	unsigned int bukkitCountY;
 	unsigned int iteration;
 	unsigned int iterationCount;
-	unsigned int borderFriction;
+	float borderFriction;
 };
 
 struct ShapeFactory {
