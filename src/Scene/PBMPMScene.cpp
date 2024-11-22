@@ -334,9 +334,9 @@ void PBMPMScene::constructScene() {
 	auto computeId = g2p2gPipeline.getCommandListID();
 
 	// Create Constant Data
-	constants = { {512, 512}, 0.0005, 9.81, 1.5, 0.05,
+	constants = { {512, 512}, 0.005, 9.81, 1.5, 0.05,
 		(unsigned int)std::ceil(std::pow(10, 7)),
-		1, 2, 30, 0, 0,  0, 0, 0, 0, 1, 0 };
+		1, 2, 30, 0, 0,  0, 0, 0, 0, 5, 0 };
 
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
@@ -364,11 +364,20 @@ void PBMPMScene::constructScene() {
 	
 	std::vector<int> freeIndices;
 	freeIndices.resize(1 + maxParticles); //maybe four maybe one idk
-	freeIndices[0] = maxParticles - instanceCount;
-	particleFreeIndicesBuffer = StructuredBuffer(freeIndices.data(), freeIndices.size(), sizeof(int));
 
-	XMUINT4 count = { instanceCount, 0, 0, 0 };
+	XMUINT4 count = { 0, 0, 0, 0 };
+
+	// Add particles
+	for (int i = 0; i < instanceCount; i++) {
+		freeIndices[0]--;
+		if (freeIndices[0] < 0) {
+			count.x++;
+		}
+		
+	}
+
 	particleCount = StructuredBuffer(&count, 1, sizeof(XMUINT4));
+	particleFreeIndicesBuffer = StructuredBuffer(freeIndices.data(), freeIndices.size(), sizeof(int));
 	
 	// Set it based on instance size
 	XMUINT4 simDispatch = { (instanceCount + ParticleDispatchSize - 1) / ParticleDispatchSize, 1, 1, 0};
@@ -468,8 +477,17 @@ void PBMPMScene::compute() {
 	
 	resetBuffers(true);
 
+	/*std::vector<int> gridBufferData;
+	gridBufferData.resize(constants.gridSize.x * constants.gridSize.y * 4);
+
+	std::vector<int> gridBufferData2;
+	gridBufferData2.resize(constants.gridSize.x * constants.gridSize.y * 4);
+
+	std::vector<int> gridBufferData3;
+	gridBufferData3.resize(constants.gridSize.x * constants.gridSize.y * 4);*/
+
 	// Could be 20?
-	int substepCount = 5;
+	int substepCount = 20;
 	for (int substepIdx = 0; substepIdx < substepCount; substepIdx++) {
 
 		// Update simulation uniforms
@@ -486,19 +504,13 @@ void PBMPMScene::compute() {
 		//freeIndices.resize(1 + maxParticles);
 		//particleFreeIndicesBuffer.copyDataFromGPU(*context, freeIndices.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
 
-		//// Copy the three grids from GPU
-		//std::vector<int> gridBufferData;
-		//gridBufferData.resize(constants.gridSize.x * constants.gridSize.y * 4);
+		// Copy the three grids from GPU
 		//gridBuffers[0].copyDataFromGPU(*context, gridBufferData.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
 
 		//// second grid
-		//std::vector<int> gridBufferData2;
-		//gridBufferData2.resize(constants.gridSize.x * constants.gridSize.y * 4);
 		//gridBuffers[1].copyDataFromGPU(*context, gridBufferData2.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
 
 		//// third grid
-		//std::vector<int> gridBufferData3;
-		//gridBufferData3.resize(constants.gridSize.x * constants.gridSize.y * 4);
 		//gridBuffers[2].copyDataFromGPU(*context, gridBufferData3.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
 
 		for (int iterationIdx = 0; iterationIdx < constants.iterationCount; iterationIdx++) {
@@ -601,6 +613,12 @@ void PBMPMScene::compute() {
 		//std::vector<int> gridBufferData3_end;
 		//gridBufferData3_end.resize(constants.gridSize.x * constants.gridSize.y * 4);
 		//gridBuffers[2].copyDataFromGPU(*context, gridBufferData3_end.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
+
+		//gridBuffers[0].copyDataFromGPU(*context, gridBufferData.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
+
+		//gridBuffers[1].copyDataFromGPU(*context, gridBufferData2.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
+
+		//gridBuffers[2].copyDataFromGPU(*context, gridBufferData3.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
 
 	}
 }

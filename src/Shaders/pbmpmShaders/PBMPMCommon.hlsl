@@ -2,16 +2,16 @@
 
 #define ParticleDispatchSize 64
 #define GridDispatchSize 8
-#define BukkitSize 6
+#define BukkitSize 8
 #define BukkitHaloSize 1
-#define GuardianSize 0
+#define GuardianSize 3
 
 #define MaterialLiquid 0
 #define MaterialElastic 1
 #define MaterialSand 2
 #define MaterialVisco 3
 
-#define TotalBukkitEdgeLength (BukkitSize + 2 * BukkitHaloSize)
+#define TotalBukkitEdgeLength (BukkitSize + BukkitHaloSize * 2)
 #define TileDataSizePerEdge (TotalBukkitEdgeLength * 4)
 #define TileDataSize (TileDataSizePerEdge * TileDataSizePerEdge)
 

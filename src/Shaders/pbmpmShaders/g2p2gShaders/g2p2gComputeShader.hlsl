@@ -159,13 +159,8 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     BukkitThreadData threadData = g_bukkitThreadData[groupId.x];
 
     // Calculate grid origin
-    int2 localGridOrigin = BukkitSize * int2(threadData.bukkitX - BukkitHaloSize, threadData.bukkitY - BukkitHaloSize);
-
-    // To avoid doing indexInGroup % TotalBukkitEdgeLength
-    int row = indexInGroup / TotalBukkitEdgeLength;
-    int col = indexInGroup - (row * TotalBukkitEdgeLength);
-
-    int2 idInGroup = int2(col, row);
+    int2 localGridOrigin = BukkitSize * int2(uint2(threadData.bukkitX, threadData.bukkitY)) - int2(BukkitHaloSize, BukkitHaloSize);
+    int2 idInGroup = int2(int(indexInGroup) % TotalBukkitEdgeLength, int(indexInGroup) / TotalBukkitEdgeLength);
     int2 gridVertex = idInGroup + localGridOrigin;
     float2 gridPosition = float2(gridVertex);
 
@@ -176,7 +171,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     float v = 0.0;
 
     // Check if grid vertex is within valid bounds
-    bool gridVertexIsValid = all(gridVertex >= int2(0, 0)) && all(gridVertex <= int2(g_simConstants.gridSize.x, g_simConstants.gridSize.y));
+    bool gridVertexIsValid = all(gridVertex >= int2(0, 0)) && all(gridVertex <= g_simConstants.gridSize);
 
     if (gridVertexIsValid)
     {
@@ -237,7 +232,12 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     InterlockedExchange(s_tileData[tileDataIndex + 1], encodeFixedPoint(dy, g_simConstants.fixedPointMultiplier), originalValue);
     InterlockedExchange(s_tileData[tileDataIndex + 2], encodeFixedPoint(w, g_simConstants.fixedPointMultiplier), originalValue);
     InterlockedExchange(s_tileData[tileDataIndex + 3], encodeFixedPoint(v, g_simConstants.fixedPointMultiplier), originalValue);
-
+    
+    // Make sure all values in destination grid are 0
+    InterlockedExchange(s_tileDataDst[tileDataIndex], 0, originalValue);
+    InterlockedExchange(s_tileDataDst[tileDataIndex + 1], 0, originalValue);
+    InterlockedExchange(s_tileDataDst[tileDataIndex + 2], 0, originalValue);
+    InterlockedExchange(s_tileDataDst[tileDataIndex + 3], 0, originalValue);
     // Synchronize all threads in the group
     GroupMemoryBarrierWithGroupSync();
     
@@ -245,9 +245,6 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     {
         // Load Particle
         uint myParticleIndex = g_bukkitParticleData[threadData.rangeStart + indexInGroup];
-
-        // TODO: Remove this line that makes things move bottom left
-        g_particles[myParticleIndex].position -= 80 * g_simConstants.deltaTime;
         
         Particle particle = g_particles[myParticleIndex];
         
@@ -345,7 +342,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 // Mouse Iteraction Here
                 
                 // Gravity Acceleration is normalized to the vertical size of the window
-                particle.displacement.y -= float(g_simConstants.gridSize.y) * g_simConstants.gravityStrength * g_simConstants.deltaTime;
+                particle.displacement.y -= float(g_simConstants.gridSize.y) * g_simConstants.gravityStrength * g_simConstants.deltaTime * g_simConstants.deltaTime;
                 
                 // Free count may be negative because of emission. So make sure it is at last zero before incrementing.
                 int originalMax; // Needed for InterlockedMax output parameter
@@ -355,8 +352,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
             }
             
             // Save the particle back to the buffer
-            g_particles[myParticleIndex] = particle;
-        }
+            g_particles[myParticleIndex] = particle;        }
         
         {
             // Particle update
@@ -365,6 +361,9 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 // Simple liquid viscosity: just remove deviatoric part of the deformation displacement
                 float2x2 deviatoric = -1.0 * (particle.deformationDisplacement + transpose(particle.deformationDisplacement));
                 particle.deformationDisplacement += g_simConstants.liquidViscosity * 0.5 * deviatoric;
+
+                float alpha = 0.5 * (1.0 / particle.liquidDensity - tr(particle.deformationDisplacement) - 1.0);
+                particle.deformationDisplacement += g_simConstants.liquidRelaxation * alpha * Identity;
             }
         }
         
@@ -396,7 +395,8 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 InterlockedAdd(s_tileDataDst[gridVertexIdx + 0], encodeFixedPoint(momentum.x, g_simConstants.fixedPointMultiplier));
                 InterlockedAdd(s_tileDataDst[gridVertexIdx + 1], encodeFixedPoint(momentum.y, g_simConstants.fixedPointMultiplier));
                 InterlockedAdd(s_tileDataDst[gridVertexIdx + 2], encodeFixedPoint(weightedMass, g_simConstants.fixedPointMultiplier));
-                
+      
+
                 if (g_simConstants.useGridVolumeForLiquid != 0)
                 {
                     InterlockedAdd(s_tileDataDst[gridVertexIdx + 3], encodeFixedPoint(weight * particle.volume, g_simConstants.fixedPointMultiplier));
@@ -414,8 +414,9 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     if (gridVertexIsValid)
     {
         uint gridVertexAddress = gridVertexIndex(uint2(gridVertex), g_simConstants.gridSize);
-        
+
         // Atomic loads from shared memory using InterlockedAdd with 0
+
         int dxi, dyi, wi, vi;
         InterlockedAdd(s_tileDataDst[tileDataIndex + 0], 0, dxi);
         InterlockedAdd(s_tileDataDst[tileDataIndex + 1], 0, dyi);
@@ -423,15 +424,10 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
         InterlockedAdd(s_tileDataDst[tileDataIndex + 3], 0, vi);
 
     // Atomic adds to the destination buffer
-        //InterlockedAdd(g_gridDst[gridVertexAddress + 0], dxi);
-        //InterlockedAdd(g_gridDst[gridVertexAddress + 1], dyi);
-        //InterlockedAdd(g_gridDst[gridVertexAddress + 2], wi);
-        //InterlockedAdd(g_gridDst[gridVertexAddress + 3], vi);
-
-        InterlockedAdd(g_gridDst[gridVertexAddress + 0], 10);
-        InterlockedAdd(g_gridDst[gridVertexAddress + 1], 10);
-        InterlockedAdd(g_gridDst[gridVertexAddress + 2], 10);
-        InterlockedAdd(g_gridDst[gridVertexAddress + 3], 10);
+        InterlockedAdd(g_gridDst[gridVertexAddress + 0], dxi);
+        InterlockedAdd(g_gridDst[gridVertexAddress + 1], dyi);
+        InterlockedAdd(g_gridDst[gridVertexAddress + 2], wi);
+        InterlockedAdd(g_gridDst[gridVertexAddress + 3], vi);
     
     // Clear the entries in g_gridToBeCleared
         g_gridToBeCleared[gridVertexAddress + 0] = 0;
@@ -439,4 +435,5 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
         g_gridToBeCleared[gridVertexAddress + 2] = 0;
         g_gridToBeCleared[gridVertexAddress + 3] = 0;
     }
+
 }
