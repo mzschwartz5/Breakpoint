@@ -2,14 +2,22 @@
 #include <vector>
 #include "Drawable.h"
 #include "../D3D/Pipeline/ComputePipeline.h"
+#include "../D3D/Pipeline/MeshPipeline.h"
 #include "../D3D/StructuredBuffer.h"
 #include "../Shaders/constants.h"
 
 struct GridConstants {
     unsigned int numParticles;
-    XMINT3 gridDim;
+    XMUINT3 gridDim;
     XMFLOAT3 minBounds;
     float resolution;
+};
+
+struct MeshShadingConstants {
+    XMMATRIX viewProj;
+    XMUINT3 dimensions;
+    float resolution;
+    XMFLOAT3 minBounds;
 };
 
 struct Cell {
@@ -31,7 +39,8 @@ public:
                ComputePipeline* surfaceCellDetectionCP,
                ComputePipeline* surfaceVertexCompactionCP,
                ComputePipeline* surfaceVertexDensityCP,
-               ComputePipeline* surfaceVertexNormalCP);
+               ComputePipeline* surfaceVertexNormalCP,
+               MeshPipeline* fluidMeshPipeline);
 
     void compute();
     void draw(Camera* camera);
@@ -45,6 +54,8 @@ public:
     void releaseResources();
 
 private:
+    void transitionBuffersToUAV(ID3D12GraphicsCommandList6* cmdList);
+
     GridConstants gridConstants;
     
     ComputePipeline* bilevelUniformGridCP;
@@ -53,6 +64,8 @@ private:
     ComputePipeline* surfaceVertexCompactionCP;
     ComputePipeline* surfaceVertexDensityCP;
     ComputePipeline* surfaceVertexNormalCP;
+
+    MeshPipeline* fluidMeshPipeline;
     
     UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
@@ -64,7 +77,8 @@ private:
     StructuredBuffer cellsBuffer;
     StructuredBuffer blocksBuffer;
     StructuredBuffer surfaceBlockIndicesBuffer;
-    StructuredBuffer surfaceCellDispatch;
+    StructuredBuffer surfaceBlockDispatch;
+    StructuredBuffer surfaceHalfBlockDispatch; // This is just 2x surfaceBlockDispatch, but saves us a round trip to the GPU to multiply by 2
     StructuredBuffer surfaceVerticesBuffer;
     StructuredBuffer surfaceVertexIndicesBuffer;
     StructuredBuffer surfaceVertDensityDispatch;
