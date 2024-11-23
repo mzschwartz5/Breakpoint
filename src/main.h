@@ -15,3 +15,8 @@
 #include "Scene/Camera.h"
 #include "Scene/Scene.h"
 
+#include "ImGUI/ImGUIHelper.h"
+
+static ImGUIDescriptorHeapAllocator imguiHeapAllocator;
+static ID3D12DescriptorHeap* imguiSRVHeap = nullptr;
+
