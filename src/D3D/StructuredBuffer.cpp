@@ -1,7 +1,8 @@
 #include "StructuredBuffer.h"
 
-StructuredBuffer::StructuredBuffer(const void* inputData, unsigned int numEle, size_t eleSize)
-	: data(inputData), numElements(numEle), elementSize(eleSize)
+
+StructuredBuffer::StructuredBuffer(const void* inputData, unsigned int numEle, UINT eleSize, DescriptorHeap* heap)
+	: data(inputData), descriptorHeap(heap), numElements(numEle), elementSize(eleSize)
 {
 }
 
@@ -205,6 +206,7 @@ void StructuredBuffer::passDataToGPU(DXContext& context, ID3D12GraphicsCommandLi
     }
 
     context.resetCommandList(cmdId);
+
 }
 
 void StructuredBuffer::createUAV(DXContext& context, DescriptorHeap* dh) {

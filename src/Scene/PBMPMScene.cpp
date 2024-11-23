@@ -13,6 +13,7 @@ PBMPMScene::PBMPMScene(DXContext* context, RenderPipeline* pipeline, unsigned in
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	bufferClearPipeline("bufferClearRootSignature.cso", "bufferClearComputeShader.cso", *context, CommandListID::PBMPM_BUFFERCLEAR_COMPUTE_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
+
 {
 	context->resetCommandList(CommandListID::PBMPM_G2P2G_COMPUTE_ID);
 	context->resetCommandList(CommandListID::PBMPM_BUKKITCOUNT_COMPUTE_ID);
@@ -358,6 +359,7 @@ void PBMPMScene::constructScene() {
 							  (((i / particlesPerRow) * spacing - (particlesPerCol - 1) * spacing / 2.f) + 0.4f) * 500 , };
 		particles[i] = { position, {0.f, 0.f}, {1.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f, 0.f}, 
 						1.0, density*volume, 0, volume, 0.0, 1.0, 1.0};
+
 	}
 
 	particleBuffer = StructuredBuffer(particles.data(), particles.size(), sizeof(PBMPMParticle));
@@ -419,12 +421,12 @@ void PBMPMScene::constructScene() {
 
 	// Create Vertex & Index Buffer
 	auto circleData = generateCircle(radius, 32);
-	indexCount = circleData.second.size();
+	indexCount = (unsigned int)circleData.second.size();
 
-	vertexBuffer = VertexBuffer(circleData.first, circleData.first.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
+	vertexBuffer = VertexBuffer(circleData.first, (UINT)(circleData.first.size() * sizeof(XMFLOAT3)), (UINT)sizeof(XMFLOAT3));
 	vbv = vertexBuffer.passVertexDataToGPU(*context, pipeline->getCommandList());
 
-	indexBuffer = IndexBuffer(circleData.second, circleData.second.size() * sizeof(unsigned int));
+	indexBuffer = IndexBuffer(circleData.second, (UINT)(circleData.second.size() * sizeof(unsigned int)));
 	ibv = indexBuffer.passIndexDataToGPU(*context, pipeline->getCommandList());
 
 	//Transition both buffers to their usable states

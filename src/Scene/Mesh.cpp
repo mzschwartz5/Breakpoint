@@ -2,8 +2,8 @@
 
 Mesh::Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList6* cmdList, RenderPipeline* pipeline, XMFLOAT4X4 p_modelMatrix) {
 	loadMesh(fileLocation);
-    vertexBuffer = VertexBuffer(vertexPositions, vertices.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
-    indexBuffer = IndexBuffer(indices, indices.size() * sizeof(unsigned int));
+    vertexBuffer = VertexBuffer(vertexPositions, (UINT)(vertices.size() * sizeof(XMFLOAT3)), (UINT)sizeof(XMFLOAT3));
+    indexBuffer = IndexBuffer(indices, (UINT)(indices.size() * sizeof(unsigned int)));
 
     modelMatrix = p_modelMatrix;
 
@@ -123,6 +123,6 @@ void Mesh::releaseResources() {
     indexBuffer.releaseResources();
 }
 
-size_t Mesh::getNumTriangles() {
+UINT Mesh::getNumTriangles() {
     return numTriangles;
 }

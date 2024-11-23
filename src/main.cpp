@@ -1,23 +1,5 @@
 #include "main.h"
 
-// Base Object Scene = 0, Bouncing Ball Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3
-#define SCENE 3
-
-// This should probably go somewhere else
-void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
-    vp.TopLeftX = vp.TopLeftY = 0;
-    vp.Width = Window::get().getWidth();
-    vp.Height = Window::get().getHeight();
-    vp.MinDepth = 1.f;
-    vp.MaxDepth = 0.f;
-    cmdList->RSSetViewports(1, &vp);
-    RECT scRect;
-    scRect.left = scRect.top = 0;
-    scRect.right = Window::get().getWidth();
-    scRect.bottom = Window::get().getHeight();
-    cmdList->RSSetScissorRects(1, &scRect);
-}
-
 int main() {
     //set up DX, window, keyboard mouse
     DebugLayer debugLayer = DebugLayer();
@@ -33,48 +15,17 @@ int main() {
         return false;
     }
 
+    //initialize FPS counter variables
+    LARGE_INTEGER timeFrequency, startTime, endTime;
+    float fps = 0.0f;
+    int frameCount = 0;
+
+    QueryPerformanceFrequency(&timeFrequency);
+    QueryPerformanceCounter(&startTime);
+
     mouse->SetWindow(Window::get().getHWND());
 
-    context.createCommandList(CommandListID::PAPA_ID);
-    context.resetCommandList(CommandListID::PAPA_ID);
-
-#if SCENE == 0
-	RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context, CommandListID::RENDER_ID,
-	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-	// Initialize command lists
-	context.resetCommandList(CommandListID::RENDER_ID);
-
-    ObjectScene scene{ &context, &basicPipeline };
-#endif
-#if SCENE == 1
-    RenderPipeline renderPipeline("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", context, CommandListID::RENDER_ID,
-	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-    // Create compute pipeline
-    ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, CommandListID::PBMPM_G2P2G_COMPUTE_ID,
-    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-	// Initialize command lists
-    context.resetCommandList(CommandListID::RENDER_ID);
-    context.resetCommandList(CommandListID::PBMPM_G2P2G_COMPUTE_ID);
-
-    PhysicsScene scene{ &context, &renderPipeline, &computePipeline, 10 };
-#endif
-#if SCENE == 2
-    MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    // TODO: Make a Scene Class for Mesh Shading?
-#endif
-#if SCENE == 3
-    RenderPipeline renderPipeline("PBMPMVertexShader.cso", "PixelShader.cso", "PBMPMVertexRootSignature.cso", context, CommandListID::RENDER_ID,
-	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-    // Initialize command lists
-    context.resetCommandList(CommandListID::RENDER_ID);
-
-    PBMPMScene scene{ &context, &renderPipeline, 10000 };
-#endif
+    Scene scene{Object, camera.get(), &context};
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -106,6 +57,15 @@ int main() {
         if (kState.LeftControl) {
             camera->translate({ 0.f, -1.0f, 0.f });
         }
+        if (kState.D1) {
+            scene.setRenderScene(Object);
+        }
+        if (kState.D2) {
+            scene.setRenderScene(PBMPM);
+        }
+        if (kState.D3) {
+            scene.setRenderScene(Physics);
+        }
 
         //check mouse state
         auto mState = mouse->GetState();
@@ -120,23 +80,40 @@ int main() {
 
         //update camera
         camera->updateViewMat();
-#if SCENE == 1 || SCENE == 3
-		// Dispatch compute shader for physics scene
-        scene.compute();
-#endif
-        //draw to window
-        Window::get().beginFrame(renderPipeline.getCommandList());
-        D3D12_VIEWPORT vp;
-        createDefaultViewport(vp, renderPipeline.getCommandList());
 
-        scene.draw(camera.get());
-        
-        Window::get().endFrame(renderPipeline.getCommandList());
+        //draw to window
+        auto renderPipeline = scene.getRenderPipeline();
+        scene.compute();
+
+        Window::get().beginFrame(renderPipeline->getCommandList());
+        D3D12_VIEWPORT vp;
+        Window::get().createAndSetDefaultViewport(vp, renderPipeline->getCommandList());
+
+        scene.draw();
+
+        //measure FPS
+        QueryPerformanceCounter(&endTime);
+        float elapsedTime = (float)(endTime.QuadPart - startTime.QuadPart) / (float)timeFrequency.QuadPart;
+        frameCount++;
+
+        if (elapsedTime >= 1.0f) {
+            fps = (float)frameCount / elapsedTime;
+            frameCount = 0;
+            startTime = endTime;
+        }
+
+        std::wstringstream fpsStream;
+        fpsStream << std::fixed << std::setprecision(2) << fps;
+        std::wstring fpsStr = L"Breakpoint - FPS: " + fpsStream.str();
+        Window::get().updateTitle(fpsStr);
+
+        Window::get().endFrame(renderPipeline->getCommandList());
 
         //finish draw, present, reset
-        context.executeCommandList(renderPipeline.getCommandListID());
+        context.executeCommandList(renderPipeline->getCommandListID());
         Window::get().present();
-		context.resetCommandList(renderPipeline.getCommandListID());
+		    context.resetCommandList(renderPipeline->getCommandListID());
+
     }
 
     // Close

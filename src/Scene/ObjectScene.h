@@ -1,9 +1,9 @@
 #pragma once
 #include <filesystem>
-#include "Scene.h"
+#include "Drawable.h"
 #include "Mesh.h"
 
-class ObjectScene : public Scene {
+class ObjectScene : public Drawable {
 public:
 	ObjectScene(DXContext* context, RenderPipeline* pipeline);
 

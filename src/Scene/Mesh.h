@@ -37,13 +37,13 @@ public:
 
 	void releaseResources();
 
-	size_t getNumTriangles();
+	UINT getNumTriangles();
 
 private:
 	std::vector<Vertex> vertices;
 	std::vector<XMFLOAT3> vertexPositions;
 	std::vector<unsigned int> indices;
-	size_t numTriangles;
+	UINT numTriangles;
 
 	VertexBuffer vertexBuffer;
 	IndexBuffer indexBuffer;

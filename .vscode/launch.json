@@ -1,0 +1,31 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Debug",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Debug/bin/Breakpoint.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/app",
+            "environment": [],
+            "externalConsole": true,
+            "preLaunchTask": "build-debug",
+            "internalConsoleOptions": "neverOpen"
+        },
+        {
+            "name": "Release",
+            "type": "cppvsdbg",
+            "request": "launch",
+            "program": "${workspaceFolder}/build/Release/bin/Breakpoint.exe",
+            "args": [],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/app",
+            "environment": [],
+            "externalConsole": true,
+            "preLaunchTask": "build-release",
+            "internalConsoleOptions": "neverOpen"
+        },
+    ]
+}

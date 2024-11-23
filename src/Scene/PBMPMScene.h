@@ -2,6 +2,7 @@
 
 #include "Scene.h"
 #include "../D3D/DXContext.h"
+#include "Drawable.h"
 #include "../D3D/StructuredBuffer.h"
 #include "../D3D/VertexBuffer.h"
 #include "../D3D/IndexBuffer.h"
@@ -96,7 +97,7 @@ struct BukkitThreadData {
 	unsigned int bukkitY;
 };
 
-class PBMPMScene : public Scene {
+class PBMPMScene : public Drawable {
 public:
 	PBMPMScene(DXContext* context, RenderPipeline* renderPipeline, unsigned int instanceCount);
 

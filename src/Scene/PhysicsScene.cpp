@@ -1,7 +1,7 @@
 #include "PhysicsScene.h"
 
 PhysicsScene::PhysicsScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* compPipeline, unsigned int instances)
-	: Scene(context, pipeline), context(context), pipeline(pipeline), 
+	: Drawable(context, pipeline), context(context), pipeline(pipeline), 
 	computePipeline(compPipeline), instanceCount(instances),
 	modelMat(XMMatrixIdentity())
 {
@@ -13,11 +13,11 @@ void PhysicsScene::constructScene() {
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
 	// Create position and velocity data
-	for (int i = 0; i < instanceCount; ++i) {
+	for (unsigned int i = 0; i < instanceCount; ++i) {
 		positions.push_back({ -0.72f + 0.15f * i, 0.f, 1.f });
 	}
 
-	for (int i = 0; i < instanceCount; ++i) {
+	for (unsigned int i = 0; i < instanceCount; ++i) {
 		velocities.push_back({ 0.0f, 0.0f, 0.0f });
 	}
 
@@ -35,12 +35,12 @@ void PhysicsScene::constructScene() {
 
 	// Create Vertex & Index Buffer
 	auto circleData = generateCircle(0.05f, 32);
-	indexCount = circleData.second.size();
+	indexCount = (unsigned int)circleData.second.size();
 
-	vertexBuffer = VertexBuffer(circleData.first, circleData.first.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
+	vertexBuffer = VertexBuffer(circleData.first, (UINT)(circleData.first.size() * sizeof(XMFLOAT3)), (UINT)sizeof(XMFLOAT3));
 	vbv = vertexBuffer.passVertexDataToGPU(*context, pipeline->getCommandList());
 
-	indexBuffer = IndexBuffer(circleData.second, circleData.second.size() * sizeof(unsigned int));
+	indexBuffer = IndexBuffer(circleData.second, (UINT)(circleData.second.size() * sizeof(unsigned int)));
 	ibv = indexBuffer.passIndexDataToGPU(*context, pipeline->getCommandList());
 
 	//Transition both buffers to their usable states

@@ -174,8 +174,12 @@ void Window::shutdown() {
     }
 }
 
+void Window::updateTitle(std::wstring text) {
+    SetWindowTextW(window, text.c_str());
+}
+
 bool Window::getBuffers() {
-    for (size_t i = 0; i < FRAME_COUNT; i++) {
+    for (UINT i = 0; i < FRAME_COUNT; i++) {
         if (FAILED(swapChain->GetBuffer(i, IID_PPV_ARGS(&swapChainBuffers[i])))) {
             return false;
         }
@@ -246,4 +250,19 @@ LRESULT Window::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam
                     return 0;
     }
     return DefWindowProc(wnd, msg, wParam, lParam);
+}
+
+
+void Window::createAndSetDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
+    vp.TopLeftX = vp.TopLeftY = 0;
+    vp.Width = (float)Window::get().getWidth();
+    vp.Height = (float)Window::get().getHeight();
+    vp.MinDepth = 1.f;
+    vp.MaxDepth = 0.f;
+    cmdList->RSSetViewports(1, &vp);
+    RECT scRect;
+    scRect.left = scRect.top = 0;
+    scRect.right = Window::get().getWidth();
+    scRect.bottom = Window::get().getHeight();
+    cmdList->RSSetScissorRects(1, &scRect);
 }
