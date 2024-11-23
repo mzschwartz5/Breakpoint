@@ -24,6 +24,11 @@ struct Voxel {
     XMFLOAT3 u; // Local X-axis
     XMFLOAT3 v; // Local Y-axis
     XMFLOAT3 w; // Local Z-axis
+    bool faceConnections[6]; // Store connection state for each face (+X,-X,+Y,-Y,+Z,-Z)
+    float faceStrains[6];
+
+    XMFLOAT3 centroidVelocity;
+    float accumulatedStrain;
 };
 
 struct FaceConstraint {
@@ -48,5 +53,9 @@ struct SimulationParams {
     UINT constraintCount;
     float deltaTime;
     float count;
+    float breakingThreshold;
+    float randomSeed;
+    float strainMemory;
+    float rotationalInertia;
     DirectX::XMFLOAT3 gravity;
 };

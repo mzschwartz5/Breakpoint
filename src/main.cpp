@@ -180,6 +180,7 @@ int main() {
 #if SCENE == 1 || SCENE == 3 || SCENE == 4
 		// Dispatch compute shader for physics scene
         scene.compute();
+      
 #endif
         //draw to window
         Window::get().beginFrame(basicPipeline.getCommandList());

@@ -1,5 +1,6 @@
 #include "VelocitySignature.hlsl"
 
+
 struct Particle {
     float3 position;
     float3 prevPosition;
@@ -8,8 +9,11 @@ struct Particle {
 };
 
 cbuffer SimulationParams : register(b0) {
+    uint constraintCount;
     float deltaTime;
     float count;
+    float breakingThreshold;
+    float randomSeed;
     float3 gravity;
 };
 

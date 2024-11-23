@@ -9,6 +9,20 @@ PBDScene::PBDScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline
 	constructScene();
 }
 
+void PBDScene::testBreaking(std::vector<Particle> particles) {
+	// Apply force to second voxel to test breaking
+	for (int i = 8; i < 16; i++) {
+		particles[i].velocity = XMFLOAT3(3.0f, 0.0f, 0.0f); // Push second voxel right
+	}
+}
+
+void PBDScene::testTwisting(std::vector<Particle> particles) {
+	// Apply twist force to second voxel
+	for (int i = 8; i < 16; i++) {
+		particles[i].velocity = XMFLOAT3(0.0f, 1.0f * ((i % 2) * 2 - 1), 0.0f);
+	}
+}
+
 void PBDScene::constructScene() {
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
@@ -25,14 +39,14 @@ void PBDScene::constructScene() {
 	{  0.25f,  0.25f,  0.25f }, // Particle 6
 	{ -0.25f,  0.25f,  0.25f },  // Particle 7
 
-		{ 0.35f, -0.25f, -0.25f }, // 8
-{ 0.85f, -0.25f, -0.25f }, // 9
-{ 0.85f,  0.25f, -0.25f }, // 10
-{ 0.35f,  0.25f, -0.25f }, // 11
-{ 0.35f, -0.25f,  0.25f }, // 12
-{ 0.85f, -0.25f,  0.25f }, // 13
-{ 0.85f,  0.25f,  0.25f }, // 14
-{ 0.35f,  0.25f,  0.25f }   // 15
+		{ 0.35f, -0.25f, -0.25f },  // 8
+		{ 0.85f, -0.25f, -0.25f },  // 9
+		{ 0.85f,  0.25f, -0.25f },  // 10
+		{ 0.35f,  0.25f, -0.25f },  // 11
+		{ 0.35f, -0.25f,  0.25f },  // 12
+		{ 0.85f, -0.25f,  0.25f },  // 13
+		{ 0.85f,  0.25f,  0.25f },  // 14
+		{ 0.35f,  0.25f,  0.25f }   // 15
 	};
 
 	
@@ -52,8 +66,15 @@ void PBDScene::constructScene() {
 	voxel0.u = { 1.0f, 0.0f, 0.0f };
 	voxel0.v = { 0.0f, 1.0f, 0.0f };
 	voxel0.w = { 0.0f, 0.0f, 1.0f };
-	voxels.push_back(voxel0);
-	indices.push_back(0);
+
+	for (int i = 0; i < 6; i++) {
+		voxel0.faceConnections[i] = true;
+		voxel0.faceStrains[i] = 0.0f;
+	}
+
+	voxel0.centroidVelocity = { 0.0f, 0.0f, 0.0f };
+	voxel0.accumulatedStrain = 0.0f;
+
 
 	// Voxel 1
 	Voxel voxel1;
@@ -63,6 +84,17 @@ void PBDScene::constructScene() {
 	voxel1.u = { 1.0f, 0.0f, 0.0f };
 	voxel1.v = { 0.0f, 1.0f, 0.0f };
 	voxel1.w = { 0.0f, 0.0f, 1.0f };
+
+	for (int i = 0; i < 6; i++) {
+		voxel1.faceConnections[i] = true;
+		voxel1.faceStrains[i] = 0.0f;
+	}
+	voxel1.centroidVelocity = { 0.0f, 0.0f, 0.0f };
+	voxel1.accumulatedStrain = 0.0f;
+
+
+	voxels.push_back(voxel0);
+	indices.push_back(0);
 	voxels.push_back(voxel1);
 	indices.push_back(1);
 
@@ -71,15 +103,20 @@ void PBDScene::constructScene() {
 	
 
 
-	
+	auto now = std::chrono::system_clock::now();
+	auto duration = now.time_since_epoch();
+	float randomSeed = static_cast<float>(duration.count());
 
 
 	simParams.deltaTime = 0.033f;
 	simParams.count = instanceCount;
 	simParams.gravity = { 0.0f, -9.81f, 0.0f };
 	simParams.constraintCount = static_cast<unsigned int>(voxels.size());
-	
+	simParams.breakingThreshold = 0.1f;
+	simParams.randomSeed = randomSeed;
 
+	simParams.strainMemory = 1.0f;        // Adjust this value to control strain persistence
+	simParams.rotationalInertia = 0.5f;    // Adjust this to control rotation behavior
 
 	
 
@@ -161,7 +198,7 @@ void PBDScene::compute() {
 	ID3D12DescriptorHeap* applyForcesHeaps[] = { computePipeline->getDescriptorHeap()->Get() };
 	forcesList->SetDescriptorHeaps(_countof(applyForcesHeaps), applyForcesHeaps);
 	forcesList->SetComputeRootDescriptorTable(1, particleBuffer.getGPUDescriptorHandle());
-	forcesList->SetComputeRoot32BitConstants(0, 5, &simParams, 0);
+	forcesList->SetComputeRoot32BitConstants(0, 10, &simParams, 0);
 	forcesList->Dispatch(instanceCount, 1, 1);
 
 	// UAV barrier to ensure forces are applied before constraints
@@ -185,7 +222,7 @@ void PBDScene::compute() {
 	constraintList->SetComputeRootDescriptorTable(0, computePipeline->getDescriptorHeap()->GetGPUHandleAt(0));
 	//constraintList->SetComputeRootDescriptorTable(0, computePipeline->getDescriptorHeap()->GetGPUHandleAt(1));
 	constraintList->SetComputeRootDescriptorTable(2, computePipeline->getDescriptorHeap()->GetGPUHandleAt(2));
-	constraintList->SetComputeRoot32BitConstants(1, 1, &simParams.constraintCount, 0);
+	constraintList->SetComputeRoot32BitConstants(1, 10, &simParams, 0);
 
 	 
 		constraintList->Dispatch(simParams.constraintCount, 1, 1);
@@ -208,7 +245,7 @@ void PBDScene::compute() {
 	ID3D12DescriptorHeap* velocityHeaps[] = { computePipeline->getDescriptorHeap()->Get() };
 	velocityList->SetDescriptorHeaps(_countof(velocityHeaps), velocityHeaps);
 	velocityList->SetComputeRootDescriptorTable(1, particleBuffer.getGPUDescriptorHandle());
-	velocityList->SetComputeRoot32BitConstants(0, 5, &simParams, 0);
+	velocityList->SetComputeRoot32BitConstants(0, 10, &simParams, 0);
 	velocityList->Dispatch(instanceCount, 1, 1);
 
 

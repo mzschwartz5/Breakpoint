@@ -8,8 +8,11 @@ struct Particle {
 };
 
 cbuffer SimulationParams : register(b0) {
+    uint constraintCount;
     float deltaTime;
     float count;
+    float breakingThreshold;
+    float randomSeed;
     float3 gravity;
 };
 

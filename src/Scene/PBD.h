@@ -7,12 +7,16 @@
 #include "../D3D/Pipeline/ComputePipeline.h"
 #include "Geometry.h"
 #include "./PBD/particles.h"
+#include <chrono>
 
 
 class PBDScene : public Scene {
 public:
 	PBDScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* computePipeline, 
 		ComputePipeline* applyForcesPipeline, ComputePipeline* velocityUpdatePipeline, unsigned int instances);
+
+	void testBreaking(std::vector<Particle> particles);
+	void testTwisting(std::vector<Particle> particles);
 
 	void constructScene();
 
