@@ -29,3 +29,4 @@ static const int SURFACE_VERTEX_COMPACTION_THREADS_X = (CELLS_PER_BLOCK_EDGE + 1
 // It's actually not so important for the workgroup size for this pass to match the number of vertices per block. By this point
 // we no longer have block-level coherency of vertices anyway. But use this as a starting point - can adjust it later.
 static const int SURFACE_VERTEX_DENSITY_THREADS_X = SURFACE_VERTEX_COMPACTION_THREADS_X;
+static const int SURFACE_VERTEX_NORMAL_THREADS_X = SURFACE_VERTEX_COMPACTION_THREADS_X;
