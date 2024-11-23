@@ -1,4 +1,4 @@
-uint to1D(uint3 index, uint3 dimensions) {
+inline uint to1D(uint3 index, uint3 dimensions) {
     return index.x + (index.y * dimensions.x) + (index.z * dimensions.x * dimensions.y);
 }
 
@@ -10,6 +10,11 @@ uint3 to3D(uint index, uint3 dimensions) {
     return uint3(x, y, z);
 }
 
-float cubic(float x) {
+inline float cubic(float x) {
     return x * x * x;
+}
+
+inline uint divRoundUp(uint num, uint denom)
+{
+    return (num + denom - 1) / denom;
 }
