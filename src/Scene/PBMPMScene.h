@@ -1,19 +1,27 @@
 #pragma once
 
+#include "../D3D/DXContext.h"
 #include "Drawable.h"
 #include "../D3D/StructuredBuffer.h"
 #include "../D3D/VertexBuffer.h"
 #include "../D3D/IndexBuffer.h"
 #include "../D3D/Pipeline/ComputePipeline.h"
 #include "Geometry.h"
+#include <math.h>
+
+// Keep consistent with PBMPMCommon.hlsl
 
 const unsigned int ParticleDispatchSize = 64;
 const unsigned int GridDispatchSize = 8;
 const unsigned int BukkitSize = 6;
 const unsigned int BukkitHaloSize = 1;
+const unsigned int GuardianSize = 3;
+
+const unsigned int maxParticles = 50000;
+const unsigned int maxTimestampCount = 2048;
 
 struct PBMPMConstants {
-	XMFLOAT2 gridSize;
+	XMUINT2 gridSize;
 	float deltaTime;
 	float gravityStrength;
 
@@ -33,7 +41,7 @@ struct PBMPMConstants {
 	unsigned int bukkitCountY;
 	unsigned int iteration;
 	unsigned int iterationCount;
-	unsigned int borderFriction;
+	float borderFriction;
 };
 
 struct ShapeFactory {
@@ -54,8 +62,8 @@ struct ShapeFactory {
 struct PBMPMParticle {
 	XMFLOAT2 position;
 	XMFLOAT2 displacement;
-	XMFLOAT3X3 deformationGradient;
-	XMFLOAT3X3 deformationDisplacement;
+	XMFLOAT4 deformationGradient;
+	XMFLOAT4 deformationDisplacement;
 
 	float liquidDensity;
 	float mass;
@@ -75,15 +83,22 @@ struct BukkitSystem {
 	StructuredBuffer countBuffer2;
 	StructuredBuffer particleData;
 	StructuredBuffer threadData;
-	std::array<int, 4> dispatch{ 0, 1, 1, 0 };
-	std::array<int, 4> blankDispatch{ 0, 1, 1, 0 };
-	std::array<int, 4> particleAllocator{ 0, 0, 0, 0 };
+	StructuredBuffer dispatch;
+	StructuredBuffer blankDispatch;
+	StructuredBuffer particleAllocator;
 	StructuredBuffer indexStart;
+};
+
+struct BukkitThreadData {
+	unsigned int rangeStart;
+	unsigned int rangeCount;
+	unsigned int bukkitX;
+	unsigned int bukkitY;
 };
 
 class PBMPMScene : public Drawable {
 public:
-	PBMPMScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* compPipeline, unsigned int instanceCount);
+	PBMPMScene(DXContext* context, RenderPipeline* renderPipeline, unsigned int instanceCount);
 
 	void constructScene();
 
@@ -94,24 +109,44 @@ public:
 	void releaseResources();
 
 private:
-
-
-
-private:
 	DXContext* context;
-	RenderPipeline* pipeline;
-	ComputePipeline* computePipeline;
+	RenderPipeline* renderPipeline;
+
+	ComputePipeline g2p2gPipeline;
+	ComputePipeline bukkitCountPipeline;
+	ComputePipeline bukkitAllocatePipeline;
+	ComputePipeline bukkitInsertPipeline;
+	ComputePipeline bufferClearPipeline;
+
+	PBMPMConstants constants;
+	BukkitSystem bukkitSystem;
+
 	XMMATRIX modelMat;
-	std::vector<XMFLOAT3> positions;
-	std::vector<XMFLOAT3> velocities;
-	StructuredBuffer positionBuffer;
-	StructuredBuffer velocityBuffer;
 	D3D12_VERTEX_BUFFER_VIEW vbv;
 	D3D12_INDEX_BUFFER_VIEW ibv;
 	VertexBuffer vertexBuffer;
 	IndexBuffer indexBuffer;
 	unsigned int instanceCount;
+	ID3D12CommandSignature* commandSignature = nullptr;
 	UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
 	unsigned int indexCount = 0;
+
+	unsigned int substepIndex = 0;
+
+	// Scene Buffers
+	StructuredBuffer particleBuffer;
+	StructuredBuffer particleFreeIndicesBuffer;
+	StructuredBuffer particleCount;
+	StructuredBuffer particleSimDispatch;
+
+	std::array<StructuredBuffer, 3> gridBuffers;
+
+	void createBukkitSystem();
+
+	void updateSimUniforms(unsigned int iteration);
+
+	void resetBuffers(bool resetGrids = false);
+
+	void bukkitizeParticles();
 };

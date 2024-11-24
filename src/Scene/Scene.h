@@ -35,7 +35,6 @@ private:
 	ObjectScene objectScene;
 	
 	RenderPipeline pbmpmRP;
-	ComputePipeline pbmpmCP;
 	unsigned int pbmpmIC;
 	PBMPMScene pbmpmScene;
 

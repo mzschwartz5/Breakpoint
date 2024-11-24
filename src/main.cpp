@@ -106,13 +106,14 @@ int main() {
         fpsStream << std::fixed << std::setprecision(2) << fps;
         std::wstring fpsStr = L"Breakpoint - FPS: " + fpsStream.str();
         Window::get().updateTitle(fpsStr);
-        
+
         Window::get().endFrame(renderPipeline->getCommandList());
 
         //finish draw, present, reset
         context.executeCommandList(renderPipeline->getCommandListID());
         Window::get().present();
-		context.resetCommandList(renderPipeline->getCommandListID());
+		    context.resetCommandList(renderPipeline->getCommandListID());
+
     }
 
     // Close
