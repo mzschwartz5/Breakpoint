@@ -15,16 +15,8 @@ int main() {
         return false;
     }
 
-    //initialize FPS counter variables
-    LARGE_INTEGER timeFrequency, startTime, endTime;
-    float fps = 0.0f;
-    int frameCount = 0;
-
-    QueryPerformanceFrequency(&timeFrequency);
-    QueryPerformanceCounter(&startTime);
-
     //initialize ImGUI
-    auto io = initImGUI(context);
+    ImGuiIO& io = initImGUI(context);
 
     //set mouse to use the window
     mouse->SetWindow(Window::get().getHWND());
@@ -113,22 +105,6 @@ int main() {
 
         renderPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
-
-        //measure FPS
-        QueryPerformanceCounter(&endTime);
-        float elapsedTime = (float)(endTime.QuadPart - startTime.QuadPart) / (float)timeFrequency.QuadPart;
-        frameCount++;
-
-        if (elapsedTime >= 1.0f) {
-            fps = (float)frameCount / elapsedTime;
-            frameCount = 0;
-            startTime = endTime;
-        }
-
-        std::wstringstream fpsStream;
-        fpsStream << std::fixed << std::setprecision(2) << fps;
-        std::wstring fpsStr = L"Breakpoint - FPS: " + fpsStream.str();
-        Window::get().updateTitle(fpsStr);
 
         Window::get().endFrame(renderPipeline->getCommandList());
 
