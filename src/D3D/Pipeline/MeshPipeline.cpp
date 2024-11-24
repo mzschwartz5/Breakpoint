@@ -4,6 +4,9 @@ MeshPipeline::MeshPipeline(std::string meshShaderName, std::string fragShaderNam
     CommandListID cmdID, D3D12_DESCRIPTOR_HEAP_TYPE type, unsigned int numberOfDescriptors, D3D12_DESCRIPTOR_HEAP_FLAGS flags)
 	: Pipeline(rootSignatureShaderName, context, cmdID, type, numberOfDescriptors, flags), meshShader(meshShaderName), fragShader(fragShaderName)
 {
+    // TODO: this should be in the base pipeline class (same for compute pipeline)
+    createPSOD();
+    createPipelineState(context.getDevice());
 }
 
 void MeshPipeline::createPSOD() {
@@ -23,7 +26,11 @@ void MeshPipeline::createPSOD() {
 }
 
 void MeshPipeline::createPipelineState(ComPointer<ID3D12Device6> device) {
-   CD3DX12_PIPELINE_MESH_STATE_STREAM psoStream = CD3DX12_PIPELINE_MESH_STATE_STREAM(psod);
-   D3D12_PIPELINE_STATE_STREAM_DESC streamDesc = { sizeof(psoStream), &psoStream };
-   device->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&pso));
+    CD3DX12_PIPELINE_MESH_STATE_STREAM psoStream = CD3DX12_PIPELINE_MESH_STATE_STREAM(psod);
+    D3D12_PIPELINE_STATE_STREAM_DESC streamDesc = { sizeof(psoStream), &psoStream };
+    HRESULT hr = device->CreatePipelineState(&streamDesc, IID_PPV_ARGS(&pso));
+
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create compute pipeline state");
+    }
 }

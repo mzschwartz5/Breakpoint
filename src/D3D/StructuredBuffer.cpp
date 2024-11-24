@@ -1,20 +1,45 @@
 #include "StructuredBuffer.h"
 
-StructuredBuffer::StructuredBuffer(const void* inputData, unsigned int numEle, size_t eleSize, DescriptorHeap* heap)
-	: data(inputData), descriptorHeap(heap), numElements(numEle), elementSize(eleSize)
+
+StructuredBuffer::StructuredBuffer(const void* inputData, unsigned int numEle, UINT eleSize)
+	: data(inputData), numElements(numEle), elementSize(eleSize)
 {
-	findFreeHandle();
 }
 
-void StructuredBuffer::findFreeHandle() {
-	unsigned int index = descriptorHeap->GetNextAvailableIndex();
-    cpuHandle = descriptorHeap->GetCPUHandleAt(index);
-	gpuHandle = descriptorHeap->GetGPUHandleAt(index);
+void StructuredBuffer::findFreeHandle(DescriptorHeap* dh, CD3DX12_CPU_DESCRIPTOR_HANDLE& cpuHandle, CD3DX12_GPU_DESCRIPTOR_HANDLE& gpuHandle) {
+	unsigned int index = dh->GetNextAvailableIndex();
+    cpuHandle = dh->GetCPUHandleAt(index);
+	gpuHandle = dh->GetGPUHandleAt(index);
 }
 
-CD3DX12_GPU_DESCRIPTOR_HANDLE StructuredBuffer::getGPUDescriptorHandle()
+CD3DX12_CPU_DESCRIPTOR_HANDLE StructuredBuffer::getUAVCPUDescriptorHandle()
 {
-	return gpuHandle;
+	return UAVcpuHandle;
+}
+
+CD3DX12_GPU_DESCRIPTOR_HANDLE StructuredBuffer::getUAVGPUDescriptorHandle()
+{
+	return UAVgpuHandle;
+}
+
+CD3DX12_CPU_DESCRIPTOR_HANDLE StructuredBuffer::getSRVCPUDescriptorHandle()
+{
+    return SRVcpuHandle;
+}
+
+CD3DX12_GPU_DESCRIPTOR_HANDLE StructuredBuffer::getSRVGPUDescriptorHandle()
+{
+    return SRVgpuHandle;
+}
+
+CD3DX12_CPU_DESCRIPTOR_HANDLE StructuredBuffer::getCBVCPUDescriptorHandle()
+{
+	return CBVcpuHandle;
+}
+
+CD3DX12_GPU_DESCRIPTOR_HANDLE StructuredBuffer::getCBVGPUDescriptorHandle()
+{
+	return CBVgpuHandle;
 }
 
 D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::getGPUVirtualAddress()
@@ -22,7 +47,18 @@ D3D12_GPU_VIRTUAL_ADDRESS StructuredBuffer::getGPUVirtualAddress()
 	return buffer->GetGPUVirtualAddress();
 }
 
-void StructuredBuffer::passCBVDataToGPU(DXContext& context) {
+void StructuredBuffer::passCBVDataToGPU(DXContext& context, DescriptorHeap* dh) {
+
+	if (isCBV) {
+		throw std::runtime_error("CBV already created.");
+    }
+	else if (isUAV || isSRV) {
+		throw std::runtime_error("Cannot create CBV after creating UAV or SRV.");
+	}
+
+    findFreeHandle(dh, CBVcpuHandle, CBVgpuHandle);
+    isCBV = true;
+
     // Calculate the aligned buffer size (256-byte alignment required for CBV)
     UINT bufferSize = (numElements * elementSize + 255) & ~255; // Round up to 256 bytes
 
@@ -63,11 +99,18 @@ void StructuredBuffer::passCBVDataToGPU(DXContext& context) {
     cbvDesc.BufferLocation = buffer->GetGPUVirtualAddress();
     cbvDesc.SizeInBytes = bufferSize; // Must be 256-byte aligned
 
-    context.getDevice()->CreateConstantBufferView(&cbvDesc, cpuHandle);
+    context.getDevice()->CreateConstantBufferView(&cbvDesc, CBVcpuHandle);
 }
 
-void StructuredBuffer::passSRVDataToGPU(DXContext& context, ID3D12GraphicsCommandList6* cmdList, CommandListID cmdId) {
+void StructuredBuffer::passDataToGPU(DXContext& context, ID3D12GraphicsCommandList6* cmdList, CommandListID cmdId) {
 	// THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
+
+	if (isCBV) {
+		throw std::runtime_error("Cannot create UAV or SRV after creating CBV.");
+	}
+    else if (isUAV || isSRV) {
+		throw std::runtime_error("UAV or SRV already created.");
+	}
 
     // Calculate the total buffer size
     UINT bufferSize = numElements * elementSize;
@@ -84,7 +127,7 @@ void StructuredBuffer::passSRVDataToGPU(DXContext& context, ID3D12GraphicsComman
     bufferDesc.MipLevels = 1;
     bufferDesc.SampleDesc.Count = 1;
     bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    bufferDesc.Flags = D3D12_RESOURCE_FLAG_NONE;  // No unordered access flag
+    bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;  // No unordered access flag
 
     HRESULT hr = context.getDevice()->CreateCommittedResource(
         &defaultHeapProps,
@@ -127,7 +170,7 @@ void StructuredBuffer::passSRVDataToGPU(DXContext& context, ID3D12GraphicsComman
     // Step 4: Copy data from the upload buffer to the GPU buffer
     cmdList->CopyResource(buffer.Get(), uploadBuffer.Get());
 
-    // Step 5: Transition the SRV buffer to the PIXEL_SHADER_RESOURCE state
+    // Step 5: Transition the buffer to the SHADER_RESOURCE state
     D3D12_RESOURCE_BARRIER barrier = {};
     barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
     barrier.Transition.pResource = buffer.Get();
@@ -164,7 +207,6 @@ void StructuredBuffer::passSRVDataToGPU(DXContext& context, ID3D12GraphicsComman
 
     context.resetCommandList(cmdId);
 
-    // Step 6: Create the SRV in the descriptor heap
     D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
     srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
     srvDesc.Format = DXGI_FORMAT_UNKNOWN;
@@ -173,117 +215,18 @@ void StructuredBuffer::passSRVDataToGPU(DXContext& context, ID3D12GraphicsComman
     srvDesc.Buffer.NumElements = numElements;
     srvDesc.Buffer.StructureByteStride = elementSize;
 
-    context.getDevice()->CreateShaderResourceView(buffer.Get(), &srvDesc, cpuHandle);
 }
 
-void StructuredBuffer::passUAVDataToGPU(DXContext& context, ID3D12GraphicsCommandList6 *cmdList, CommandListID cmdId) {
-    // THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
+void StructuredBuffer::createUAV(DXContext& context, DescriptorHeap* dh) {
 
-    // Calculate the total buffer size
-    UINT bufferSize = numElements * elementSize;
+	if (isCBV) {
+		throw std::runtime_error("Cannot create UAV after creating CBV.");
+	}
+    else if (isUAV) {
+		throw std::runtime_error("UAV already created.");
+	}
 
-    // Create a default heap resource for the UAV (GPU-only)
-    D3D12_HEAP_PROPERTIES defaultHeapProps = {};
-    defaultHeapProps.Type = D3D12_HEAP_TYPE_DEFAULT;
-
-    D3D12_RESOURCE_DESC bufferDesc = {};
-    bufferDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    bufferDesc.Width = bufferSize;
-    bufferDesc.Height = 1;
-    bufferDesc.DepthOrArraySize = 1;
-    bufferDesc.MipLevels = 1;
-    bufferDesc.SampleDesc.Count = 1;
-    bufferDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-    bufferDesc.Flags = D3D12_RESOURCE_FLAG_ALLOW_UNORDERED_ACCESS;
-
-    HRESULT hr = context.getDevice()->CreateCommittedResource(
-        &defaultHeapProps,
-        D3D12_HEAP_FLAG_NONE,
-        &bufferDesc,
-        D3D12_RESOURCE_STATE_COPY_DEST,
-        nullptr,
-        IID_PPV_ARGS(&buffer)
-    );
-    if (FAILED(hr)) {
-        throw std::runtime_error("Failed to create UAV buffer.");
-    }
-
-    // Create an upload buffer to copy `data` to the GPU buffer
-    D3D12_HEAP_PROPERTIES uploadHeapProps = {};
-    uploadHeapProps.Type = D3D12_HEAP_TYPE_UPLOAD;
-
-    D3D12_RESOURCE_DESC uploadDesc = {};
-    uploadDesc.Dimension = D3D12_RESOURCE_DIMENSION_BUFFER;
-    uploadDesc.Width = bufferSize;
-    uploadDesc.Height = 1;
-    uploadDesc.DepthOrArraySize = 1;
-    uploadDesc.MipLevels = 1;
-    uploadDesc.SampleDesc.Count = 1;
-    uploadDesc.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
-	uploadDesc.Flags = D3D12_RESOURCE_FLAG_NONE;
-
-    ComPointer<ID3D12Resource> uploadBuffer;
-    hr = context.getDevice()->CreateCommittedResource(
-        &uploadHeapProps,
-        D3D12_HEAP_FLAG_NONE,
-        &uploadDesc,
-        D3D12_RESOURCE_STATE_GENERIC_READ,
-        nullptr,
-        IID_PPV_ARGS(&uploadBuffer)
-    );
-    if (FAILED(hr)) {
-        throw std::runtime_error("Failed to create UAV upload buffer.");
-    }
-
-    // Copy data into the upload buffer
-    void* mappedData = nullptr;
-    uploadBuffer->Map(0, nullptr, &mappedData);
-    memcpy(mappedData, data, bufferSize); // Assume `data` is correctly sized
-    uploadBuffer->Unmap(0, nullptr);
-
-    if (!buffer || !uploadBuffer) {
-        throw std::runtime_error("Buffer resources are not initialized correctly.");
-    }
-
-    // Copy data from the upload buffer to the GPU buffer
-    cmdList->CopyResource(buffer.Get(), uploadBuffer.Get());
-
-	// Transition the UAV buffer to the unordered access state
-    D3D12_RESOURCE_BARRIER barrier = {};
-    barrier.Type = D3D12_RESOURCE_BARRIER_TYPE_TRANSITION;
-    barrier.Transition.pResource = buffer.Get();
-    barrier.Transition.StateBefore = D3D12_RESOURCE_STATE_COPY_DEST;
-    barrier.Transition.StateAfter = D3D12_RESOURCE_STATE_UNORDERED_ACCESS;
-    barrier.Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
-    cmdList->ResourceBarrier(1, &barrier);
-
-	// Create a fence to wait for the GPU to finish copying data
-    ComPointer<ID3D12Fence> fence;
-    UINT64 fenceValue = 1;
-    hr = context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
-    if (FAILED(hr)) {
-        throw std::runtime_error("Failed to create fence.");
-    }
-
-    context.executeCommandList(cmdId);
-    context.getCommandQueue()->Signal(fence.Get(), fenceValue);
-
-    // Wait for the fence to reach the signaled value
-    if (fence->GetCompletedValue() < fenceValue) {
-        HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
-        if (eventHandle == nullptr) {
-            throw std::runtime_error("Failed to create event handle.");
-        }
-
-        // Set the event to be triggered when the GPU reaches the fence value
-        fence->SetEventOnCompletion(fenceValue, eventHandle);
-
-        // Wait until the event is triggered, meaning the GPU has finished
-        WaitForSingleObject(eventHandle, INFINITE);
-        CloseHandle(eventHandle);
-    }
-
-    context.resetCommandList(cmdId);
+	findFreeHandle(dh, UAVcpuHandle, UAVgpuHandle);
 
     // Create the UAV in the descriptor heap
     D3D12_UNORDERED_ACCESS_VIEW_DESC uavDesc = {};
@@ -292,7 +235,34 @@ void StructuredBuffer::passUAVDataToGPU(DXContext& context, ID3D12GraphicsComman
     uavDesc.Buffer.NumElements = numElements;
     uavDesc.Buffer.StructureByteStride = elementSize;
 
-    context.getDevice()->CreateUnorderedAccessView(buffer.Get(), nullptr, &uavDesc, cpuHandle);
+    context.getDevice()->CreateUnorderedAccessView(buffer.Get(), nullptr, &uavDesc, UAVcpuHandle);
+
+	isUAV = true;
+}
+
+void StructuredBuffer::createSRV(DXContext& context, DescriptorHeap* dh) {
+
+	if (isCBV) {
+		throw std::runtime_error("Cannot create SRV after creating CBV.");
+	}
+	else if (isSRV) {
+		throw std::runtime_error("SRV already created.");
+	}
+
+	findFreeHandle(dh, SRVcpuHandle, SRVgpuHandle);
+
+	// Create the SRV in the descriptor heap
+	D3D12_SHADER_RESOURCE_VIEW_DESC srvDesc = {};
+	srvDesc.ViewDimension = D3D12_SRV_DIMENSION_BUFFER;
+	srvDesc.Format = DXGI_FORMAT_UNKNOWN;
+	srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
+	srvDesc.Buffer.FirstElement = 0;
+	srvDesc.Buffer.NumElements = numElements;
+	srvDesc.Buffer.StructureByteStride = elementSize;
+
+	context.getDevice()->CreateShaderResourceView(buffer.Get(), &srvDesc, SRVcpuHandle);
+
+	isSRV = true;
 }
 
 void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES state, CommandListID cmdId) {
@@ -359,7 +329,6 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
     // Execute the command list to perform the copy operation
     context.executeCommandList(cmdId);
     context.getCommandQueue()->Signal(fence.Get(), fenceValue);
-    context.flush(1);
 
     if (fence->GetCompletedValue() < fenceValue) {
         HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
@@ -374,6 +343,8 @@ void StructuredBuffer::copyDataFromGPU(DXContext& context, void* outputData, ID3
         WaitForSingleObject(eventHandle, INFINITE);
         CloseHandle(eventHandle);
     }
+
+    context.resetCommandList(cmdId);
 
     // Map the readback buffer to access the data on the CPU
     void* mappedData = nullptr;

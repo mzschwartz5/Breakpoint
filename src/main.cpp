@@ -1,25 +1,6 @@
 #include "main.h"
 
-
 // Base Object Scene = 0, Bouncing Ball Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3, PBD = 4
-#define SCENE 4
-
-// This should probably go somewhere else
-void createDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList) {
-    vp.TopLeftX = vp.TopLeftY = 0;
-    vp.Width = Window::get().getWidth();
-    vp.Height = Window::get().getHeight();
-    vp.MinDepth = 1.f;
-    vp.MaxDepth = 0.f;
-    cmdList->RSSetViewports(1, &vp);
-    RECT scRect;
-    scRect.left = scRect.top = 0;
-    scRect.right = Window::get().getWidth();
-    scRect.bottom = Window::get().getHeight();
-    cmdList->RSSetScissorRects(1, &scRect);
-}
-
-
 
 int main() {
     //set up DX, window, keyboard mouse
@@ -36,114 +17,23 @@ int main() {
         return false;
     }
 
+    //initialize ImGUI
+    ImGuiIO& io = initImGUI(context);
+
+    //set mouse to use the window
     mouse->SetWindow(Window::get().getHWND());
 
 
-    context.createCommandList(CommandListID::PAPA_ID);
-    context.resetCommandList(CommandListID::PAPA_ID);
+    //initialize scene
+    Scene scene{Object, camera.get(), &context};
 
-#if SCENE == 0
-	RenderPipeline basicPipeline("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", context, CommandListID::RENDER_ID,
-	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-	// Initialize command lists
-	context.resetCommandList(CommandListID::RENDER_ID);
-
-    ObjectScene scene{ &context, &basicPipeline };
-#endif
-#if SCENE == 1
-    RenderPipeline basicPipeline("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", context, CommandListID::RENDER_ID,
-	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-    // Create compute pipeline
-    ComputePipeline computePipeline("TestComputeRootSignature.cso", "TestComputeShader.cso", context, CommandListID::PBMPM_COMPUTE_ID,
-    D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-	// Initialize command lists
-    context.resetCommandList(CommandListID::RENDER_ID);
-    context.resetCommandList(CommandListID::PBMPM_COMPUTE_ID);
-
-    PhysicsScene scene{ &context, &basicPipeline, &computePipeline, 10 };
-#endif
-#if SCENE == 2
-    MeshPipeline basicPipeline("MeshShader.cso", "PixelShader.cso", "RootSignature.cso", context,
-
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    // TODO: Make a Scene Class for Mesh Shading?
-#endif
-#if SCENE == 3
-    RenderPipeline basicPipeline("PBMPMVertexShader.cso", "PixelShader.cso", "PBMPMVertexRootSignature.cso", context, CommandListID::RENDER_ID,
-	D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-
-    // Create compute pipeline
-    ComputePipeline computePipeline("PBMPMComputeRootSignature.cso", "PBMPMComputeShader.cso", context, CommandListID::PBMPM_COMPUTE_ID,
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 2, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-    // Initialize command lists
-    context.resetCommandList(CommandListID::RENDER_ID);
-    context.resetCommandList(CommandListID::PBMPM_COMPUTE_ID);
-
-    PBMPMScene scene{ &context, &basicPipeline, &computePipeline, 50 };
-#endif
-#if SCENE == 4
-    RenderPipeline basicPipeline("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", context, CommandListID::RENDER_ID,
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    ComputePipeline computePipeline("Gram-SchmidtRootSignature.cso", "Gram-SchmidtConstraint.cso", context, CommandListID::PBD_ID,
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 3, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-
-    ComputePipeline applyForcesPipeline(
-        "VelocitySignature.cso",        // Root signature for force application
-        "applyForce.cso",               // Compute shader for force application
-        context,
-        CommandListID::apply_force_ID,
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-        1,                              // Single descriptor for particle data UAV
-        D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
-    );
-    ComputePipeline velocityUpdatePipeline(
-        "VelocitySignature.cso",        // Root signature for velocity updates
-        "VelocityUpdate.cso",           // Compute shader for velocity updates
-        context,
-        CommandListID::velocity_update_ID,
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-        1,                              // Single descriptor for particle data UAV
-        D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
-    );
-
-
-    ComputePipeline FaceToFacePipeline(
-        "Gram-SchmidtRootSignature.cso",        // Root signature for velocity updates
-        "FaceToFaceConstraint.cso",           // Compute shader for velocity updates
-        context,
-        CommandListID::FaceToFace_ID,
-        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
-        1,                              // Single descriptor for particle data UAV
-        D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
-    );
-
-    context.resetCommandList(CommandListID::RENDER_ID);
-    context.resetCommandList(CommandListID::PBD_ID);
-    context.resetCommandList(CommandListID::apply_force_ID);
-    context.resetCommandList(CommandListID::velocity_update_ID);
-    context.resetCommandList(CommandListID::FaceToFace_ID);
-
-
+    PBMPMConstants pbmpmConstants;
 
    
 
-    constexpr UINT numParticles = 24;  // Number of particles in the simulation
-    PBDScene scene{
-        &context,
-        &basicPipeline,
-        &computePipeline,
-        &applyForcesPipeline,
-        &velocityUpdatePipeline,
-        &FaceToFacePipeline,
-        numParticles
-    };
 
-#endif
+
+
     while (!Window::get().getShouldClose()) {
         //update window
         Window::get().update();
@@ -153,6 +43,12 @@ int main() {
             Window::get().resize();
             camera->updateAspect((float)Window::get().getWidth() / (float)Window::get().getHeight());
         }
+
+
+        //set up ImGUI for frame
+        ImGui_ImplDX12_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
 
         //check keyboard state
         auto kState = keyboard->GetState();
@@ -174,6 +70,15 @@ int main() {
         if (kState.LeftControl) {
             camera->translate({ 0.f, -1.0f, 0.f });
         }
+        if (kState.D1) {
+            scene.setRenderScene(Object);
+        }
+        if (kState.D2) {
+            scene.setRenderScene(PBMPM);
+        }
+        if (kState.D3) {
+            scene.setRenderScene(Physics);
+        }
 
         //check mouse state
         auto mState = mouse->GetState();
@@ -189,33 +94,47 @@ int main() {
         //update camera
         camera->updateViewMat();
 
-#if SCENE == 1 || SCENE == 3 || SCENE == 4
-		// Dispatch compute shader for physics scene
-        scene.compute();
-      
-#endif
         //draw to window
-        Window::get().beginFrame(basicPipeline.getCommandList());
+        auto renderPipeline = scene.getRenderPipeline();
+        scene.compute();
 
+        //begin frame
+        Window::get().beginFrame(renderPipeline->getCommandList());
         D3D12_VIEWPORT vp;
-        createDefaultViewport(vp, basicPipeline.getCommandList());
+        Window::get().createAndSetDefaultViewport(vp, renderPipeline->getCommandList());
 
+        //draw scene
+        scene.draw();
 
-        scene.draw(camera.get());
-        
-        Window::get().endFrame(basicPipeline.getCommandList());
+        //draw ImGUI
+        drawImGUIWindow(pbmpmConstants, io);
+
+        //render ImGUI
+        ImGui::Render();
+
+        renderPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
+        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
+
+        Window::get().endFrame(renderPipeline->getCommandList());
 
         //finish draw, present, reset
-        context.executeCommandList(basicPipeline.getCommandListID());
+        context.executeCommandList(renderPipeline->getCommandListID());
 
         Window::get().present();
-		context.resetCommandList(basicPipeline.getCommandListID());
+		    context.resetCommandList(renderPipeline->getCommandListID());
+
     }
 
     // Close
 
     // Scene should release all resources, including their pipelines
     scene.releaseResources();
+
+    ImGui_ImplDX12_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
+    imguiSRVHeap->Release();
 
     //flush pending buffer operations in swapchain
     context.flush(FRAME_COUNT);

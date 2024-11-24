@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Scene.h"
+#include "Drawable.h"
 #include "../D3D/StructuredBuffer.h"
 #include "../D3D/VertexBuffer.h"
 #include "../D3D/IndexBuffer.h"
@@ -14,7 +14,7 @@ struct Constants {
 	float deltaTime;
 };
 
-class PhysicsScene : public Scene {
+class PhysicsScene : public Drawable {
 public:
 	PhysicsScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* compPipeline, unsigned int instanceCount);
 
