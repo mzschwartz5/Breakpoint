@@ -20,7 +20,7 @@ class StructuredBuffer {
 public:
 	StructuredBuffer() = default;
 
-	StructuredBuffer(const void* data, unsigned int numEle, UINT eleSize, DescriptorHeap* heap);
+	StructuredBuffer(const void* data, unsigned int numEle, UINT eleSize);
 
 	void copyDataFromGPU(DXContext& context, void* outputData, ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES state, CommandListID cmdId);
 

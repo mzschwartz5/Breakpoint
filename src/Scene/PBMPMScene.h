@@ -1,6 +1,5 @@
 #pragma once
 
-#include "Scene.h"
 #include "../D3D/DXContext.h"
 #include "Drawable.h"
 #include "../D3D/StructuredBuffer.h"

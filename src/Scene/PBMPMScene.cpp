@@ -1,7 +1,7 @@
 #include "PBMPMScene.h"
 
 PBMPMScene::PBMPMScene(DXContext* context, RenderPipeline* pipeline, unsigned int instances)
-	: Scene(context, pipeline), context(context), renderPipeline(pipeline), instanceCount(instances),
+	: Drawable(context, pipeline), context(context), renderPipeline(pipeline), instanceCount(instances),
 	modelMat(XMMatrixIdentity()),
 	g2p2gPipeline("g2p2gRootSignature.cso", "g2p2gComputeShader.cso", *context, CommandListID::PBMPM_G2P2G_COMPUTE_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 30, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
@@ -424,10 +424,10 @@ void PBMPMScene::constructScene() {
 	indexCount = (unsigned int)circleData.second.size();
 
 	vertexBuffer = VertexBuffer(circleData.first, (UINT)(circleData.first.size() * sizeof(XMFLOAT3)), (UINT)sizeof(XMFLOAT3));
-	vbv = vertexBuffer.passVertexDataToGPU(*context, pipeline->getCommandList());
+	vbv = vertexBuffer.passVertexDataToGPU(*context, renderPipeline->getCommandList());
 
 	indexBuffer = IndexBuffer(circleData.second, (UINT)(circleData.second.size() * sizeof(unsigned int)));
-	ibv = indexBuffer.passIndexDataToGPU(*context, pipeline->getCommandList());
+	ibv = indexBuffer.passIndexDataToGPU(*context, renderPipeline->getCommandList());
 
 	//Transition both buffers to their usable states
 	D3D12_RESOURCE_BARRIER barriers[2] = {};
@@ -446,14 +446,14 @@ void PBMPMScene::constructScene() {
 	barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
 	barriers[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 
-	pipeline->getCommandList()->ResourceBarrier(2, barriers);
+	renderPipeline->getCommandList()->ResourceBarrier(2, barriers);
 
-	pipeline->createPSOD();
-	pipeline->createPipelineState(context->getDevice());
+	renderPipeline->createPSOD();
+	renderPipeline->createPipelineState(context->getDevice());
 
 	// Execute and reset render pipeline command list
-	context->executeCommandList(pipeline->getCommandListID());
-	context->resetCommandList(pipeline->getCommandListID());
+	context->executeCommandList(renderPipeline->getCommandListID());
+	context->resetCommandList(renderPipeline->getCommandListID());
 
 	// Create Fence
 	context->getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
@@ -627,7 +627,7 @@ void PBMPMScene::compute() {
 
 void PBMPMScene::draw(Camera* cam) {;
 
-	auto cmdList = pipeline->getCommandList();
+	auto cmdList = renderPipeline->getCommandList();
 
 	// Check if we're on the 1000th substep
 	//if (substepIndex == 1000) {
@@ -643,8 +643,8 @@ void PBMPMScene::draw(Camera* cam) {;
 	cmdList->IASetPrimitiveTopology(D3D_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 	// PSO
-	cmdList->SetPipelineState(pipeline->getPSO());
-	cmdList->SetGraphicsRootSignature(pipeline->getRootSignature());
+	cmdList->SetPipelineState(renderPipeline->getPSO());
+	cmdList->SetGraphicsRootSignature(renderPipeline->getRootSignature());
 
 	// Transition particle buffer to SRV
 	auto srvBarrier = CD3DX12_RESOURCE_BARRIER::Transition(particleBuffer.getBuffer(),
@@ -668,9 +668,9 @@ void PBMPMScene::draw(Camera* cam) {;
 	cmdList->ResourceBarrier(1, &srvBarrier);
 
 	// Run command list, wait for fence, and reset
-	context->executeCommandList(pipeline->getCommandListID());
+	context->executeCommandList(renderPipeline->getCommandListID());
 	context->signalAndWaitForFence(fence, fenceValue);
-	context->resetCommandList(pipeline->getCommandListID());
+	context->resetCommandList(renderPipeline->getCommandListID());
 
 }
 
