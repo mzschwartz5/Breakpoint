@@ -24,6 +24,7 @@ int main() {
     QueryPerformanceCounter(&startTime);
 
     //initialize ImGUI
+    IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGuiIO& io = ImGui::GetIO(); (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
@@ -31,7 +32,7 @@ int main() {
 
     ImGui::StyleColorsDark();
 
-    ImGui_ImplWin32_Init(&(Window::get().getHWND()));
+    ImGui_ImplWin32_Init(Window::get().getHWND());
 
     ImGui_ImplDX12_InitInfo imguiDXInfo;
     imguiDXInfo.CommandQueue = context.getCommandQueue();
