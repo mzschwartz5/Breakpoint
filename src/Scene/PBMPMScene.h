@@ -108,6 +108,8 @@ public:
 
 	void releaseResources();
 
+	void updateConstants(PBMPMConstants& newConstants);
+
 private:
 	DXContext* context;
 	RenderPipeline* renderPipeline;

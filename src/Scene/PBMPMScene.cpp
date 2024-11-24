@@ -704,3 +704,7 @@ void PBMPMScene::releaseResources() {
 	//fence->Release();
 	commandSignature->Release();
 }
+
+void PBMPMScene::updateConstants(PBMPMConstants& newConstants) {
+	constants = newConstants;
+}

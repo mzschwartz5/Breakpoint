@@ -24,39 +24,7 @@ int main() {
     QueryPerformanceCounter(&startTime);
 
     //initialize ImGUI
-    IMGUI_CHECKVERSION();
-    ImGui::CreateContext();
-    ImGuiIO& io = ImGui::GetIO(); (void)io;
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;     // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
-
-    ImGui::StyleColorsDark();
-
-    ImGui_ImplWin32_Init(Window::get().getHWND());
-
-    ImGui_ImplDX12_InitInfo imguiDXInfo;
-    imguiDXInfo.CommandQueue = context.getCommandQueue();
-    imguiDXInfo.Device = context.getDevice();
-    imguiDXInfo.NumFramesInFlight = 2;
-    imguiDXInfo.RTVFormat = DXGI_FORMAT_R8G8B8A8_UNORM;
-
-    D3D12_DESCRIPTOR_HEAP_DESC desc = {};
-    desc.Type = D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV;
-    desc.NumDescriptors = 64;
-    desc.Flags = D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE;
-    if (context.getDevice()->CreateDescriptorHeap(&desc, IID_PPV_ARGS(&imguiSRVHeap)) != S_OK) {
-        std::cout << "could not create imgui descriptor heap\n";
-        Window::get().shutdown();
-        return false;
-    }
-    imguiHeapAllocator.Create(context.getDevice(), imguiSRVHeap);
-
-    imguiHeapAllocator.Heap = imguiSRVHeap;
-    imguiDXInfo.SrvDescriptorHeap = imguiSRVHeap;
-    imguiDXInfo.SrvDescriptorAllocFn = [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE * out_cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE * out_gpu_handle){ return imguiHeapAllocator.Alloc(out_cpu_handle, out_gpu_handle);};
-    imguiDXInfo.SrvDescriptorFreeFn = [](ImGui_ImplDX12_InitInfo*, D3D12_CPU_DESCRIPTOR_HANDLE cpu_handle, D3D12_GPU_DESCRIPTOR_HANDLE gpu_handle) { return imguiHeapAllocator.Free(cpu_handle, gpu_handle); };
-
-    ImGui_ImplDX12_Init(&imguiDXInfo);
+    auto io = initImGUI(context);
 
     //set mouse to use the window
     mouse->SetWindow(Window::get().getHWND());
@@ -64,8 +32,7 @@ int main() {
     //initialize scene
     Scene scene{Object, camera.get(), &context};
 
-    bool showImGUIWindow = true;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    PBMPMConstants pbmpmConstants;
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -139,27 +106,7 @@ int main() {
         scene.draw();
 
         //draw ImGUI
-        {
-            static float f = 0.0f;
-            static int counter = 0;
-
-            ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
-
-            ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
-            ImGui::Checkbox("Demo Window", &showImGUIWindow);       // Edit bools storing our window open/close state
-            ImGui::Checkbox("Another Window", &showImGUIWindow);
-
-            ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-            ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
-
-            if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
-                counter++;
-            ImGui::SameLine();
-            ImGui::Text("counter = %d", counter);
-
-            ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-            ImGui::End();
-        }
+        drawImGUIWindow(pbmpmConstants, io);
 
         //render ImGUI
         ImGui::Render();
