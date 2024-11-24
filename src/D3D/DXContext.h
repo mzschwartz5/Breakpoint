@@ -13,6 +13,7 @@ enum CommandListID {
     PBD_ID,
     apply_force_ID,
     velocity_update_ID,
+    FaceToFace_ID,
 
 };
 

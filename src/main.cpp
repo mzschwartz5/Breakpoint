@@ -89,7 +89,7 @@ int main() {
 #if SCENE == 4
     RenderPipeline basicPipeline("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", context, CommandListID::RENDER_ID,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
-    ComputePipeline computePipeline("TestComputeRootSignature.cso", "Gram-SchmidtConstraint.cso", context, CommandListID::PBD_ID,
+    ComputePipeline computePipeline("Gram-SchmidtRootSignature.cso", "Gram-SchmidtConstraint.cso", context, CommandListID::PBD_ID,
         D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 3, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE);
 
     ComputePipeline applyForcesPipeline(
@@ -112,22 +112,34 @@ int main() {
     );
 
 
+    ComputePipeline FaceToFacePipeline(
+        "Gram-SchmidtRootSignature.cso",        // Root signature for velocity updates
+        "FaceToFaceConstraint.cso",           // Compute shader for velocity updates
+        context,
+        CommandListID::FaceToFace_ID,
+        D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+        1,                              // Single descriptor for particle data UAV
+        D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
+    );
+
     context.resetCommandList(CommandListID::RENDER_ID);
     context.resetCommandList(CommandListID::PBD_ID);
     context.resetCommandList(CommandListID::apply_force_ID);
     context.resetCommandList(CommandListID::velocity_update_ID);
+    context.resetCommandList(CommandListID::FaceToFace_ID);
 
 
 
    
 
-    constexpr UINT numParticles = 16;  // Number of particles in the simulation
+    constexpr UINT numParticles = 24;  // Number of particles in the simulation
     PBDScene scene{
         &context,
         &basicPipeline,
         &computePipeline,
         &applyForcesPipeline,
         &velocityUpdatePipeline,
+        &FaceToFacePipeline,
         numParticles
     };
 

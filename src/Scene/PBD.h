@@ -13,10 +13,18 @@
 class PBDScene : public Scene {
 public:
 	PBDScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* computePipeline, 
-		ComputePipeline* applyForcesPipeline, ComputePipeline* velocityUpdatePipeline, unsigned int instances);
+		ComputePipeline* applyForcesPipeline, ComputePipeline* velocityUpdatePipeline, ComputePipeline* FaceToFacePipeline, unsigned int instances);
 
-	void testBreaking(std::vector<Particle> particles);
-	void testTwisting(std::vector<Particle> particles);
+	/*void testBreaking(std::vector<Particle> particles);
+	void testTwisting(std::vector<Particle> particles);*/
+	void testVoxels(std::vector<Particle>* particles,
+		std::vector<Voxel>* voxels);
+
+	void createPartitions(
+		std::vector<std::vector<uint32_t>>* partitionIndices,
+		std::vector<Particle>* particles,
+		std::vector<Voxel>* voxels,
+		ComputePipeline* computePipeline);
 
 	void constructScene();
 
@@ -32,9 +40,9 @@ private:
 	ComputePipeline* computePipeline;
 	ComputePipeline* applyForcesPipeline;
 	ComputePipeline* velocityUpdatePipeline;
+	ComputePipeline* FaceToFacePipeline;
 	XMMATRIX modelMat;
-	std::vector<XMFLOAT3> positions;
-	std::vector<XMFLOAT3> velocities;
+
 
 	D3D12_VERTEX_BUFFER_VIEW vbv;
 	D3D12_INDEX_BUFFER_VIEW ibv;
@@ -47,13 +55,20 @@ private:
 
 	SimulationParams simParams = {};
 	unsigned int constraintCount = 0;
+
 	StructuredBuffer particleBuffer;
-	//StructuredBuffer constraintBuffer;
+	StructuredBuffer voxelBuffer;
 	std::vector<Particle> particles;
 	std::vector<Voxel> voxels;
-	std::vector<uint32_t> indices;
-	//std::vector<DistanceConstraint> constraints;
-	StructuredBuffer voxelBuffer;
-	StructuredBuffer V_indexBuffer;
+	
+	StructuredBuffer shapePartitionBuffer;    // Partition 0
+	StructuredBuffer xFacePartitionBuffer;    // Partition 1
+	StructuredBuffer yFacePartitionBuffer;    // Partition 2
+	StructuredBuffer zFacePartitionBuffer;    // Partition 3
+
+	std::vector<std::vector<uint32_t>> partitionIndices;
+
+
+	
 
 };

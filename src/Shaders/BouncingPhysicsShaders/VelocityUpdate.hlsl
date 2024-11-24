@@ -14,6 +14,9 @@ cbuffer SimulationParams : register(b0) {
     float breakingThreshold;
     float randomSeed;
     float3 gravity;
+
+    float compliance;
+    float numSubsteps;
 };
 
 RWStructuredBuffer<Particle> particles : register(u0);
@@ -26,9 +29,10 @@ void main(uint3 DTid : SV_DispatchThreadID) {
         return;
 
     Particle p = particles[particleIndex];
+    float h = deltaTime / numSubsteps;
 
     // Update velocity based on position change
-    p.velocity = (p.position - p.previousPosition) / 0.33f;
+    p.velocity = (p.position - p.previousPosition) / h;
 
     particles[particleIndex] = p;
 }

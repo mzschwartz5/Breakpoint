@@ -29,13 +29,15 @@ struct Voxel {
 
     XMFLOAT3 centroidVelocity;
     float accumulatedStrain;
+
+    float shapeLambda[8];
 };
 
-struct FaceConstraint {
-    UINT voxelA;
-    UINT voxelB;
-    UINT faceIndex; // Identifies which face is shared
-};
+//struct FaceConstraint {
+//    UINT voxelA;
+//    UINT voxelB;
+//    UINT faceIndex; // Identifies which face is shared
+//};
 
 //testing
 struct DistanceConstraint {
@@ -55,7 +57,8 @@ struct SimulationParams {
     float count;
     float breakingThreshold;
     float randomSeed;
-    float strainMemory;
-    float rotationalInertia;
     DirectX::XMFLOAT3 gravity;
+    float compliance;
+    float numSubsteps;
+    UINT partitionSize;
 };
