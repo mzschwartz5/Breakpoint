@@ -109,11 +109,15 @@ void Camera::updateViewMat() {
 	viewMat(1, 3) = 0.0f;
 	viewMat(2, 3) = 0.0f;
 	viewMat(3, 3) = 1.0f;
+
+	XMStoreFloat4x4(&viewProjMat, XMLoadFloat4x4(&projMat) * XMLoadFloat4x4(&viewMat));	
 }
 
 void Camera::updateProjMat() {
 	XMMATRIX P = XMMatrixPerspectiveFovLH(FOVY, aspect, nearPlane, farPlane);
 	XMStoreFloat4x4(&projMat, P);
+
+	XMStoreFloat4x4(&viewProjMat, XMLoadFloat4x4(&projMat) * XMLoadFloat4x4(&viewMat));
 }
 
 XMMATRIX Camera::getViewMat() {
@@ -122,4 +126,8 @@ XMMATRIX Camera::getViewMat() {
 
 XMMATRIX Camera::getProjMat() {
 	return XMLoadFloat4x4(&projMat);
+}
+
+XMMATRIX Camera::getViewProjMat() {
+	return XMLoadFloat4x4(&viewProjMat);
 }

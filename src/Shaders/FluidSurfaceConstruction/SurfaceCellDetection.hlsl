@@ -25,6 +25,8 @@ StructuredBuffer<uint3> surfaceBlockDispatch : register(t2);
 // Outputs
 RWStructuredBuffer<uint> surfaceVertices : register(u0);
 
+RWStructuredBuffer<uint3> surfaceHalfBlockDispatch : register(u1); // piggy-backing off this pass to set up an indirect dispatch for the mesh shading step
+
 // At a typical value of FILLED_BLOCK = 216, (4 + 2)^3, this is well within the limits of shared memory. 
 groupshared uint cellParticleCounts[FILLED_BLOCK];
 
@@ -83,6 +85,11 @@ void setVertGlobalMemory(uint index, uint value) {
 void main(uint3 globalThreadId : SV_DispatchThreadID, uint3 localThreadId : SV_GroupThreadID) {
     if (globalThreadId.x >= surfaceBlockDispatch[0].x * CELLS_PER_BLOCK) {
         return;
+    }
+
+    // Piggy-backing off this pass to set up an indirect dispatch for the mesh shading step
+    if (globalThreadId.x == 0) {
+        surfaceHalfBlockDispatch[0] = uint3(surfaceBlockDispatch[0].x * 2, 1, 1);
     }
 
     // First order of business: we launched a thread for each cell within surface blocks. We need to figure out the global index for this thread's cell. 

@@ -25,6 +25,7 @@ public:
 
 	XMMATRIX getViewMat();
 	XMMATRIX getProjMat();
+	XMMATRIX getViewProjMat();
 
 private:
 	float FOVY;
@@ -42,6 +43,7 @@ private:
 
 	XMFLOAT4X4 viewMat;
 	XMFLOAT4X4 projMat;
+	XMFLOAT4X4 viewProjMat;
 
 	void updateProjMat();
 };
