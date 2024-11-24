@@ -15,17 +15,16 @@ int main() {
         return false;
     }
 
-    //initialize FPS counter variables
-    LARGE_INTEGER timeFrequency, startTime, endTime;
-    float fps = 0.0f;
-    int frameCount = 0;
+    //initialize ImGUI
+    ImGuiIO& io = initImGUI(context);
 
-    QueryPerformanceFrequency(&timeFrequency);
-    QueryPerformanceCounter(&startTime);
-
+    //set mouse to use the window
     mouse->SetWindow(Window::get().getHWND());
 
+    //initialize scene
     Scene scene{Object, camera.get(), &context};
+
+    PBMPMConstants pbmpmConstants;
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -36,6 +35,11 @@ int main() {
             Window::get().resize();
             camera->updateAspect((float)Window::get().getWidth() / (float)Window::get().getHeight());
         }
+
+        //set up ImGUI for frame
+        ImGui_ImplDX12_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
         
         //check keyboard state
         auto kState = keyboard->GetState();
@@ -85,27 +89,22 @@ int main() {
         auto renderPipeline = scene.getRenderPipeline();
         scene.compute();
 
+        //begin frame
         Window::get().beginFrame(renderPipeline->getCommandList());
         D3D12_VIEWPORT vp;
         Window::get().createAndSetDefaultViewport(vp, renderPipeline->getCommandList());
 
+        //draw scene
         scene.draw();
 
-        //measure FPS
-        QueryPerformanceCounter(&endTime);
-        float elapsedTime = (float)(endTime.QuadPart - startTime.QuadPart) / (float)timeFrequency.QuadPart;
-        frameCount++;
+        //draw ImGUI
+        drawImGUIWindow(pbmpmConstants, io);
 
-        if (elapsedTime >= 1.0f) {
-            fps = (float)frameCount / elapsedTime;
-            frameCount = 0;
-            startTime = endTime;
-        }
+        //render ImGUI
+        ImGui::Render();
 
-        std::wstringstream fpsStream;
-        fpsStream << std::fixed << std::setprecision(2) << fps;
-        std::wstring fpsStr = L"Breakpoint - FPS: " + fpsStream.str();
-        Window::get().updateTitle(fpsStr);
+        renderPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
+        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
 
         Window::get().endFrame(renderPipeline->getCommandList());
 
@@ -119,6 +118,12 @@ int main() {
     // Close
     // Scene should release all resources, including their pipelines
     scene.releaseResources();
+
+    ImGui_ImplDX12_Shutdown();
+    ImGui_ImplWin32_Shutdown();
+    ImGui::DestroyContext();
+
+    imguiSRVHeap->Release();
 
     //flush pending buffer operations in swapchain
     context.flush(FRAME_COUNT);

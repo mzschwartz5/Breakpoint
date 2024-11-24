@@ -200,7 +200,13 @@ void Window::releaseBuffers() {
     }
 }
 
+// Forward declare message handler from imgui_impl_win32.cpp
+extern IMGUI_IMPL_API LRESULT ImGui_ImplWin32_WndProcHandler(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam);
+
 LRESULT Window::OnWindowMessage(HWND wnd, UINT msg, WPARAM wParam, LPARAM lParam) {
+    if (ImGui_ImplWin32_WndProcHandler(wnd, msg, wParam, lParam))
+        return true;
+
     switch (msg) {
         case WM_SIZE:
             //only resize if size is not 0 and size has been changed from expected size
