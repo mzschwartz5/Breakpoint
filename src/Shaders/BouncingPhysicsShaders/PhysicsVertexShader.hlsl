@@ -14,7 +14,7 @@ struct Particle {
 };
 
 // Particle positions as an SRV at register t0
-RWStructuredBuffer<Particle> particles : register(u0);
+StructuredBuffer<Particle> particles : register(t0);
 
 struct VSInput
 {

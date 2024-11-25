@@ -4,6 +4,7 @@
 #include "PBMPMScene.h"
 #include "PhysicsScene.h"
 #include "FluidScene.h"
+#include "PBD.h"
 #include "../D3D/Pipeline/RenderPipeline.h"
 #include "../D3D/Pipeline/ComputePipeline.h"
 #include "../D3D/Pipeline/MeshPipeline.h"
@@ -12,7 +13,8 @@ enum RenderScene {
 	Object,
 	PBMPM,
 	Physics,
-	Fluid
+	Fluid,
+	PBD
 };
 
 class Scene {
@@ -52,6 +54,10 @@ private:
 	ComputePipeline surfaceVertexNormalCP;
 	MeshPipeline fluidMeshPipeline;
 	FluidScene fluidScene;
+
+	RenderPipeline pbdRP;
+	unsigned int pbdIC;
+	PBDScene pbdScene;
 
 	RenderScene scene;
 

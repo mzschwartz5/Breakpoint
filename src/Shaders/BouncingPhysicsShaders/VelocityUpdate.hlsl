@@ -14,19 +14,16 @@ cbuffer SimulationParams : register(b0) {
     float breakingThreshold;
     float randomSeed;
     float3 gravity;
-
     float compliance;
     float numSubsteps;
 };
 
 RWStructuredBuffer<Particle> particles : register(u0);
 
-
-[numthreads(1, 1, 1)]
+[numthreads(256, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID) {
     uint particleIndex = DTid.x;
-    if (particleIndex >= count)
-        return;
+    if (particleIndex >= count) return;
 
     Particle p = particles[particleIndex];
     float h = deltaTime / numSubsteps;

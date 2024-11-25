@@ -79,6 +79,10 @@ int main() {
         if (kState.D3) {
             scene.setRenderScene(Physics);
         }
+        if (kState.D4) {
+            scene.setRenderScene(PBD);
+        }
+
 
         //check mouse state
         auto mState = mouse->GetState();

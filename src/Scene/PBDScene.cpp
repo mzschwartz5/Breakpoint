@@ -1,19 +1,52 @@
 #include "PBD.h"
 
 
-PBDScene::PBDScene(DXContext* context, RenderPipeline* pipeline, 
-	ComputePipeline* computePipeline, ComputePipeline* applyForcesPipeline, 
-	ComputePipeline* velocityUpdatePipeline, ComputePipeline* FaceToFacePipeline,
-	unsigned int instances)
-	: Scene(context, pipeline), context(context), pipeline(pipeline),
-	computePipeline(computePipeline), applyForcesPipeline(applyForcesPipeline), 
-	velocityUpdatePipeline(velocityUpdatePipeline), 
-	FaceToFacePipeline(FaceToFacePipeline),
-	instanceCount(instances),
-	modelMat(XMMatrixIdentity())
+PBDScene::PBDScene(DXContext* context, RenderPipeline* pipeline, unsigned int instances)
+	: Drawable(context, pipeline), context(context), renderPipeline(pipeline), instanceCount(instances),
+	modelMat(XMMatrixIdentity()),
+	
+	GramPipeline("Gram-SchmidtRootSignature.cso", "Gram-SchmidtConstraint.cso", *context, CommandListID::Gram_ID,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 7, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
+	applyForcesPipeline(
+		"VelocitySignature.cso",        // Root signature for force application
+		"applyForce.cso",               // Compute shader for force application
+		*context,
+		CommandListID::apply_force_ID,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		1,                              // Single descriptor for particle data UAV
+		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
+	),
+	velocityUpdatePipeline(
+		"VelocitySignature.cso",        // Root signature for velocity updates
+		"VelocityUpdate.cso",           // Compute shader for velocity updates
+		*context,
+		CommandListID::velocity_update_ID,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		1,                              // Single descriptor for particle data UAV
+		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
+	),
+	FaceToFacePipeline(
+		"Gram-SchmidtRootSignature.cso",        // Root signature for velocity updates
+		"FaceToFaceConstraint.cso",           // Compute shader for velocity updates
+		*context,
+		CommandListID::FaceToFace_ID,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV,
+		4,                              // Single descriptor for particle data UAV
+		D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE
+	)
 {
+	//context->resetCommandList(CommandListID::PBD_ID);
+	context->resetCommandList(CommandListID::apply_force_ID);
+	context->resetCommandList(CommandListID::velocity_update_ID);
+	context->resetCommandList(CommandListID::FaceToFace_ID);
+
 	constructScene();
+
+
 }
+
+
+
 
 //void PBDScene::testBreaking(std::vector<Particle> particles) {
 //	// Apply force to second voxel to test breaking
@@ -33,35 +66,34 @@ void PBDScene::testVoxels(std::vector<Particle>* particles,
 	std::vector<Voxel>* voxels) {
 
 	std::vector<XMFLOAT3> positions = {
-		// Voxel 0 (Base cube)
-		{ -0.15f, -0.15f, -0.15f }, // 0
-		{  0.15f, -0.15f, -0.15f }, // 1
-		{  0.15f,  0.15f, -0.15f }, // 2
-		{ -0.15f,  0.15f, -0.15f }, // 3
-		{ -0.15f, -0.15f,  0.15f }, // 4
-		{  0.15f, -0.15f,  0.15f }, // 5
-		{  0.15f,  0.15f,  0.15f }, // 6
-		{ -0.15f,  0.15f,  0.15f }, // 7
+	{ -0.05f, -0.05f, -0.05f }, // 0
+	{  0.05f, -0.05f, -0.05f }, // 1
+	{  0.05f,  0.05f, -0.05f }, // 2
+	{ -0.05f,  0.05f, -0.05f }, // 3
+	{ -0.05f, -0.05f,  0.05f }, // 4
+	{  0.05f, -0.05f,  0.05f }, // 5
+	{  0.05f,  0.05f,  0.05f }, // 6
+	{ -0.05f,  0.05f,  0.05f }, // 7
 
-		// Voxel 1 (Right connected cube - gap of 0.06)
-		{ 0.21f, -0.15f, -0.15f },  // 8
-		{ 0.51f, -0.15f, -0.15f },  // 9
-		{ 0.51f,  0.15f, -0.15f },  // 10
-		{ 0.21f,  0.15f, -0.15f },  // 11
-		{ 0.21f, -0.15f,  0.15f },  // 12
-		{ 0.51f, -0.15f,  0.15f },  // 13
-		{ 0.51f,  0.15f,  0.15f },  // 14
-		{ 0.21f,  0.15f,  0.15f },  // 15
+	// Voxel 1 (Right connected cube - gap adjusted proportionally to 0.02)
+	{ 0.07f, -0.05f, -0.05f },  // 8  (0.05 + 0.02 gap)
+	{ 0.17f, -0.05f, -0.05f },  // 9
+	{ 0.17f,  0.05f, -0.05f },  // 10
+	{ 0.07f,  0.05f, -0.05f },  // 11
+	{ 0.07f, -0.05f,  0.05f },  // 12
+	{ 0.17f, -0.05f,  0.05f },  // 13
+	{ 0.17f,  0.05f,  0.05f },  // 14
+	{ 0.07f,  0.05f,  0.05f },  // 15
 
-		// Voxel 2 (Stacked on top - gap of 0.06)
-		{ -0.15f,  0.21f, -0.15f }, // 16
-		{  0.15f,  0.21f, -0.15f }, // 17
-		{  0.15f,  0.51f, -0.15f }, // 18
-		{ -0.15f,  0.51f, -0.15f }, // 19
-		{ -0.15f,  0.21f,  0.15f }, // 20
-		{  0.15f,  0.21f,  0.15f }, // 21
-		{  0.15f,  0.51f,  0.15f }, // 22
-		{ -0.15f,  0.51f,  0.15f }, // 23
+	// Voxel 2 (Stacked on top - gap adjusted proportionally to 0.02)
+	{ -0.05f,  0.07f, -0.05f }, // 16 (0.05 + 0.02 gap)
+	{  0.05f,  0.07f, -0.05f }, // 17
+	{  0.05f,  0.17f, -0.05f }, // 18
+	{ -0.05f,  0.17f, -0.05f }, // 19
+	{ -0.05f,  0.07f,  0.05f }, // 20
+	{  0.05f,  0.07f,  0.05f }, // 21
+	{  0.05f,  0.17f,  0.05f }, // 22
+	{ -0.05f,  0.17f,  0.05f }  // 23
 
 
 	};
@@ -138,44 +170,7 @@ void PBDScene::testVoxels(std::vector<Particle>* particles,
 
 }
 
-void PBDScene::createPartitions(
-	std::vector<std::vector<uint32_t>>* partitionIndices,
-	std::vector<Particle>* particles,
-	std::vector<Voxel>* voxels, ComputePipeline* computePipeline) {
 
-
-	partitionIndices->clear();
-	partitionIndices->resize(4);
-
-	for (uint32_t i = 0; i < voxels->size(); i++) {
-		(*partitionIndices)[0].push_back(i);
-	}
-
-
-	// Partition 1: X-axis faces
-	for (uint32_t i = 0; i < voxels->size(); i++) {
-		if ((*voxels)[i].faceConnections[0] || (*voxels)[i].faceConnections[1]) {
-			(*partitionIndices)[1].push_back(i);
-		}
-	}
-
-	// Partition 2: Y-axis faces
-	for (uint32_t i = 0; i < voxels->size(); i++) {
-		if ((*voxels)[i].faceConnections[2] || (*voxels)[i].faceConnections[3]) {
-			(*partitionIndices)[2].push_back(i);
-		}
-	}
-
-	// Partition 3: Z-axis faces
-	for (uint32_t i = 0; i < voxels->size(); i++) {
-		if ((*voxels)[i].faceConnections[4] || (*voxels)[i].faceConnections[5]) {
-			(*partitionIndices)[3].push_back(i);
-		}
-	}
-
-	
-	
-}
 
 
 void PBDScene::constructScene() {
@@ -193,8 +188,8 @@ void PBDScene::constructScene() {
 	float randomSeed = static_cast<float>(duration.count());
 
 
-	simParams.deltaTime = 0.033f;
-	simParams.count = instanceCount;
+	simParams.deltaTime = 0.016f;
+	simParams.count = static_cast<unsigned int>(particles.size());
 	simParams.gravity = { 0.0f, -9.81f, 0.0f };
 	simParams.constraintCount = static_cast<unsigned int>(voxels.size());
 	simParams.breakingThreshold = 0.4f;
@@ -206,67 +201,104 @@ void PBDScene::constructScene() {
 	
 	simParams.partitionSize = instanceCount/8.0f;
 	
-	createPartitions(&partitionIndices, &particles, &voxels, computePipeline);
+	//createPartitions(&partitionIndices, &particles, &voxels, computePipeline);
 
-	particleBuffer = StructuredBuffer(particles.data(), particles.size(),
-		sizeof(Particle), computePipeline->getDescriptorHeap());
-	voxelBuffer = StructuredBuffer(voxels.data(), voxels.size(),
-		sizeof(Voxel), computePipeline->getDescriptorHeap());
+	partitionIndices.clear();
+	partitionIndices.resize(4);
+
+	for (uint32_t i = 0; i < voxels.size(); i++) {
+		partitionIndices[0].push_back(i);
+	}
+
+
+	// Partition 1: X-axis faces
+	for (uint32_t i = 0; i < voxels.size(); i++) {
+		if (voxels[i].faceConnections[0] || voxels[i].faceConnections[1]) {
+			partitionIndices[1].push_back(i);
+		}
+	}
+
+	// Partition 2: Y-axis faces
+	for (uint32_t i = 0; i < voxels.size(); i++) {
+		if (voxels[i].faceConnections[2] || voxels[i].faceConnections[3]) {
+			partitionIndices[2].push_back(i);
+		}
+	}
+
+	// Partition 3: Z-axis faces
+	for (uint32_t i = 0; i < voxels.size(); i++) {
+		if (voxels[i].faceConnections[4] || voxels[i].faceConnections[5]) {
+			partitionIndices[3].push_back(i);
+		}
+	}
 
 	if (!partitionIndices[0].empty()) {
 		shapePartitionBuffer = StructuredBuffer(
 			partitionIndices[0].data(),
 			partitionIndices[0].size(),
-			sizeof(uint32_t),
-			computePipeline->getDescriptorHeap()
+			sizeof(uint32_t)
 		);
-		
+
 	}
 
 	if (!partitionIndices[1].empty()) {
 		xFacePartitionBuffer = StructuredBuffer(
 			partitionIndices[1].data(),
 			partitionIndices[1].size(),
-			sizeof(uint32_t),
-			computePipeline->getDescriptorHeap()
+			sizeof(uint32_t)
 		);
-		
+
 	}
 	if (!partitionIndices[2].empty()) {
 		yFacePartitionBuffer = StructuredBuffer(
 			partitionIndices[2].data(),
 			partitionIndices[2].size(),
-			sizeof(uint32_t),
-			computePipeline->getDescriptorHeap()
+			sizeof(uint32_t)
 		);
-		
+
 	}
 	if (!partitionIndices[3].empty()) {
 		zFacePartitionBuffer = StructuredBuffer(
 			partitionIndices[3].data(),
 			partitionIndices[3].size(),
-			sizeof(uint32_t),
-			computePipeline->getDescriptorHeap()
+			sizeof(uint32_t)
 		);
-		
+
 	}
+
+
+	particleBuffer = StructuredBuffer(particles.data(), particles.size(),
+		sizeof(Particle));
+	voxelBuffer = StructuredBuffer(voxels.data(), voxels.size(),
+		sizeof(Voxel));
+
+	
 	
 
-	auto computeList = computePipeline->getCommandList();
-	auto forcesList = applyForcesPipeline->getCommandList();
-	auto velocityList = velocityUpdatePipeline->getCommandList();
+	//auto computeList = computePipeline.getCommandList();
+	auto GramList = GramPipeline.getCommandList();
+	auto forcesList = applyForcesPipeline.getCommandList();
+	auto velocityList = velocityUpdatePipeline.getCommandList();
 
 	
 
-	particleBuffer.passUAVDataToGPU(*context, computeList, computePipeline->getCommandListID());
-	voxelBuffer.passUAVDataToGPU(*context, computeList, computePipeline->getCommandListID());
+	particleBuffer.passDataToGPU(*context, GramList, GramPipeline.getCommandListID());
+	voxelBuffer.passDataToGPU(*context, GramList, GramPipeline.getCommandListID());
 	
+	particleBuffer.createUAV(*context, GramPipeline.getDescriptorHeap());
+	voxelBuffer.createUAV(*context, GramPipeline.getDescriptorHeap());
 	
-	shapePartitionBuffer.passSRVDataToGPU(*context, computePipeline->getCommandList(), computePipeline->getCommandListID());
-	xFacePartitionBuffer.passSRVDataToGPU(*context, computePipeline->getCommandList(), computePipeline->getCommandListID());
-	yFacePartitionBuffer.passSRVDataToGPU(*context, computePipeline->getCommandList(), computePipeline->getCommandListID());
-	zFacePartitionBuffer.passSRVDataToGPU(*context, computePipeline->getCommandList(), computePipeline->getCommandListID());
-	
+	particleBuffer.createSRV(*context, GramPipeline.getDescriptorHeap());
+
+	shapePartitionBuffer.passDataToGPU(*context, GramPipeline.getCommandList(), GramPipeline.getCommandListID());
+	xFacePartitionBuffer.passDataToGPU(*context, GramPipeline.getCommandList(), GramPipeline.getCommandListID());
+	yFacePartitionBuffer.passDataToGPU(*context, GramPipeline.getCommandList(), GramPipeline.getCommandListID());
+	zFacePartitionBuffer.passDataToGPU(*context, GramPipeline.getCommandList(), GramPipeline.getCommandListID());
+
+	shapePartitionBuffer.createSRV(*context, GramPipeline.getDescriptorHeap());
+	xFacePartitionBuffer.createSRV(*context, GramPipeline.getDescriptorHeap());
+	yFacePartitionBuffer.createSRV(*context, GramPipeline.getDescriptorHeap());
+	zFacePartitionBuffer.createSRV(*context, GramPipeline.getDescriptorHeap());
 
 	
 	
@@ -276,10 +308,10 @@ void PBDScene::constructScene() {
 	indexCount = circleData.second.size();
 
 	vertexBuffer = VertexBuffer(circleData.first, circleData.first.size() * sizeof(XMFLOAT3), sizeof(XMFLOAT3));
-	vbv = vertexBuffer.passVertexDataToGPU(*context, pipeline->getCommandList());
+	vbv = vertexBuffer.passVertexDataToGPU(*context, renderPipeline->getCommandList());
 
 	indexBuffer = IndexBuffer(circleData.second, circleData.second.size() * sizeof(unsigned int));
-	ibv = indexBuffer.passIndexDataToGPU(*context, pipeline->getCommandList());
+	ibv = indexBuffer.passIndexDataToGPU(*context, renderPipeline->getCommandList());
 
 	//Transition both buffers to their usable states
 	D3D12_RESOURCE_BARRIER barriers[2] = {};
@@ -298,14 +330,14 @@ void PBDScene::constructScene() {
 	barriers[1].Transition.StateAfter = D3D12_RESOURCE_STATE_INDEX_BUFFER;
 	barriers[1].Transition.Subresource = D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES;
 
-	pipeline->getCommandList()->ResourceBarrier(2, barriers);
+	renderPipeline->getCommandList()->ResourceBarrier(2, barriers);
 
-	pipeline->createPSOD();
-	pipeline->createPipelineState(context->getDevice());
+	renderPipeline->createPSOD();
+	renderPipeline->createPipelineState(context->getDevice());
 
 	// Execute and reset render pipeline command list
-	context->executeCommandList(pipeline->getCommandListID());
-	context->resetCommandList(pipeline->getCommandListID());
+	context->executeCommandList(renderPipeline->getCommandListID());
+	context->resetCommandList(renderPipeline->getCommandListID());
 
 	context->getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 }
@@ -322,18 +354,21 @@ void PBDScene::compute() {
 		simParams.deltaTime = fullTimeStep / simParams.numSubsteps;
 
 
-		auto forcesList = applyForcesPipeline->getCommandList();
+		auto forcesList = applyForcesPipeline.getCommandList();
 		//context->resetCommandList(CommandListID::apply_force_ID);
 
 
-		forcesList->SetPipelineState(applyForcesPipeline->getPSO());
-		forcesList->SetComputeRootSignature(applyForcesPipeline->getRootSignature());
+		forcesList->SetPipelineState(applyForcesPipeline.getPSO());
+		forcesList->SetComputeRootSignature(applyForcesPipeline.getRootSignature());
 
-		ID3D12DescriptorHeap* applyForcesHeaps[] = { computePipeline->getDescriptorHeap()->Get() };
+		ID3D12DescriptorHeap* applyForcesHeaps[] = { GramPipeline.getDescriptorHeap()->Get() };
 		forcesList->SetDescriptorHeaps(_countof(applyForcesHeaps), applyForcesHeaps);
-		forcesList->SetComputeRootDescriptorTable(1, particleBuffer.getGPUDescriptorHandle());
+		forcesList->SetComputeRootDescriptorTable(1, particleBuffer.getUAVGPUDescriptorHandle());
 		forcesList->SetComputeRoot32BitConstants(0, sizeof(SimulationParams) / 4, &simParams, 0);
-		forcesList->Dispatch(instanceCount, 1, 1);
+
+		UINT numThreadGroups = (particles.size() + 255) / 256;
+		forcesList->Dispatch(numThreadGroups, 1, 1);
+
 
 		// UAV barrier to ensure forces are applied before constraints
 		D3D12_RESOURCE_BARRIER uavBarrier = {};
@@ -342,62 +377,68 @@ void PBDScene::compute() {
 		forcesList->ResourceBarrier(1, &uavBarrier);
 
 
-		context->executeCommandList(applyForcesPipeline->getCommandListID());
+		context->executeCommandList(applyForcesPipeline.getCommandListID());
 		context->signalAndWaitForFence(fence, ++fenceValue);
 		
 		if (!partitionIndices[0].empty()) {
 
 			simParams.partitionSize = static_cast<uint32_t>(partitionIndices[0].size());
-			auto constraintList = computePipeline->getCommandList();
+			auto constraintList = GramPipeline.getCommandList();
 
-			constraintList->SetPipelineState(computePipeline->getPSO());
-			constraintList->SetComputeRootSignature(computePipeline->getRootSignature());
-			ID3D12DescriptorHeap* constraintHeaps[] = { computePipeline->getDescriptorHeap()->Get() };
+			constraintList->SetPipelineState(GramPipeline.getPSO());
+			constraintList->SetComputeRootSignature(GramPipeline.getRootSignature());
+			ID3D12DescriptorHeap* constraintHeaps[] = { GramPipeline.getDescriptorHeap()->Get() };
 			constraintList->SetDescriptorHeaps(_countof(constraintHeaps), constraintHeaps);
 
-			constraintList->SetComputeRootDescriptorTable(0, computePipeline->getDescriptorHeap()->GetGPUHandleAt(0)); // Points to first UAV
-			constraintList->SetComputeRoot32BitConstants(1, sizeof(SimulationParams) / 4, &simParams, 0);
-			constraintList->SetComputeRootDescriptorTable(2, computePipeline->getDescriptorHeap()->GetGPUHandleAt(2)); // Points to SRV
+			constraintList->SetComputeRootDescriptorTable(0, particleBuffer.getUAVGPUDescriptorHandle()); // Points to first UAV
+			constraintList->SetComputeRootDescriptorTable(1, voxelBuffer.getUAVGPUDescriptorHandle());
+			constraintList->SetComputeRoot32BitConstants(2, sizeof(SimulationParams) / 4, &simParams, 0);
+			constraintList->SetComputeRootDescriptorTable(3, shapePartitionBuffer.getSRVGPUDescriptorHandle()); // Points to SRV
 
 
 			UINT numThreadGroups = (simParams.partitionSize + 255) / 256;
 			constraintList->Dispatch(numThreadGroups, 1, 1);
 
-			context->executeCommandList(computePipeline->getCommandListID());
+			context->executeCommandList(GramPipeline.getCommandListID());
 			context->signalAndWaitForFence(fence, ++fenceValue);
 		}
-	
+		
 		for (int i = 1; i < 4; i++) {
 			if (!partitionIndices[i].empty()) {
+				
+
+
 				simParams.partitionSize = static_cast<uint32_t>(partitionIndices[i].size());
-				auto Face_ConstraintList = FaceToFacePipeline->getCommandList();
-				Face_ConstraintList->SetComputeRootSignature(FaceToFacePipeline->getRootSignature());
-				ID3D12DescriptorHeap* FaceToFaceHeaps[] = { computePipeline->getDescriptorHeap()->Get() };
+				auto Face_ConstraintList = FaceToFacePipeline.getCommandList();
+				Face_ConstraintList->SetPipelineState(FaceToFacePipeline.getPSO());
+				Face_ConstraintList->SetComputeRootSignature(FaceToFacePipeline.getRootSignature());
+				ID3D12DescriptorHeap* FaceToFaceHeaps[] = { GramPipeline.getDescriptorHeap()->Get() };
 				Face_ConstraintList->SetDescriptorHeaps(_countof(FaceToFaceHeaps), FaceToFaceHeaps);
 
-				Face_ConstraintList->SetComputeRootDescriptorTable(0, computePipeline->getDescriptorHeap()->GetGPUHandleAt(0));
-				Face_ConstraintList->SetComputeRoot32BitConstants(1, sizeof(SimulationParams) / 4, &simParams, 0);
+				Face_ConstraintList->SetComputeRootDescriptorTable(0, particleBuffer.getUAVGPUDescriptorHandle());
+				Face_ConstraintList->SetComputeRootDescriptorTable(1, voxelBuffer.getUAVGPUDescriptorHandle());
+				Face_ConstraintList->SetComputeRoot32BitConstants(2, sizeof(SimulationParams) / 4, &simParams, 0);
 
 				StructuredBuffer* currentBuffer = nullptr;
 				
 				switch (i) {
 				case 1:
-					Face_ConstraintList->SetComputeRootDescriptorTable(2, computePipeline->getDescriptorHeap()->GetGPUHandleAt(3));
+					Face_ConstraintList->SetComputeRootDescriptorTable(3, xFacePartitionBuffer.getSRVGPUDescriptorHandle());
 					
 					break;
 				case 2:
 					
-					Face_ConstraintList->SetComputeRootDescriptorTable(2, computePipeline->getDescriptorHeap()->GetGPUHandleAt(4));
+					Face_ConstraintList->SetComputeRootDescriptorTable(3, yFacePartitionBuffer.getSRVGPUDescriptorHandle());
 					break;
 				case 3:
-					Face_ConstraintList->SetComputeRootDescriptorTable(2, computePipeline->getDescriptorHeap()->GetGPUHandleAt(5));
+					Face_ConstraintList->SetComputeRootDescriptorTable(3, zFacePartitionBuffer.getSRVGPUDescriptorHandle());
 					
 					break;
 				default:
 					continue;
 				}
 
-				//Face_ConstraintList->SetComputeRootDescriptorTable(2, currentBuffer->getGPUDescriptorHandle());
+				
 
 
 				UINT numThreadGroups = (simParams.partitionSize + 255) / 256;
@@ -418,22 +459,25 @@ void PBDScene::compute() {
 				}
 
 
-				context->executeCommandList(FaceToFacePipeline->getCommandListID());
+				context->executeCommandList(FaceToFacePipeline.getCommandListID());
 				context->signalAndWaitForFence(fence, ++fenceValue);
+				context->resetCommandList(FaceToFacePipeline.getCommandListID());
 			}
 		
 		}
 	
 
-		auto velocityList = velocityUpdatePipeline->getCommandList();
+		auto velocityList = velocityUpdatePipeline.getCommandList();
 
-		velocityList->SetPipelineState(velocityUpdatePipeline->getPSO());
-		velocityList->SetComputeRootSignature(velocityUpdatePipeline->getRootSignature());
-		ID3D12DescriptorHeap* velocityHeaps[] = { computePipeline->getDescriptorHeap()->Get() };
+		velocityList->SetPipelineState(velocityUpdatePipeline.getPSO());
+		velocityList->SetComputeRootSignature(velocityUpdatePipeline.getRootSignature());
+		ID3D12DescriptorHeap* velocityHeaps[] = { GramPipeline.getDescriptorHeap()->Get() };
 		velocityList->SetDescriptorHeaps(_countof(velocityHeaps), velocityHeaps);
-		velocityList->SetComputeRootDescriptorTable(1, particleBuffer.getGPUDescriptorHandle());
+
+		velocityList->SetComputeRootDescriptorTable(1, particleBuffer.getUAVGPUDescriptorHandle());
 		velocityList->SetComputeRoot32BitConstants(0, sizeof(SimulationParams) / 4, &simParams, 0);
-		velocityList->Dispatch(instanceCount, 1, 1);
+		numThreadGroups = (particles.size() + 255) / 256;
+		velocityList->Dispatch(numThreadGroups, 1, 1);
 
 
 		D3D12_RESOURCE_BARRIER velocityBarrier = {};
@@ -442,31 +486,34 @@ void PBDScene::compute() {
 		velocityList->ResourceBarrier(1, &velocityBarrier);
 
 		////velocityList->Close();
-		context->executeCommandList(velocityUpdatePipeline->getCommandListID());
+		context->executeCommandList(velocityUpdatePipeline.getCommandListID());
 		context->signalAndWaitForFence(fence, ++fenceValue);
 
 
 
 
 		// --- End Compute Pass ---
-		context->resetCommandList(applyForcesPipeline->getCommandListID());
-		context->resetCommandList(velocityUpdatePipeline->getCommandListID());
-		context->resetCommandList(computePipeline->getCommandListID());
-		context->resetCommandList(FaceToFacePipeline->getCommandListID());
+		context->resetCommandList(applyForcesPipeline.getCommandListID());
+		context->resetCommandList(velocityUpdatePipeline.getCommandListID());
+		
+		/*computePipeline.getCommandList()->Close();
+		context->resetCommandList(computePipeline.getCommandListID());*/
+		
+		context->resetCommandList(GramPipeline.getCommandListID());
 	
 	}
 	simParams.deltaTime = fullTimeStep;
 
-	context->executeCommandList(pipeline->getCommandListID());
+	context->executeCommandList(renderPipeline->getCommandListID());
 	context->signalAndWaitForFence(fence, fenceValue);
-	context->resetCommandList(pipeline->getCommandListID());
+	context->resetCommandList(renderPipeline->getCommandListID());
 }
 
 void PBDScene::draw(Camera* cam) {
 
 	
 
-	auto cmdList = pipeline->getCommandList();
+	auto cmdList = renderPipeline->getCommandList();
 
 	// IA
 	cmdList->IASetVertexBuffers(0, 1, &vbv);
@@ -485,26 +532,31 @@ void PBDScene::draw(Camera* cam) {
 
 
 
-	cmdList->SetPipelineState(pipeline->getPSO());
-	cmdList->SetGraphicsRootSignature(pipeline->getRootSignature());
+	cmdList->SetPipelineState(renderPipeline->getPSO());
+	cmdList->SetGraphicsRootSignature(renderPipeline->getRootSignature());
 
-	ID3D12DescriptorHeap* descriptorHeaps[] = { pipeline->getDescriptorHeap()->Get() };
+
+	auto srvBarrier = CD3DX12_RESOURCE_BARRIER::Transition(particleBuffer.getBuffer(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE);
+	cmdList->ResourceBarrier(1, &srvBarrier);
+
+	ID3D12DescriptorHeap* descriptorHeaps[] = { GramPipeline.getDescriptorHeap()->Get() };
 	cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 	auto viewMat = cam->getViewMat();
 	auto projMat = cam->getProjMat();
 	cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
 	cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
 	cmdList->SetGraphicsRoot32BitConstants(0, 16, &modelMat, 32);
-	cmdList->SetGraphicsRootUnorderedAccessView(1, particleBuffer.getGPUVirtualAddress()); // Descriptor table slot 1 for position SRV
+	cmdList->SetGraphicsRootDescriptorTable(1, particleBuffer.getSRVGPUDescriptorHandle()); // Descriptor table slot 1 for position SRV
 
 	// Draw
 	cmdList->DrawIndexedInstanced(indexCount, instanceCount, 0, 0, 0);
 
 
 	// Run command list, wait for fence, and reset
-	context->executeCommandList(pipeline->getCommandListID());
+	context->executeCommandList(renderPipeline->getCommandListID());
 	context->signalAndWaitForFence(fence, fenceValue);
-	context->resetCommandList(pipeline->getCommandListID());
+	context->resetCommandList(renderPipeline->getCommandListID());
 
 }
 
@@ -514,11 +566,12 @@ void PBDScene::releaseResources() {
 	vertexBuffer.releaseResources();
 	indexBuffer.releaseResources();
 
-	computePipeline->releaseResources();
-	pipeline->releaseResources();
-	velocityUpdatePipeline->releaseResources();
-	applyForcesPipeline->releaseResources();
-	FaceToFacePipeline->releaseResources();
+	//computePipeline.releaseResources();
+	renderPipeline->releaseResources();
+	velocityUpdatePipeline.releaseResources();
+	applyForcesPipeline.releaseResources();
+	FaceToFacePipeline.releaseResources();
+	GramPipeline.releaseResources();
 
 	shapePartitionBuffer.releaseResources();
 	xFacePartitionBuffer.releaseResources();

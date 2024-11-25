@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Scene.h"
+#include "Drawable.h"
 #include "../D3D/StructuredBuffer.h"
 #include "../D3D/VertexBuffer.h"
 #include "../D3D/IndexBuffer.h"
@@ -10,21 +10,19 @@
 #include <chrono>
 
 
-class PBDScene : public Scene {
+class PBDScene : public Drawable {
 public:
-	PBDScene(DXContext* context, RenderPipeline* pipeline, ComputePipeline* computePipeline, 
-		ComputePipeline* applyForcesPipeline, ComputePipeline* velocityUpdatePipeline, ComputePipeline* FaceToFacePipeline, unsigned int instances);
+	PBDScene(DXContext* context, RenderPipeline* pipeline, unsigned int instances);
 
-	/*void testBreaking(std::vector<Particle> particles);
-	void testTwisting(std::vector<Particle> particles);*/
+	
 	void testVoxels(std::vector<Particle>* particles,
 		std::vector<Voxel>* voxels);
 
-	void createPartitions(
+	/*void createPartitions(
 		std::vector<std::vector<uint32_t>>* partitionIndices,
 		std::vector<Particle>* particles,
 		std::vector<Voxel>* voxels,
-		ComputePipeline* computePipeline);
+		ComputePipeline computePipeline);*/
 
 	void constructScene();
 
@@ -36,11 +34,13 @@ public:
 
 private:
 	DXContext* context;
-	RenderPipeline* pipeline;
-	ComputePipeline* computePipeline;
-	ComputePipeline* applyForcesPipeline;
-	ComputePipeline* velocityUpdatePipeline;
-	ComputePipeline* FaceToFacePipeline;
+	RenderPipeline* renderPipeline;
+
+	//ComputePipeline computePipeline;
+	ComputePipeline applyForcesPipeline;
+	ComputePipeline GramPipeline;
+	ComputePipeline velocityUpdatePipeline;
+	ComputePipeline FaceToFacePipeline;
 	XMMATRIX modelMat;
 
 

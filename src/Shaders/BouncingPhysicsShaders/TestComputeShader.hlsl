@@ -2,54 +2,45 @@
 
 
 struct Particle {
-	float3 position;
-	float3 prevPosition;
-	float3 velocity;
-	float invMass;
+    float3 position;
+    float3 prevPosition;
+    float3 velocity;
+    float invMass;
 };
 
-struct DistanceConstraint {
-	uint particleA;
-	uint particleB;
-	float restLength;
+struct Voxel {
+    uint particleIndices[8];
+    float3 u; // Local X-axis
+    float3 v; // Local Y-axis
+    float3 w; // Local Z-axis
+    bool faceConnections[6]; // Store connection state for each face (+X,-X,+Y,-Y,+Z,-Z)
+    float faceStrains[6]; // Store strain for each face
+
+    float shapeLambda[8];
 };
 
-cbuffer ConstraintParams : register(b0) {
-    uint constraintCount;
-};
 
-// RWStructuredBuffer for particle data
 RWStructuredBuffer<Particle> particles : register(u0);
+RWStructuredBuffer<Voxel> voxels : register(u1);
+StructuredBuffer<uint> shapepartitionBuffer : register(t0);
+StructuredBuffer<uint> xpepartitionBuffer : register(t1);
+StructuredBuffer<uint> ypartitionBuffer : register(t2);
+StructuredBuffer<uint> zpartitionBuffer : register(t3);
 
-// StructuredBuffer for constraints
-StructuredBuffer<DistanceConstraint> constraints : register(t0);
+cbuffer SimulationParams : register(b0) {
+    uint constraintCount;
+    float deltaTime;
+    float count;
+    float breakingThreshold;
+    float randomSeed;
+    float3 gravity;
 
-
+    float compliance;
+    float numSubsteps;
+    uint partitionSize;
+};
 [numthreads(1, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID) {
-    uint constraintIndex = DTid.x;
-    if (constraintIndex >= constraintCount)
-        return;
-
-    // Process the single constraint
-    DistanceConstraint dc = constraints[constraintIndex];
-    uint idxA = dc.particleA;
-    uint idxB = dc.particleB;
-
-    Particle pa = particles[idxA];
-    Particle pb = particles[idxB];
-
-    // Calculate correction
-    float2 delta = pb.position.xy - pa.position.xy;
-    float currentLength = length(delta);
-    float2 correction = normalize(delta) * (currentLength - dc.restLength) * 0.5f;
-
-    // Apply correction
-    pa.position += float3(correction.xy, 0);
-    pb.position -= float3(correction.xy, 0);
-
-    // Write back updated particles
-    particles[idxA] = pa;
-    particles[idxB] = pb;
+    
 
 }
