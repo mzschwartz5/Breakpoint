@@ -48,19 +48,6 @@ PBDScene::PBDScene(DXContext* context, RenderPipeline* pipeline, unsigned int in
 
 
 
-//void PBDScene::testBreaking(std::vector<Particle> particles) {
-//	// Apply force to second voxel to test breaking
-//	for (int i = 8; i < 16; i++) {
-//		particles[i].velocity = XMFLOAT3(3.0f, 0.0f, 0.0f); // Push second voxel right
-//	}
-//}
-//
-//void PBDScene::testTwisting(std::vector<Particle> particles) {
-//	// Apply twist force to second voxel
-//	for (int i = 8; i < 16; i++) {
-//		particles[i].velocity = XMFLOAT3(0.0f, 1.0f * ((i % 2) * 2 - 1), 0.0f);
-//	}
-//}
 
 void PBDScene::testVoxels(std::vector<Particle>* particles,
 	std::vector<Voxel>* voxels) {
@@ -76,24 +63,24 @@ void PBDScene::testVoxels(std::vector<Particle>* particles,
 	{ -0.05f,  0.05f,  0.05f }, // 7
 
 	// Voxel 1 (Right connected cube - gap adjusted proportionally to 0.02)
-	{ 0.07f, -0.05f, -0.05f },  // 8  (0.05 + 0.02 gap)
-	{ 0.17f, -0.05f, -0.05f },  // 9
-	{ 0.17f,  0.05f, -0.05f },  // 10
-	{ 0.07f,  0.05f, -0.05f },  // 11
-	{ 0.07f, -0.05f,  0.05f },  // 12
-	{ 0.17f, -0.05f,  0.05f },  // 13
-	{ 0.17f,  0.05f,  0.05f },  // 14
-	{ 0.07f,  0.05f,  0.05f },  // 15
+	{ 0.15f, -0.05f, -0.05f },  // 8  (0.05 + 0.02 gap)
+	{ 0.25f, -0.05f, -0.05f },  // 9
+	{ 0.25f,  0.05f, -0.05f },  // 10
+	{ 0.15f,  0.05f, -0.05f },  // 11
+	{ 0.15f, -0.05f,  0.05f },  // 12
+	{ 0.25f, -0.05f,  0.05f },  // 13
+	{ 0.25f,  0.05f,  0.05f },  // 14
+	{ 0.15f,  0.05f,  0.05f },  // 15
 
-	// Voxel 2 (Stacked on top - gap adjusted proportionally to 0.02)
-	{ -0.05f,  0.07f, -0.05f }, // 16 (0.05 + 0.02 gap)
-	{  0.05f,  0.07f, -0.05f }, // 17
-	{  0.05f,  0.17f, -0.05f }, // 18
-	{ -0.05f,  0.17f, -0.05f }, // 19
-	{ -0.05f,  0.07f,  0.05f }, // 20
-	{  0.05f,  0.07f,  0.05f }, // 21
-	{  0.05f,  0.17f,  0.05f }, // 22
-	{ -0.05f,  0.17f,  0.05f }  // 23
+	// Voxel 2 positions (indices 16-23)
+		{ -0.05f,  0.15f, -0.05f }, // 16
+		{  0.05f,  0.15f, -0.05f }, // 17
+		{  0.05f,  0.25f, -0.05f }, // 18
+		{ -0.05f,  0.25f, -0.05f }, // 19
+		{ -0.05f,  0.15f,  0.05f }, // 20
+		{  0.05f,  0.15f,  0.05f }, // 21
+		{  0.05f,  0.25f,  0.05f }, // 22
+		{ -0.05f,  0.25f,  0.05f }  // 23
 
 
 	};
@@ -165,7 +152,7 @@ void PBDScene::testVoxels(std::vector<Particle>* particles,
 	// Push voxels
 	voxels->push_back(voxel0);
 	voxels->push_back(voxel1);
-	voxels->push_back(voxel2);
+	voxels->push_back(voxel2); 
 
 
 }
@@ -189,17 +176,16 @@ void PBDScene::constructScene() {
 
 
 	simParams.deltaTime = 0.016f;
-	simParams.count = static_cast<unsigned int>(particles.size());
+	simParams.count = instanceCount;
 	simParams.gravity = { 0.0f, -9.81f, 0.0f };
 	simParams.constraintCount = static_cast<unsigned int>(voxels.size());
-	simParams.breakingThreshold = 0.4f;
+	simParams.breakingThreshold = 0.5f;
 	simParams.randomSeed = randomSeed;
 
 	simParams.numSubsteps = 20.0f;  // As recommended in the paper
 	simParams.compliance = 0.0001f;
 
 	
-	simParams.partitionSize = instanceCount/8.0f;
 	
 	//createPartitions(&partitionIndices, &particles, &voxels, computePipeline);
 

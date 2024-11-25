@@ -66,9 +66,9 @@ void main(uint3 DTid : SV_DispatchThreadID) {
     Voxel voxel = voxels[voxelIndex];
 
     // Get current voxel axes
-    float3 u = voxel.u;
-    float3 v = voxel.v;
-    float3 w = voxel.w;
+    float3 u = particles[voxel.particleIndices[1]].position - particles[voxel.particleIndices[0]].position;
+    float3 v = particles[voxel.particleIndices[3]].position - particles[voxel.particleIndices[0]].position;
+    float3 w = particles[voxel.particleIndices[4]].position - particles[voxel.particleIndices[0]].position;
 
     float h = deltaTime / numSubsteps;
     float alpha = compliance / (h * h);
@@ -114,18 +114,21 @@ void main(uint3 DTid : SV_DispatchThreadID) {
                     v * localPos.y +
                     w * localPos.z;
 
-                float3 constraint = p.position - worldPos;
-                float w_inv = p.invMass;
+                //float3 constraint = p.position - worldPos;
+                //float w_inv = p.invMass;
 
-                // XPBD update
-                float C = dot(constraint, constraint);
-                float lambda = voxel.shapeLambda[j];
-                float deltaLambda = (-C - alpha * lambda) / (w_inv + alpha);
-                voxel.shapeLambda[j] += deltaLambda;
+                //// XPBD update
+                //float C = dot(constraint, constraint);
+                //float lambda = voxel.shapeLambda[j];
+                //float deltaLambda = (-C - alpha * lambda) / (w_inv + alpha);
+                //voxel.shapeLambda[j] += deltaLambda;
 
-                // Apply position correction
-                p.position += constraint * w_inv * deltaLambda;
+                //// Apply position correction
+                //p.position += constraint * w_inv * deltaLambda;
+                p.position = worldPos;
                 particles[pIndex] = p;
+                /*p.position = worldPos;
+                particles[pIndex] = p;*/
             }
         }
 
