@@ -110,6 +110,8 @@ public:
 
 	void updateConstants(PBMPMConstants& newConstants);
 
+	static bool constantsEqual(PBMPMConstants& one, PBMPMConstants& two);
+
 private:
 	DXContext* context;
 	RenderPipeline* renderPipeline;

@@ -22,9 +22,12 @@ int main() {
     mouse->SetWindow(Window::get().getHWND());
 
     //initialize scene
-    Scene scene{Object, camera.get(), &context};
+    Scene scene{PBMPM, camera.get(), &context};
 
-    PBMPMConstants pbmpmConstants;
+    PBMPMConstants pbmpmConstants{ {512, 512}, 0.01, 2.5, 1.5, 0.01,
+        (unsigned int)std::ceil(std::pow(10, 7)),
+        1, 4, 30, 0, 0,  0, 0, 0, 0, 5, 0.9 };
+    PBMPMConstants pbmpmTempConstants = pbmpmConstants;
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -35,11 +38,6 @@ int main() {
             Window::get().resize();
             camera->updateAspect((float)Window::get().getWidth() / (float)Window::get().getHeight());
         }
-
-        //set up ImGUI for frame
-        ImGui_ImplDX12_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
         
         //check keyboard state
         auto kState = keyboard->GetState();
@@ -74,7 +72,7 @@ int main() {
         //check mouse state
         auto mState = mouse->GetState();
 
-        if (mState.positionMode == Mouse::MODE_RELATIVE) {
+        if (mState.positionMode == Mouse::MODE_RELATIVE && kState.LeftControl) {
             camera->rotateOnX(-mState.y * 0.01f);
             camera->rotateOnY(mState.x * 0.01f);
             camera->rotate();
@@ -97,11 +95,20 @@ int main() {
         //draw scene
         scene.draw();
 
+        //set up ImGUI for frame
+        ImGui_ImplDX12_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
+
         //draw ImGUI
-        drawImGUIWindow(pbmpmConstants, io);
+        drawImGUIWindow(pbmpmTempConstants, io);
 
         //render ImGUI
         ImGui::Render();
+        if (!PBMPMScene::constantsEqual(pbmpmTempConstants, pbmpmConstants)) {
+            scene.updatePBMPMConstants(pbmpmTempConstants);
+            pbmpmConstants = pbmpmTempConstants;
+        }
 
         renderPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
@@ -111,8 +118,7 @@ int main() {
         //finish draw, present, reset
         context.executeCommandList(renderPipeline->getCommandListID());
         Window::get().present();
-		    context.resetCommandList(renderPipeline->getCommandListID());
-
+		context.resetCommandList(renderPipeline->getCommandListID());
     }
 
     // Close

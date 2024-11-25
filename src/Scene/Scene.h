@@ -28,6 +28,8 @@ public:
 
 	void releaseResources();
 
+	void updatePBMPMConstants(PBMPMConstants& newConstants);
+
 private:
 	Camera* camera;
 
