@@ -38,11 +38,6 @@ int main() {
             Window::get().resize();
             camera->updateAspect((float)Window::get().getWidth() / (float)Window::get().getHeight());
         }
-
-        //set up ImGUI for frame
-        ImGui_ImplDX12_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
         
         //check keyboard state
         auto kState = keyboard->GetState();
@@ -77,7 +72,7 @@ int main() {
         //check mouse state
         auto mState = mouse->GetState();
 
-        if (mState.positionMode == Mouse::MODE_RELATIVE) {
+        if (mState.positionMode == Mouse::MODE_RELATIVE && kState.LeftControl) {
             camera->rotateOnX(-mState.y * 0.01f);
             camera->rotateOnY(mState.x * 0.01f);
             camera->rotate();
@@ -99,6 +94,11 @@ int main() {
 
         //draw scene
         scene.draw();
+
+        //set up ImGUI for frame
+        ImGui_ImplDX12_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
 
         //draw ImGUI
         drawImGUIWindow(pbmpmTempConstants, io);

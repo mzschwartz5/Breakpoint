@@ -668,9 +668,9 @@ void PBMPMScene::draw(Camera* cam) {;
 	cmdList->ResourceBarrier(1, &srvBarrier);
 
 	// Run command list, wait for fence, and reset
-	context->executeCommandList(renderPipeline->getCommandListID());
-	context->signalAndWaitForFence(fence, fenceValue);
-	context->resetCommandList(renderPipeline->getCommandListID());
+	//context->executeCommandList(renderPipeline->getCommandListID());
+	//context->signalAndWaitForFence(fence, fenceValue);
+	//context->resetCommandList(renderPipeline->getCommandListID());
 
 }
 
@@ -706,7 +706,11 @@ void PBMPMScene::releaseResources() {
 }
 
 void PBMPMScene::updateConstants(PBMPMConstants& newConstants) {
+	int tempIter = constants.iteration;
+	int tempDeltaT = constants.deltaTime;
 	constants = newConstants;
+	constants.iteration = tempIter;
+	constants.deltaTime = tempDeltaT;
 }
 
 bool PBMPMScene::constantsEqual(PBMPMConstants& one, PBMPMConstants& two) {

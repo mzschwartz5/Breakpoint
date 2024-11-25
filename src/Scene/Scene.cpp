@@ -32,9 +32,11 @@ Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context)
 	fluidMeshPipeline("FluidMeshShader.cso", "PixelShader.cso", "FluidMeshRootSig.cso", *context, CommandListID::FLUID_MESH_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	fluidScene(context, &fluidRP, &bilevelUniformGridCP, &surfaceBlockDetectionCP, &surfaceCellDetectionCP, &surfaceVertexCompactionCP, &surfaceVertexDensityCP, &surfaceVertexNormalCP, &fluidMeshPipeline),
-	currentRP(&objectRP),
-	currentCP(nullptr)
-{}
+	currentRP(),
+	currentCP()
+{
+	setRenderScene(p_scene);
+}
 
 RenderPipeline* Scene::getRenderPipeline() {
 	return currentRP;
