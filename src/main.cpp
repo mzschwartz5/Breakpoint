@@ -22,9 +22,12 @@ int main() {
     mouse->SetWindow(Window::get().getHWND());
 
     //initialize scene
-    Scene scene{Object, camera.get(), &context};
+    Scene scene{PBMPM, camera.get(), &context};
 
-    PBMPMConstants pbmpmConstants;
+    PBMPMConstants pbmpmConstants{ {512, 512}, 0.01, 2.5, 1.5, 0.01,
+        (unsigned int)std::ceil(std::pow(10, 7)),
+        1, 4, 30, 0, 0,  0, 0, 0, 0, 5, 0.9 };
+    PBMPMConstants pbmpmTempConstants = pbmpmConstants;
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -98,10 +101,14 @@ int main() {
         scene.draw();
 
         //draw ImGUI
-        drawImGUIWindow(pbmpmConstants, io);
+        drawImGUIWindow(pbmpmTempConstants, io);
 
         //render ImGUI
         ImGui::Render();
+        if (!PBMPMScene::constantsEqual(pbmpmTempConstants, pbmpmConstants)) {
+            scene.updatePBMPMConstants(pbmpmTempConstants);
+            pbmpmConstants = pbmpmTempConstants;
+        }
 
         renderPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
         ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
@@ -111,8 +118,7 @@ int main() {
         //finish draw, present, reset
         context.executeCommandList(renderPipeline->getCommandListID());
         Window::get().present();
-		    context.resetCommandList(renderPipeline->getCommandListID());
-
+		context.resetCommandList(renderPipeline->getCommandListID());
     }
 
     // Close

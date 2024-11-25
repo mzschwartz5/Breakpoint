@@ -104,3 +104,7 @@ void Scene::releaseResources() {
 	physicsScene.releaseResources();
 	fluidScene.releaseResources();
 }
+
+void Scene::updatePBMPMConstants(PBMPMConstants& newConstants) {
+	pbmpmScene.updateConstants(newConstants);
+}

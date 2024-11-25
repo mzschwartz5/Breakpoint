@@ -708,3 +708,21 @@ void PBMPMScene::releaseResources() {
 void PBMPMScene::updateConstants(PBMPMConstants& newConstants) {
 	constants = newConstants;
 }
+
+bool PBMPMScene::constantsEqual(PBMPMConstants& one, PBMPMConstants& two) {
+	return one.gridSize.x == two.gridSize.x && one.gridSize.y == two.gridSize.y &&
+		one.gravityStrength == two.gravityStrength &&
+		one.liquidRelaxation == two.liquidRelaxation &&
+		one.liquidViscosity == two.liquidViscosity &&
+		one.fixedPointMultiplier == two.fixedPointMultiplier &&
+		one.useGridVolumeForLiquid == two.useGridVolumeForLiquid &&
+		one.particlesPerCellAxis == two.particlesPerCellAxis &&
+		one.frictionAngle == two.frictionAngle &&
+		one.shapeCount == two.shapeCount &&
+		one.simFrame == two.simFrame &&
+		one.bukkitCount == two.bukkitCount &&
+		one.bukkitCountX == two.bukkitCountX &&
+		one.bukkitCountY == two.bukkitCountY &&
+		one.iterationCount == two.iterationCount &&
+		one.borderFriction == two.borderFriction;
+}
