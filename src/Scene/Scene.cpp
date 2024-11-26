@@ -38,9 +38,12 @@ Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context)
 	pbdIC(24),
 	pbdScene(context, &pbdRP, pbdIC),
 	
-	currentRP(&objectRP),
-	currentCP(nullptr)
-{}
+	currentRP(),
+	currentCP()
+{
+	setRenderScene(p_scene);
+}
+
 
 RenderPipeline* Scene::getRenderPipeline() {
 	return currentRP;
@@ -120,4 +123,8 @@ void Scene::releaseResources() {
 	physicsScene.releaseResources();
 	fluidScene.releaseResources();
 	pbdScene.releaseResources();
+}
+
+void Scene::updatePBMPMConstants(PBMPMConstants& newConstants) {
+	pbmpmScene.updateConstants(newConstants);
 }
