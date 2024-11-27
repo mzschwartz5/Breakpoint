@@ -6,8 +6,15 @@ cbuffer CameraMatrices : register(b0) {
 	float4x4 modelMatrix;       // 16 floats
 };
 
+struct Particle {
+    float3 position;
+    float3 prevPosition;
+    float3 velocity;
+    float invMass;
+};
+
 // Particle positions as an SRV at register t0
-StructuredBuffer<float3> particlePositions : register(t0);
+StructuredBuffer<Particle> particles : register(t0);
 
 struct VSInput
 {
@@ -19,7 +26,8 @@ struct VSInput
 float4 main(VSInput input) : SV_Position
 {
     // Retrieve the particle position for the current instance
-    float3 particlePosition = particlePositions[input.InstanceID];
+    Particle particle = particles[input.InstanceID];
+    float3 particlePosition = particle.position;
 
     // Apply the model, view, and projection transformations
     float4 worldPos = mul(modelMatrix, float4(input.Position + particlePosition, 1.0));

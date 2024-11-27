@@ -1,5 +1,7 @@
 #include "main.h"
 
+// Base Object Scene = 0, Bouncing Ball Scene = 1, Mesh Shader Scene = 2, PBMPM Scene = 3, PBD = 4
+
 int main() {
     //set up DX, window, keyboard mouse
     DebugLayer debugLayer = DebugLayer();
@@ -21,6 +23,7 @@ int main() {
     //set mouse to use the window
     mouse->SetWindow(Window::get().getHWND());
 
+
     //initialize scene
     Scene scene{PBMPM, camera.get(), &context};
 
@@ -28,6 +31,11 @@ int main() {
         (unsigned int)std::ceil(std::pow(10, 7)),
         1, 4, 30, 0, 0,  0, 0, 0, 0, 5, 0.9 };
     PBMPMConstants pbmpmTempConstants = pbmpmConstants;
+
+   
+
+
+
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -38,7 +46,6 @@ int main() {
             Window::get().resize();
             camera->updateAspect((float)Window::get().getWidth() / (float)Window::get().getHeight());
         }
-        
         //check keyboard state
         auto kState = keyboard->GetState();
         if (kState.W) {
@@ -68,6 +75,10 @@ int main() {
         if (kState.D3) {
             scene.setRenderScene(Physics);
         }
+        if (kState.D4) {
+            scene.setRenderScene(PBD);
+        }
+
 
         //check mouse state
         auto mState = mouse->GetState();
@@ -117,11 +128,13 @@ int main() {
 
         //finish draw, present, reset
         context.executeCommandList(renderPipeline->getCommandListID());
+
         Window::get().present();
 		context.resetCommandList(renderPipeline->getCommandListID());
     }
 
     // Close
+
     // Scene should release all resources, including their pipelines
     scene.releaseResources();
 

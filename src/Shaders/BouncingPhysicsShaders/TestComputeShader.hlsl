@@ -1,55 +1,46 @@
 #include "TestComputeRootSignature.hlsl"  // Includes the ROOTSIG definition
 
-// Root constants bound to b0
-struct Constants {
-    float gravityStrength;
-    float2 inputVector;
-    float deltaTime;
+
+struct Particle {
+    float3 position;
+    float3 prevPosition;
+    float3 velocity;
+    float invMass;
 };
 
-ConstantBuffer<Constants> cb : register(b0);
+struct Voxel {
+    uint particleIndices[8];
+    float3 u; // Local X-axis
+    float3 v; // Local Y-axis
+    float3 w; // Local Z-axis
+    bool faceConnections[6]; // Store connection state for each face (+X,-X,+Y,-Y,+Z,-Z)
+    float faceStrains[6]; // Store strain for each face
 
-// UAV for positions buffer (output buffer)
-RWStructuredBuffer<float3> positionsBuffer : register(u0);
+    float shapeLambda[8];
+};
 
-// UAV for velocities buffer (output buffer)
-RWStructuredBuffer<float3> velocitiesBuffer : register(u1);
 
-float Random(float2 seed) {
-    // Apply some mathematical transformations for randomness
-    float dotProduct = dot(seed, float2(12.9898, 78.233));
-    float sinValue = sin(dotProduct) * 43758.5453;
+RWStructuredBuffer<Particle> particles : register(u0);
+RWStructuredBuffer<Voxel> voxels : register(u1);
+StructuredBuffer<uint> shapepartitionBuffer : register(t0);
+StructuredBuffer<uint> xpepartitionBuffer : register(t1);
+StructuredBuffer<uint> ypartitionBuffer : register(t2);
+StructuredBuffer<uint> zpartitionBuffer : register(t3);
 
-    // Fract() returns the fractional part to get a pseudo-random number between 0 and 1
-    return frac(sinValue);
-}
+cbuffer SimulationParams : register(b0) {
+    uint constraintCount;
+    float deltaTime;
+    float count;
+    float breakingThreshold;
+    float randomSeed;
+    float3 gravity;
 
+    float compliance;
+    float numSubsteps;
+    uint partitionSize;
+};
 [numthreads(1, 1, 1)]
 void main(uint3 DTid : SV_DispatchThreadID) {
-	float deltaTime = cb.deltaTime;
-	float2 position = float2(positionsBuffer[DTid.x].x, positionsBuffer[DTid.x].y);
-	float2 velocity = float2(velocitiesBuffer[DTid.x].x, velocitiesBuffer[DTid.x].y);
-    velocity += float3(0, -1, 0) * cb.gravityStrength * cb.deltaTime;
-	position += velocity * cb.deltaTime;
-
-	// Bounce Velocity if the particle hits the ground
-	if (abs(position.y) > 0.365f) {
-		position.y = sign(position.y) * 0.365f;
-		velocity.y = -velocitiesBuffer[DTid.x].y;
-		// Randomize the x-velocity a bit
-		velocity.x += Random(position) - 0.5;
-	}
-	// Bounce Velocity if the particle hits the walls
-	if (abs(position.x) > 0.72f) {
-		position.x = sign(position.x) * 0.72f;
-		// Dampen the x-velocity
-		velocity.x = -velocitiesBuffer[DTid.x].x * 0.9;
-		// Randomize the y-velocity a bit
-		velocity.y += Random(position) - 0.5;
-	}
-
-	// Update the position and velocity
-	positionsBuffer[DTid.x] = float3(position.x, position.y, 0);
-	velocitiesBuffer[DTid.x] = float3(velocity.x, velocity.y, 0);
+    
 
 }

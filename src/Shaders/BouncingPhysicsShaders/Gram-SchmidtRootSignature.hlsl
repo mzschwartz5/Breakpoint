@@ -8,6 +8,3 @@
 "DescriptorTable(SRV(t2, numDescriptors = 1)),"\
 "DescriptorTable(SRV(t3, numDescriptors = 1))," \
 "DescriptorTable(SRV(t4, numDescriptors = 1))," 
-
-   
-

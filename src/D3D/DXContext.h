@@ -4,7 +4,7 @@
 #include <stdexcept>
 #include <array>
 
-#define NUM_CMDLISTS 16
+#define NUM_CMDLISTS 22
 enum CommandListID {
     OBJECT_RENDER_ID,
     PBMPM_RENDER_ID,
@@ -21,7 +21,15 @@ enum CommandListID {
     SURFACE_VERTEX_COMPACTION_COMPUTE_ID,
     SURFACE_VERTEX_DENSITY_COMPUTE_ID,
     SURFACE_VERTEX_NORMAL_COMPUTE_ID,
-    FLUID_MESH_ID
+    FLUID_MESH_ID,
+
+    PBD_Render_ID,
+    PBD_ID,
+    Gram_ID,
+    apply_force_ID,
+    velocity_update_ID,
+    FaceToFace_ID
+
 };
 
 class DXContext

@@ -1,6 +1,6 @@
 #include "Scene.h"
 
-Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context) 
+Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context)
 	: scene(p_scene), camera(p_camera),
 	objectRP("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", *context, CommandListID::OBJECT_RENDER_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
@@ -17,7 +17,7 @@ Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context)
 	physicsScene(context, &physicsRP, &physicsCP, physicsIC),
 	fluidRP("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", *context, CommandListID::BILEVEL_UNIFORM_GRID_COMPUTE_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
-	bilevelUniformGridCP("BilevelUniformGridRootSig.cso", "BilevelUniformGrid.cso", *context, CommandListID::BILEVEL_UNIFORM_GRID_COMPUTE_ID, 
+	bilevelUniformGridCP("BilevelUniformGridRootSig.cso", "BilevelUniformGrid.cso", *context, CommandListID::BILEVEL_UNIFORM_GRID_COMPUTE_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 3, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	surfaceBlockDetectionCP("SurfaceBlockDetectionRootSig.cso", "SurfaceBlockDetection.cso", *context, CommandListID::SURFACE_BLOCK_DETECTION_COMPUTE_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 3, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
@@ -32,11 +32,18 @@ Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context)
 	fluidMeshPipeline("FluidMeshShader.cso", "PixelShader.cso", "FluidMeshRootSig.cso", *context, CommandListID::FLUID_MESH_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	fluidScene(context, &fluidRP, &bilevelUniformGridCP, &surfaceBlockDetectionCP, &surfaceCellDetectionCP, &surfaceVertexCompactionCP, &surfaceVertexDensityCP, &surfaceVertexNormalCP, &fluidMeshPipeline),
+
+	pbdRP("PhysicsVertexShader.cso", "PixelShader.cso", "PhysicsRootSignature.cso", *context, CommandListID::PBD_Render_ID,
+		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
+	pbdIC(24),
+	pbdScene(context, &pbdRP, pbdIC),
+	
 	currentRP(),
 	currentCP()
 {
 	setRenderScene(p_scene);
 }
+
 
 RenderPipeline* Scene::getRenderPipeline() {
 	return currentRP;
@@ -58,6 +65,10 @@ void Scene::setRenderScene(RenderScene renderScene) {
 		currentRP = &fluidRP;
 		currentCP = &bilevelUniformGridCP;
 		break;
+	case PBD:
+		currentRP = &pbdRP;
+		//currentCP = &bilevelUniformGridCP;
+		break;
 	case Object:
 	default:
 		currentRP = &objectRP;
@@ -77,6 +88,9 @@ void Scene::compute() {
 	case Fluid:
 		fluidScene.compute();
 		break;
+	case PBD:
+		pbdScene.compute();
+		break;
 	default:
 		break;
 	}
@@ -93,6 +107,9 @@ void Scene::draw() {
 	case Fluid:
 		fluidScene.draw(camera);
 		break;
+	case PBD:
+		pbdScene.draw(camera);
+		break;
 	default:
 	case Object:
 		objectScene.draw(camera);
@@ -105,6 +122,7 @@ void Scene::releaseResources() {
 	pbmpmScene.releaseResources();
 	physicsScene.releaseResources();
 	fluidScene.releaseResources();
+	pbdScene.releaseResources();
 }
 
 void Scene::updatePBMPMConstants(PBMPMConstants& newConstants) {
