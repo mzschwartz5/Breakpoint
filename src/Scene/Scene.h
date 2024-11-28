@@ -13,8 +13,7 @@ enum RenderScene {
 	Object,
 	PBMPM,
 	Physics,
-	Fluid,
-	PBD
+	Fluid
 };
 
 class Scene {
@@ -42,11 +41,6 @@ private:
 	unsigned int pbmpmIC;
 	PBMPMScene pbmpmScene;
 
-	RenderPipeline physicsRP; 
-	ComputePipeline physicsCP;
-	unsigned int physicsIC;
-	PhysicsScene physicsScene;
-
 	RenderPipeline fluidRP;
 	ComputePipeline bilevelUniformGridCP;
 	ComputePipeline surfaceBlockDetectionCP;
@@ -56,10 +50,6 @@ private:
 	ComputePipeline surfaceVertexNormalCP;
 	MeshPipeline fluidMeshPipeline;
 	FluidScene fluidScene;
-
-	RenderPipeline pbdRP;
-	unsigned int pbdIC;
-	PBDScene pbdScene;
 
 	RenderScene scene;
 
