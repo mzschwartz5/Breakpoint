@@ -30,16 +30,16 @@ RWStructuredBuffer<int> g_gridToBeCleared : register(u3);
 groupshared int s_tileData[TileDataSize];
 groupshared int s_tileDataDst[TileDataSize];
 
-unsigned int localGridIndex(uint2 index) {
-	return (index.y * TotalBukkitEdgeLength + index.x) * 4;
+unsigned int localGridIndex(uint3 index) {
+	return (index.z * TotalBukkitEdgeLength * TotalBukkitEdgeLength + index.y * TotalBukkitEdgeLength + index.x) * 4;
 }
 
 // Function to clamp a particle's position inside the guardian region of the grid
-float2 projectInsideGuardian(float2 p, uint2 gridSize, float guardianSize)
+float3 projectInsideGuardian(float3 p, uint3 gridSize, float guardianSize)
 {
     // Define the minimum and maximum clamp boundaries
-    float2 clampMin = float2(guardianSize, guardianSize);
-    float2 clampMax = float2(gridSize) - float2(guardianSize, guardianSize) - float2(1.0, 1.0);
+    float3 clampMin = float3(guardianSize, guardianSize, guardianSize);
+    float3 clampMax = float3(gridSize) - float3(guardianSize, guardianSize, guardianSize) - float3(1.0, 1.0, 1.0);
 
     // Clamp the position `p` to be within the defined boundaries
     return clamp(p, clampMin, clampMax);
@@ -149,7 +149,6 @@ SVDResult svd(float2x2 m)
 // Define constants for identity and zero matrices
 static const float2x2 Identity = float2x2(1, 0, 0, 1);
 static const float2x2 ZeroMatrix = float2x2(0, 0, 0, 0);
-
 
 [numthreads(ParticleDispatchSize, 1, 1)]
 void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)

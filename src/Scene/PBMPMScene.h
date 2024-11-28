@@ -21,7 +21,7 @@ const unsigned int maxParticles = 50000;
 const unsigned int maxTimestampCount = 2048;
 
 struct PBMPMConstants {
-	XMUINT2 gridSize;
+	XMUINT3 gridSize; //2 -> 3
 	float deltaTime;
 	float gravityStrength;
 
@@ -39,14 +39,15 @@ struct PBMPMConstants {
 	unsigned int bukkitCount;
 	unsigned int bukkitCountX;
 	unsigned int bukkitCountY;
+	unsigned int bukkitCountZ; //added
 	unsigned int iteration;
 	unsigned int iterationCount;
 	float borderFriction;
 };
 
 struct ShapeFactory {
-	XMFLOAT2 position;
-	XMFLOAT2 halfSize;
+	XMFLOAT3 position; //2->3
+	XMFLOAT3 halfSize; //2->3
 
 	float radius;
 	float rotation;
@@ -60,8 +61,8 @@ struct ShapeFactory {
 };
 
 struct PBMPMParticle {
-	XMFLOAT2 position;
-	XMFLOAT2 displacement;
+	XMFLOAT3 position; //2->3
+	XMFLOAT3 displacement; //2->3
 	XMFLOAT4 deformationGradient;
 	XMFLOAT4 deformationDisplacement;
 
@@ -78,6 +79,7 @@ struct PBMPMParticle {
 struct BukkitSystem {
 	unsigned int countX;
 	unsigned int countY;
+	unsigned int countZ; //added Z
 	unsigned int count;
 	StructuredBuffer countBuffer;
 	StructuredBuffer countBuffer2;
@@ -94,6 +96,7 @@ struct BukkitThreadData {
 	unsigned int rangeCount;
 	unsigned int bukkitX;
 	unsigned int bukkitY;
+	unsigned int bukkitZ; //added Z
 };
 
 class PBMPMScene : public Drawable {

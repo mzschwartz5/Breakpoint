@@ -16,7 +16,7 @@
 #define TileDataSize (TileDataSizePerEdge * TileDataSizePerEdge)
 
 struct PBMPMConstants {
-	uint2 gridSize;
+	uint3 gridSize; //2 -> 3
 	float deltaTime;
 	float gravityStrength;
 
@@ -34,14 +34,15 @@ struct PBMPMConstants {
 	unsigned int bukkitCount;
 	unsigned int bukkitCountX;
 	unsigned int bukkitCountY;
+	unsigned int bukkitCountZ; //added Z
 	unsigned int iteration;
 	unsigned int iterationCount;
 	float borderFriction;
 };
 
 struct Particle {
-	float2 position;
-	float2 displacement;
+	float3 position; //2->3
+	float3 displacement; //2->3
 	float2x2 deformationGradient;
 	float2x2 deformationDisplacement;
 
@@ -60,15 +61,16 @@ struct BukkitThreadData {
 	unsigned int rangeCount;
 	unsigned int bukkitX;
 	unsigned int bukkitY;
+	unsigned int bukkitZ; //added Z
 };
 
 // Helper Functions
 
 // Function to calculate the grid vertex index using lexicographical ordering
-uint gridVertexIndex(uint2 gridVertex, uint2 gridSize)
+uint gridVertexIndex(uint3 gridVertex, uint3 gridSize)
 {
 	// 4 components per grid vertex
-	return 4 * (gridVertex.y * gridSize.x + gridVertex.x);
+	return 4 * (gridVertex.z * gridVertex.y * gridVertex.x + gridVertex.y * gridSize.x + gridVertex.x);
 }
 
 // Function to decode a fixed-point integer to a floating-point value
@@ -86,8 +88,8 @@ int encodeFixedPoint(float floatingPoint, uint fixedPointMultiplier)
 // Structure to hold quadratic weight information
 struct QuadraticWeightInfo
 {
-    float2 weights[3];
-    float2 cellIndex;
+    float3 weights[3]; //not rly sure what this is for... these used to be float2s
+    float3 cellIndex;
 };
 
 // Helper function for element-wise square (power of 2)
@@ -96,11 +98,15 @@ float2 pow2(float2 x)
     return x * x;
 }
 
+float3 pow2(float3 x) {
+	return x * x;
+}
+
 // Initialize QuadraticWeightInfo based on position
-QuadraticWeightInfo quadraticWeightInit(float2 position)
+QuadraticWeightInfo quadraticWeightInit(float3 position)
 {
-    float2 roundDownPosition = floor(position);
-    float2 offset = (position - roundDownPosition) - 0.5;
+    float3 roundDownPosition = floor(position);
+    float3 offset = (position - roundDownPosition) - 0.5;
 
     QuadraticWeightInfo result;
     result.weights[0] = 0.5 * pow2(0.5 - offset);
@@ -117,18 +123,22 @@ float2 pow3(float2 x)
     return x * x * x;
 }
 
+float3 pow3(float3 x) {
+	return x * x * x;
+}
+
 // Structure to hold cubic weight information
 struct CubicWeightInfo
 {
-    float2 weights[4];
-    float2 cellIndex;
+    float3 weights[4];
+    float3 cellIndex;
 };
 
 // Initialize CubicWeightInfo based on position
-CubicWeightInfo cubicWeightInit(float2 position)
+CubicWeightInfo cubicWeightInit(float3 position)
 {
-    float2 roundDownPosition = floor(position);
-    float2 offset = position - roundDownPosition;
+    float3 roundDownPosition = floor(position);
+    float3 offset = position - roundDownPosition;
 
     CubicWeightInfo result;
     result.weights[0] = pow3(2.0 - (1.0 + offset)) / 6.0;
@@ -142,14 +152,14 @@ CubicWeightInfo cubicWeightInit(float2 position)
 
 // Bukkit and Dispatch helpers 
 
-uint bukkitAddressToIndex(uint2 bukkitAddress, uint bukkitCountX)
+uint bukkitAddressToIndex(uint3 bukkitAddress, uint bukkitCountX, uint bukkitCountY)
 {
-    return bukkitAddress.y * bukkitCountX + bukkitAddress.x;
+    return bukkitAddress.z * bukkitCountY * bukkitCountX + bukkitAddress.y * bukkitCountX + bukkitAddress.x;
 }
 
-int2 positionToBukkitId(float2 position)
+int3 positionToBukkitId(float3 position)
 {
-    return int2(position / float(BukkitSize));
+    return int3(position / float(BukkitSize));
 }
 
 uint divUp(uint threadCount, uint groupSize)
