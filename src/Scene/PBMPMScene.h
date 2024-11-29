@@ -63,8 +63,8 @@ struct ShapeFactory {
 struct PBMPMParticle {
 	XMFLOAT3 position; //2->3
 	XMFLOAT3 displacement; //2->3
-	XMFLOAT4 deformationGradient;
-	XMFLOAT4 deformationDisplacement;
+	XMFLOAT3X3 deformationGradient;
+	XMFLOAT3X3 deformationDisplacement;
 
 	float liquidDensity;
 	float mass;

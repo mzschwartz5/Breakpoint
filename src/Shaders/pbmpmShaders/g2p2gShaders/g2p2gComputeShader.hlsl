@@ -31,7 +31,7 @@ groupshared int s_tileData[TileDataSize];
 groupshared int s_tileDataDst[TileDataSize];
 
 unsigned int localGridIndex(uint3 index) {
-	return (index.z * TotalBukkitEdgeLength * TotalBukkitEdgeLength + index.y * TotalBukkitEdgeLength + index.x) * 6;
+	return (index.z * TotalBukkitEdgeLength * TotalBukkitEdgeLength + index.y * TotalBukkitEdgeLength + index.x) * 5;
 }
 
 // Function to clamp a particle's position inside the guardian region of the grid
@@ -545,14 +545,12 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                         InterlockedAdd(s_tileDataDst[gridVertexIdx + 2], encodeFixedPoint(momentum.z, g_simConstants.fixedPointMultiplier));
                         InterlockedAdd(s_tileDataDst[gridVertexIdx + 3], encodeFixedPoint(weightedMass, g_simConstants.fixedPointMultiplier));
 
-
                         if (g_simConstants.useGridVolumeForLiquid != 0)
                         {
                             InterlockedAdd(s_tileDataDst[gridVertexIdx + 4], encodeFixedPoint(weight * particle.volume, g_simConstants.fixedPointMultiplier));
                         }
                     }
                 }
-
             }
         }
     }

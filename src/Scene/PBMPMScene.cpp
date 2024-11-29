@@ -41,7 +41,7 @@ void PBMPMScene::createBukkitSystem() {
 	bukkitSystem.particleData = StructuredBuffer(particleData.data(), particleData.size(), sizeof(int));
 
 	std::vector<BukkitThreadData> threadData;
-	threadData.resize(5 * bukkitCountX * bukkitCountY * bukkitCountZ); //idk why this was 40
+	threadData.resize(40 * bukkitCountX * bukkitCountY * bukkitCountZ); //idk why this is 40
 	bukkitSystem.threadData = StructuredBuffer(threadData.data(), threadData.size(), sizeof(BukkitThreadData));
 
 	XMUINT4 allocator = { 0, 0, 0, 0 };
@@ -130,7 +130,7 @@ void PBMPMScene::resetBuffers(bool resetGrids) {
 	bufferClearPipeline.getCommandList()->Dispatch((particleDataSize + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE, 1, 1);
 
 	// Reset ThreadData:
-	UINT threadDataSize = 5 * bukkitSystem.count; // The total number of elements in the buffer - this was also 40
+	UINT threadDataSize = 40 * bukkitSystem.count; // The total number of elements in the buffer - this was also 40
 	bufferClearPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 1, &threadDataSize, 0);
 	bufferClearPipeline.getCommandList()->SetComputeRootDescriptorTable(1, bukkitSystem.threadData.getUAVGPUDescriptorHandle());
 	bufferClearPipeline.getCommandList()->Dispatch((threadDataSize + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE, 1, 1);
@@ -361,8 +361,8 @@ void PBMPMScene::constructScene() {
 	for (int i = 0; i < instanceCount; ++i) {
 		XMFLOAT3 position ={ (((i % particlesPerRow) * spacing - (particlesPerRow - 1) * spacing / 2.f) + 0.4f) * 500,
 							  (((i / particlesPerRow) * spacing - (particlesPerCol - 1) * spacing / 2.f) + 0.4f) * 500 , 0.f};
-		particles[i] = { position, {0.f, 0.f, 0.f}, {1.f, 0.f, 0.f, 1.f}, {0.f, 0.f, 0.f, 0.f}, 
-						1.0, density*volume, 0, volume, 0.0, 1.0, 1.0};
+		particles[i] = { position, {0.f, 0.f, 0.f}, { 1, 0, 0, 0, 1, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
+						1.0, density * volume, 0, volume, 0.0, 1.0, 1.0};
 
 	}
 
@@ -483,15 +483,6 @@ void PBMPMScene::compute() {
 	
 	resetBuffers(true);
 
-	/*std::vector<int> gridBufferData;
-	gridBufferData.resize(constants.gridSize.x * constants.gridSize.y * 4);
-
-	std::vector<int> gridBufferData2;
-	gridBufferData2.resize(constants.gridSize.x * constants.gridSize.y * 4);
-
-	std::vector<int> gridBufferData3;
-	gridBufferData3.resize(constants.gridSize.x * constants.gridSize.y * 4);*/
-
 	// Could be 20?
 	int substepCount = 20;
 	for (int substepIdx = 0; substepIdx < substepCount; substepIdx++) {
@@ -500,25 +491,6 @@ void PBMPMScene::compute() {
 		constants.iteration = 0;
 		updateSimUniforms(substepIdx);
 		
-		// Copy particle data from the GPU
-		//std::vector<PBMPMParticle> particles;
-		//particles.resize(maxParticles);
-		//particleBuffer.copyDataFromGPU(*context, particles.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//// Copy free indices from the GPU
-		//std::vector<int> freeIndices;
-		//freeIndices.resize(1 + maxParticles);
-		//particleFreeIndicesBuffer.copyDataFromGPU(*context, freeIndices.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		// Copy the three grids from GPU
-		//gridBuffers[0].copyDataFromGPU(*context, gridBufferData.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//// second grid
-		//gridBuffers[1].copyDataFromGPU(*context, gridBufferData2.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//// third grid
-		//gridBuffers[2].copyDataFromGPU(*context, gridBufferData3.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
 		for (int iterationIdx = 0; iterationIdx < constants.iterationCount; iterationIdx++) {
 			constants.iteration = iterationIdx;
 
@@ -592,54 +564,12 @@ void PBMPMScene::compute() {
 		bukkitizeParticles();
 
 		substepIndex++;
-
-		// Copy particle data from the GPU
-
-		// Copy particle data from the GPU
-		//std::vector<PBMPMParticle> particles_end;
-		//particles_end.resize(maxParticles);
-		//particleBuffer.copyDataFromGPU(*context, particles_end.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//// Copy free indices from the GPU
-		//std::vector<int> freeIndices_end;
-		//freeIndices_end.resize(1 + maxParticles);
-		//particleFreeIndicesBuffer.copyDataFromGPU(*context, freeIndices_end.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//// Copy the three grids from GPU
-		//std::vector<int> gridBufferData_end;
-		//gridBufferData_end.resize(constants.gridSize.x * constants.gridSize.y * 4);
-		//gridBuffers[0].copyDataFromGPU(*context, gridBufferData_end.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//// second grid
-		//std::vector<int> gridBufferData2_end;
-		//gridBufferData2_end.resize(constants.gridSize.x * constants.gridSize.y * 4);
-		//gridBuffers[1].copyDataFromGPU(*context, gridBufferData2_end.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//// third grid
-		//std::vector<int> gridBufferData3_end;
-		//gridBufferData3_end.resize(constants.gridSize.x * constants.gridSize.y * 4);
-		//gridBuffers[2].copyDataFromGPU(*context, gridBufferData3_end.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//gridBuffers[0].copyDataFromGPU(*context, gridBufferData.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//gridBuffers[1].copyDataFromGPU(*context, gridBufferData2.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//gridBuffers[2].copyDataFromGPU(*context, gridBufferData3.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
 	}
 }
 
 void PBMPMScene::draw(Camera* cam) {;
 
 	auto cmdList = renderPipeline->getCommandList();
-
-	// Check if we're on the 1000th substep
-	//if (substepIndex == 1000) {
-	//	// Create a particle array to copy from gpu
-	//	std::vector<PBMPMParticle> particles;
-	//	particles.resize(maxParticles);
-	//	particleBuffer.copyDataFromGPU(*context, particles.data(), cmdList, D3D12_RESOURCE_STATE_UNORDERED_ACCESS, pipeline->getCommandListID());
-	//}
 
 	// IA
 	cmdList->IASetVertexBuffers(0, 1, &vbv);
@@ -670,12 +600,6 @@ void PBMPMScene::draw(Camera* cam) {;
 	srvBarrier = CD3DX12_RESOURCE_BARRIER::Transition(particleBuffer.getBuffer(),
 		D3D12_RESOURCE_STATE_ALL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 	cmdList->ResourceBarrier(1, &srvBarrier);
-
-	// Run command list, wait for fence, and reset
-	//context->executeCommandList(renderPipeline->getCommandListID());
-	//context->signalAndWaitForFence(fence, fenceValue);
-	//context->resetCommandList(renderPipeline->getCommandListID());
-
 }
 
 void PBMPMScene::releaseResources() {
@@ -705,7 +629,6 @@ void PBMPMScene::releaseResources() {
 	bukkitSystem.particleAllocator.releaseResources();
 	bukkitSystem.indexStart.releaseResources();
 
-	//fence->Release();
 	commandSignature->Release();
 }
 

@@ -12,7 +12,7 @@
 #define MaterialVisco 3
 
 #define TotalBukkitEdgeLength (BukkitSize + BukkitHaloSize * 2)
-#define TileDataSizePerEdge (TotalBukkitEdgeLength * 4)
+#define TileDataSizePerEdge (TotalBukkitEdgeLength * 5) //4->5
 #define TileDataSize (TileDataSizePerEdge * TileDataSizePerEdge)
 
 struct PBMPMConstants {
@@ -69,8 +69,8 @@ struct BukkitThreadData {
 // Function to calculate the grid vertex index using lexicographical ordering
 uint gridVertexIndex(uint3 gridVertex, uint3 gridSize)
 {
-	// 4 components per grid vertex
-	return 4 * (gridVertex.z * gridVertex.y * gridVertex.x + gridVertex.y * gridSize.x + gridVertex.x);
+	// 5 components per grid vertex -- xyz and 2 weights
+	return 5 * (gridVertex.z * gridVertex.y * gridVertex.x + gridVertex.y * gridSize.x + gridVertex.x);
 }
 
 // Function to decode a fixed-point integer to a floating-point value
