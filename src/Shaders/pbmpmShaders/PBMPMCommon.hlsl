@@ -42,18 +42,16 @@ struct PBMPMConstants {
 
 struct Particle {
 	float3 position; //2->3
-	float3 displacement; //2->3
-	float3x3 deformationGradient;
-	float3x3 deformationDisplacement;
-
 	float liquidDensity;
+	float3 displacement; //2->3
 	float mass;
 	float material;
 	float volume;
-
 	float lambda;
 	float logJp;
 	float enabled;
+	float4x4 deformationGradient;
+	float4x4 deformationDisplacement;
 };
 
 struct BukkitThreadData {

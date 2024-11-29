@@ -361,9 +361,9 @@ void PBMPMScene::constructScene() {
 	for (int i = 0; i < instanceCount; ++i) {
 		XMFLOAT3 position ={ (((i % particlesPerRow) * spacing - (particlesPerRow - 1) * spacing / 2.f) + 0.4f) * 500,
 							  (((i / particlesPerRow) * spacing - (particlesPerCol - 1) * spacing / 2.f) + 0.4f) * 500 , 0.f};
-		particles[i] = { position, {0.f, 0.f, 0.f}, { 1, 0, 0, 0, 1, 0, 0, 0, 1 }, { 0, 0, 0, 0, 0, 0, 0, 0, 0 },
-						1.0, density * volume, 0, volume, 0.0, 1.0, 1.0};
-
+		particles[i] = { position, 1.0, {0.f, 0.f, 0.f}, density * volume, 0, volume, 0.0, 1.0, 1.0,
+						{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
+						{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
 	}
 
 	particleBuffer = StructuredBuffer(particles.data(), particles.size(), sizeof(PBMPMParticle));
