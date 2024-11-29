@@ -31,7 +31,7 @@ void main(uint3 id : SV_DispatchThreadID)
     }
 
     // Get particle position
-    float2 position = particle.position;
+    float3 position = particle.position;
 
     // Calculate the bukkit ID for this particle
     int3 particleBukkit = positionToBukkitId(position);

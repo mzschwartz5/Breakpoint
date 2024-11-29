@@ -43,8 +43,8 @@ struct PBMPMConstants {
 struct Particle {
 	float3 position; //2->3
 	float3 displacement; //2->3
-	float2x2 deformationGradient;
-	float2x2 deformationDisplacement;
+	float3x3 deformationGradient;
+	float3x3 deformationDisplacement;
 
 	float liquidDensity;
 	float mass;
@@ -93,10 +93,10 @@ struct QuadraticWeightInfo
 };
 
 // Helper function for element-wise square (power of 2)
-float2 pow2(float2 x)
-{
-    return x * x;
-}
+//float2 pow2(float2 x)
+//{
+//    return x * x;
+//}
 
 float3 pow2(float3 x) {
 	return x * x;
@@ -112,16 +112,16 @@ QuadraticWeightInfo quadraticWeightInit(float3 position)
     result.weights[0] = 0.5 * pow2(0.5 - offset);
     result.weights[1] = 0.75 - pow2(offset);
     result.weights[2] = 0.5 * pow2(0.5 + offset);
-    result.cellIndex = roundDownPosition - float2(1, 1);
+    result.cellIndex = roundDownPosition - float3(1, 1, 1);
 
     return result;
 }
 
 // Helper function for element-wise cube (power of 3)
-float2 pow3(float2 x)
-{
-    return x * x * x;
-}
+//float2 pow3(float2 x)
+//{
+//    return x * x * x;
+//}
 
 float3 pow3(float3 x) {
 	return x * x * x;
@@ -142,10 +142,10 @@ CubicWeightInfo cubicWeightInit(float3 position)
 
     CubicWeightInfo result;
     result.weights[0] = pow3(2.0 - (1.0 + offset)) / 6.0;
-    result.weights[1] = 0.5 * pow3(offset) - pow2(offset) + float2(2.0 / 3.0, 2.0 / 3.0);
-    result.weights[2] = 0.5 * pow3(1.0 - offset) - pow2(1.0 - offset) + float2(2.0 / 3.0, 2.0 / 3.0);
+    result.weights[1] = 0.5 * pow3(offset) - pow2(offset) + float3(2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0); // just add a 2/3, may need to adjust
+    result.weights[2] = 0.5 * pow3(1.0 - offset) - pow2(1.0 - offset) + float3(2.0 / 3.0, 2.0 / 3.0, 2.0 / 3.0);
     result.weights[3] = pow3(2.0 - (2.0 - offset)) / 6.0;
-    result.cellIndex = roundDownPosition - float2(1, 1);
+    result.cellIndex = roundDownPosition - float3(1, 1, 1);
 
     return result;
 }

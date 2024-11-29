@@ -424,13 +424,13 @@ void PBMPMScene::constructScene() {
 	gridBuffers[2].createSRV(*context, g2p2gPipeline.getDescriptorHeap());
 
 	// Create Vertex & Index Buffer
-	auto circleData = generateCircle(radius, 32);
-	indexCount = (unsigned int)circleData.second.size();
+	auto sphereData = generateSphere(radius, 16, 16);
+	indexCount = (unsigned int)sphereData.second.size();
 
-	vertexBuffer = VertexBuffer(circleData.first, (UINT)(circleData.first.size() * sizeof(XMFLOAT3)), (UINT)sizeof(XMFLOAT3));
+	vertexBuffer = VertexBuffer(sphereData.first, (UINT)(sphereData.first.size() * sizeof(XMFLOAT3)), (UINT)sizeof(XMFLOAT3));
 	vbv = vertexBuffer.passVertexDataToGPU(*context, renderPipeline->getCommandList());
 
-	indexBuffer = IndexBuffer(circleData.second, (UINT)(circleData.second.size() * sizeof(unsigned int)));
+	indexBuffer = IndexBuffer(sphereData.second, (UINT)(sphereData.second.size() * sizeof(unsigned int)));
 	ibv = indexBuffer.passIndexDataToGPU(*context, renderPipeline->getCommandList());
 
 	//Transition both buffers to their usable states
