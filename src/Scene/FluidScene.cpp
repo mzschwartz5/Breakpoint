@@ -67,6 +67,7 @@ void FluidScene::draw(Camera* camera) {
     cmdList->ResourceBarrier(1, &surfaceHalfBlockDispatchBarrier2);
 
     // Draws
+    // !!! the command signature may need a different type here, D3D12_INDIRECT_ARGUMENT_TYPE_DISPATCH_MESH
     cmdList->ExecuteIndirect(commandSignature, 1, surfaceHalfBlockDispatch.getBuffer(), 0, nullptr, 0);
 
     transitionBuffersToUAV(cmdList);
@@ -166,7 +167,7 @@ void FluidScene::constructScene() {
     surfaceVertexNormalBuffer.passDataToGPU(*context, surfaceVertexNormalCP->getCommandList(), surfaceVertexNormalCP->getCommandListID());
     surfaceVertexNormalBuffer.createUAV(*context, surfaceVertexNormalCP->getDescriptorHeap()); 
     surfaceVertexNormalBuffer.createSRV(*context, surfaceVertexNormalCP->getDescriptorHeap());
-
+    
 	// Create Command Signature
 	// Describe the arguments for an indirect dispatch
 	D3D12_INDIRECT_ARGUMENT_DESC argumentDesc = {};
@@ -295,7 +296,7 @@ void FluidScene::computeSurfaceCellDetection() {
     );
 
     D3D12_RESOURCE_BARRIER barriers[3] = { surfaceBlockIndicesBufferBarrier, surfaceBlockDispatchBarrier, cellsBufferBarrier };
-    cmdList->ResourceBarrier(1, barriers);
+    cmdList->ResourceBarrier(3, barriers);
 
     // Set compute root descriptor table
     cmdList->SetComputeRootDescriptorTable(0, surfaceBlockIndicesBuffer.getSRVGPUDescriptorHandle());
@@ -321,6 +322,10 @@ void FluidScene::computeSurfaceCellDetection() {
     context->signalAndWaitForFence(fence, fenceValue);
 
     context->resetCommandList(surfaceCellDetectionCP->getCommandListID());
+
+    // For testing, copy back surfaceHalfBlockDispatch to CPU
+    // D3D12_DISPATCH_ARGUMENTS dispatchCPU;
+    // surfaceHalfBlockDispatch.copyDataFromGPU(*context, &dispatchCPU, surfaceCellDetectionCP->getCommandList(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, surfaceCellDetectionCP->getCommandListID());
 }
 
 void FluidScene::compactSurfaceVertices() {
@@ -348,8 +353,8 @@ void FluidScene::compactSurfaceVertices() {
         D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE 
     );
 
-    D3D12_RESOURCE_BARRIER barriers[3] = { surfaceBlockDispatchBarrier, surfaceVerticesBufferBarrier };
-    cmdList->ResourceBarrier(1, barriers);
+    D3D12_RESOURCE_BARRIER barriers[2] = { surfaceBlockDispatchBarrier, surfaceVerticesBufferBarrier };
+    cmdList->ResourceBarrier(2, barriers);
 
     // Set compute root descriptor table
     cmdList->SetComputeRootDescriptorTable(0, surfaceVerticesBuffer.getSRVGPUDescriptorHandle());
@@ -401,16 +406,24 @@ void FluidScene::computeSurfaceVertexDensity() {
         D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE
     );
 
-    D3D12_RESOURCE_BARRIER barriers[2] = { surfaceVertexIndicesBufferBarrier, surfaceVertDensityDispatchBarrier };
-    cmdList->ResourceBarrier(1, barriers);
+    // Transition surfaceBlockDispatch to a UAV
+    D3D12_RESOURCE_BARRIER surfaceBlockDispatchBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
+        surfaceBlockDispatch.getBuffer(),
+        D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE,
+        D3D12_RESOURCE_STATE_UNORDERED_ACCESS
+    );
+
+    D3D12_RESOURCE_BARRIER barriers[3] = { surfaceVertexIndicesBufferBarrier, surfaceVertDensityDispatchBarrier, surfaceBlockDispatchBarrier };
+    cmdList->ResourceBarrier(3, barriers);
 
     // Set compute root descriptor table
     cmdList->SetComputeRootDescriptorTable(0, positionBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(1, cellsBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(2, surfaceVertexIndicesBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootShaderResourceView(3, surfaceVertDensityDispatch.getGPUVirtualAddress());
-    cmdList->SetComputeRootDescriptorTable(4, surfaceVertDensityBuffer.getUAVGPUDescriptorHandle());
-    cmdList->SetComputeRoot32BitConstants(5, 1, &gridConstants, 0);
+    cmdList->SetComputeRootUnorderedAccessView(4, surfaceBlockDispatch.getGPUVirtualAddress());
+    cmdList->SetComputeRootDescriptorTable(5, surfaceVertDensityBuffer.getUAVGPUDescriptorHandle());
+    cmdList->SetComputeRoot32BitConstants(6, 1, &gridConstants, 0);
 
 
     // Transition surfaceVertDensityDispatch to indirect argument buffer
@@ -456,7 +469,7 @@ void FluidScene::computeSurfaceVertexNormal() {
     );
 
     D3D12_RESOURCE_BARRIER barriers[2] = { surfaceVertDensityBufferBarrier, surfaceVertDensityDispatchBarrier };
-    cmdList->ResourceBarrier(1, barriers);
+    cmdList->ResourceBarrier(2, barriers);
 
     // Set compute root descriptor table
     cmdList->SetComputeRootDescriptorTable(0, surfaceVertDensityBuffer.getSRVGPUDescriptorHandle());
