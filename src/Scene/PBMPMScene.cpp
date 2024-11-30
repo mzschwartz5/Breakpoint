@@ -563,8 +563,7 @@ void PBMPMScene::compute() {
 	}
 }
 
-void PBMPMScene::draw(Camera* cam) {;
-
+void PBMPMScene::draw(Camera* cam) {
 	auto cmdList = renderPipeline->getCommandList();
 
 	// IA

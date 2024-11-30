@@ -315,8 +315,8 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     float dx = 0.0;
     float dy = 0.0;
     float dz = 0.0;
-    float w = 0.0;
-    float v = 0.0;
+    float w = 0.0; //weight
+    float v = 0.0; //volume
 
     // Check if grid vertex is within valid bounds
     bool gridVertexIsValid = all(gridVertex >= int3(0, 0, 0)) && all(gridVertex <= g_simConstants.gridSize);
@@ -579,9 +579,9 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
         int dxi, dyi, dzi, wi, vi;
         InterlockedAdd(s_tileDataDst[tileDataIndex + 0], 0, dxi);
         InterlockedAdd(s_tileDataDst[tileDataIndex + 1], 0, dyi);
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 3], 0, dzi);
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 4], 0, wi);
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 5], 0, vi);
+        InterlockedAdd(s_tileDataDst[tileDataIndex + 2], 0, dzi);
+        InterlockedAdd(s_tileDataDst[tileDataIndex + 3], 0, wi);
+        InterlockedAdd(s_tileDataDst[tileDataIndex + 4], 0, vi);
 
     // Atomic adds to the destination buffer
         InterlockedAdd(g_gridDst[gridVertexAddress + 0], dxi);
