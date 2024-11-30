@@ -83,14 +83,21 @@ float getRandomFloatInRange(float min, float max) {
 }
 
 void FluidScene::constructScene() {
-    unsigned int numParticles = 3 * CELLS_PER_BLOCK_EDGE * 3 * CELLS_PER_BLOCK_EDGE * 3 * CELLS_PER_BLOCK_EDGE;
-    gridConstants = { numParticles, {3 * CELLS_PER_BLOCK_EDGE, 3 * CELLS_PER_BLOCK_EDGE, 3 * CELLS_PER_BLOCK_EDGE}, {0.f, 0.f, 0.f}, 0.1f };
+    unsigned int blocksPerEdge = 3;
+    unsigned int numParticles = blocksPerEdge * CELLS_PER_BLOCK_EDGE * blocksPerEdge * CELLS_PER_BLOCK_EDGE * blocksPerEdge * CELLS_PER_BLOCK_EDGE;
+    numParticles -= blocksPerEdge * CELLS_PER_BLOCK_EDGE * blocksPerEdge * CELLS_PER_BLOCK_EDGE; // Skip the top level of cells
+    gridConstants = { numParticles, {blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE}, {0.f, 0.f, 0.f}, 0.1f };
 
-    // Populate position data. 1000 partices in a 12x12x12 block of cells, each at a random position in a cell.
+    // Populate position data. Place a particle per-cell in a 12x12x12 block of cells, each at a random position in a cell.
     // (Temporary, eventually, position data will come from simulation)
     for (unsigned int i = 0; i < gridConstants.gridDim.x; ++i) {
         for (unsigned int j = 0; j < gridConstants.gridDim.y; ++j) {
             for (unsigned int k = 0; k < gridConstants.gridDim.z; ++k) {
+                // SKip i,j,k = top level of cells, that way the top level is empty and the second-to-top level becomes the "surface"
+                if (k == gridConstants.gridDim.z - 1) {
+                    continue;
+                }
+
                 positions.push_back({ 
                     gridConstants.minBounds.x + gridConstants.resolution * i + getRandomFloatInRange(0.f, gridConstants.resolution),
                     gridConstants.minBounds.y + gridConstants.resolution * j + getRandomFloatInRange(0.f, gridConstants.resolution),
@@ -112,7 +119,7 @@ void FluidScene::constructScene() {
     std::vector<Cell> cells(numCells);
     std::vector<Block> blocks(numBlocks);
     std::vector<unsigned int> surfaceBlockIndices(numBlocks, 0);
-    XMUINT3 dipatchCPU = { 0, 0, 0 };
+    XMUINT3 dipatchCPU = { 0, 1, 1 };
     std::vector<unsigned int> surfaceVertices(numVerts, 0);
     std::vector<unsigned int> surfaceVertexIndices(numVerts, 0);
     std::vector<float> surfaceVertexDensities(numVerts, 0.f);
@@ -323,9 +330,10 @@ void FluidScene::computeSurfaceCellDetection() {
 
     context->resetCommandList(surfaceCellDetectionCP->getCommandListID());
 
-    // For testing, copy back surfaceHalfBlockDispatch to CPU
-    // D3D12_DISPATCH_ARGUMENTS dispatchCPU;
-    // surfaceHalfBlockDispatch.copyDataFromGPU(*context, &dispatchCPU, surfaceCellDetectionCP->getCommandList(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, surfaceCellDetectionCP->getCommandListID());
+    // For testing, copy the surfaceVerticesBuffer to the CPU
+    int numVerts = (gridConstants.gridDim.x + 1) * (gridConstants.gridDim.y + 1) * (gridConstants.gridDim.z + 1);
+    std::vector<unsigned int> surfaceVertices(numVerts, 0);
+    surfaceVerticesBuffer.copyDataFromGPU(*context, surfaceVertices.data(), surfaceCellDetectionCP->getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, surfaceCellDetectionCP->getCommandListID());
 }
 
 void FluidScene::compactSurfaceVertices() {
