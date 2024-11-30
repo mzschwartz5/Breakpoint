@@ -26,7 +26,7 @@ int main() {
 
     PBMPMConstants pbmpmConstants{ {512, 512}, 0.01F, 2.5F, 1.5F, 0.01F,
         (unsigned int)std::ceil(std::pow(10, 7)),
-        1, 4, 30, 0, 0,  0, 0, 0, 0, 5, 0.9F };
+        1, 8, 30, 0, 0,  0, 0, 0, 0, 5, 0.9F };
     PBMPMConstants pbmpmTempConstants = pbmpmConstants;
 
     while (!Window::get().getShouldClose()) {
@@ -105,7 +105,7 @@ int main() {
         //render ImGUI
         ImGui::Render();
         if (!PBMPMScene::constantsEqual(pbmpmTempConstants, pbmpmConstants)) {
-            scene.updatePBMPMConstants(pbmpmTempConstants);
+            //scene.updatePBMPMConstants(pbmpmTempConstants);
             pbmpmConstants = pbmpmTempConstants;
         }
 

@@ -336,13 +336,13 @@ void PBMPMScene::constructScene() {
 
 	// Create Constant Data
 	constants = { {512, 512}, 0.01, 2.5, 1.5, 0.01,
-		(unsigned int)std::ceil(std::pow(10, 7)),
-		1, 4, 30, 0, 0,  0, 0, 0, 0, 5, 0.9 };
+		(unsigned int)std::ceil(std::pow(10, 14)),
+		1, 64, 30, 0, 0,  0, 0, 0, 0, 10, 0.9 };
 
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	float radius = 0.002;
+	float radius = 0.001;
 	float spacing = radius * 2.1;
 
 	int particlesPerRow = (int)sqrt(instanceCount);
@@ -515,15 +515,17 @@ void PBMPMScene::compute() {
 		//// third grid
 		//gridBuffers[2].copyDataFromGPU(*context, gridBufferData3.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
 
+		StructuredBuffer* currentGrid = &gridBuffers[0];
+		StructuredBuffer* nextGrid = &gridBuffers[1];
+		StructuredBuffer* nextNextGrid = &gridBuffers[2];
+
 		for (int iterationIdx = 0; iterationIdx < constants.iterationCount; iterationIdx++) {
 			constants.iteration = iterationIdx;
 
 			updateSimUniforms(substepIdx);
 
-			auto currentGrid = gridBuffers[bufferIdx];
-			auto nextGrid = gridBuffers[(bufferIdx + 1) % 3];
-			auto nextNextGrid = gridBuffers[(bufferIdx + 2) % 3];
-			bufferIdx = (bufferIdx + 1) % 3;
+			std::swap(currentGrid, nextGrid);
+			std::swap(nextGrid, nextNextGrid);
 
 			auto cmdList = g2p2gPipeline.getCommandList();
 
@@ -533,7 +535,7 @@ void PBMPMScene::compute() {
 			};
 			cmdList->ResourceBarrier(_countof(barriers), barriers);
 
-			auto currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid.getBuffer(),
+			auto currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid->getBuffer(),
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 			cmdList->ResourceBarrier(1, &currGridBarrier);
 
@@ -547,9 +549,9 @@ void PBMPMScene::compute() {
 
 			cmdList->SetComputeRootDescriptorTable(1, particleBuffer.getUAVGPUDescriptorHandle());
 			cmdList->SetComputeRootDescriptorTable(2, bukkitSystem.particleData.getSRVGPUDescriptorHandle());
-			cmdList->SetComputeRootDescriptorTable(3, currentGrid.getSRVGPUDescriptorHandle());
-			cmdList->SetComputeRootDescriptorTable(4, nextGrid.getUAVGPUDescriptorHandle());
-			cmdList->SetComputeRootDescriptorTable(5, nextNextGrid.getUAVGPUDescriptorHandle());
+			cmdList->SetComputeRootDescriptorTable(3, currentGrid->getSRVGPUDescriptorHandle());
+			cmdList->SetComputeRootDescriptorTable(4, nextGrid->getUAVGPUDescriptorHandle());
+			cmdList->SetComputeRootDescriptorTable(5, nextNextGrid->getUAVGPUDescriptorHandle());
 
 			// Transition dispatch buffer to an indirect argument
 			auto dispatchBarrier = CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.dispatch.getBuffer(),
@@ -565,7 +567,7 @@ void PBMPMScene::compute() {
 			cmdList->ResourceBarrier(1, &dispatchBarrier);
 
 			// Transition currentGrid to UAV
-			currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid.getBuffer(),
+			currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid->getBuffer(),
 				D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 			cmdList->ResourceBarrier(1, &currGridBarrier);
 

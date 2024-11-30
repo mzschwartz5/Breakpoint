@@ -44,19 +44,17 @@ struct PBMPMConstants {
 	float borderFriction;
 };
 
-struct ShapeFactory {
+struct SimShape {
+	int id;
 	XMFLOAT2 position;
+	float rotation;
 	XMFLOAT2 halfSize;
 
-	float radius;
-	float rotation;
-	float functionality;
-	float shapeType;
-
-	float emitMaterial;
+	int shapeType;
+	int functionality;
+	int material;
 	float emissionRate;
-	float emissionSpeed;
-	float padding;
+	int radius;
 };
 
 struct PBMPMParticle {
@@ -143,6 +141,8 @@ private:
 	StructuredBuffer particleFreeIndicesBuffer;
 	StructuredBuffer particleCount;
 	StructuredBuffer particleSimDispatch;
+	StructuredBuffer renderDispatchBuffer;
+	StructuredBuffer shapeBuffer;
 
 	std::array<StructuredBuffer, 3> gridBuffers;
 
