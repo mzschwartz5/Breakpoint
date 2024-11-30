@@ -633,27 +633,23 @@ void PBMPMScene::releaseResources() {
 }
 
 void PBMPMScene::updateConstants(PBMPMConstants& newConstants) {
-	int tempIter = constants.iteration;
-	int tempDeltaT = constants.deltaTime;
-	constants = newConstants;
-	constants.iteration = tempIter;
-	constants.deltaTime = tempDeltaT;
+	constants.gravityStrength = newConstants.gravityStrength;
+	constants.liquidRelaxation = newConstants.liquidRelaxation;
+	constants.liquidViscosity = newConstants.liquidViscosity;
+	constants.fixedPointMultiplier = newConstants.fixedPointMultiplier;
+	constants.useGridVolumeForLiquid = newConstants.useGridVolumeForLiquid;
+	constants.particlesPerCellAxis = newConstants.particlesPerCellAxis;
+	constants.frictionAngle = newConstants.frictionAngle;
+	constants.borderFriction = newConstants.borderFriction;
 }
 
 bool PBMPMScene::constantsEqual(PBMPMConstants& one, PBMPMConstants& two) {
-	return one.gridSize.x == two.gridSize.x && one.gridSize.y == two.gridSize.y &&
-		one.gravityStrength == two.gravityStrength &&
+	return one.gravityStrength == two.gravityStrength &&
 		one.liquidRelaxation == two.liquidRelaxation &&
 		one.liquidViscosity == two.liquidViscosity &&
 		one.fixedPointMultiplier == two.fixedPointMultiplier &&
 		one.useGridVolumeForLiquid == two.useGridVolumeForLiquid &&
 		one.particlesPerCellAxis == two.particlesPerCellAxis &&
 		one.frictionAngle == two.frictionAngle &&
-		one.shapeCount == two.shapeCount &&
-		one.simFrame == two.simFrame &&
-		one.bukkitCount == two.bukkitCount &&
-		one.bukkitCountX == two.bukkitCountX &&
-		one.bukkitCountY == two.bukkitCountY &&
-		one.iterationCount == two.iterationCount &&
 		one.borderFriction == two.borderFriction;
 }

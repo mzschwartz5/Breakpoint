@@ -509,7 +509,8 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
             }
             
             // Save the particle back to the buffer
-            g_particles[myParticleIndex] = particle;        }
+            g_particles[myParticleIndex] = particle;        
+        }
         
         {
             // Particle update

@@ -26,7 +26,7 @@ int main() {
 
     PBMPMConstants pbmpmConstants{ {512, 512, 512}, 0.01F, 2.5F, 1.5F, 0.01F,
         (unsigned int)std::ceil(std::pow(10, 7)),
-        1, 4, 30, 0, 0,  0, 0, 0, 0, 5, 0.9F };
+        1, 4, 30, 0, 0, 0, 0, 0, 0, 5, 0.9F };
     PBMPMConstants pbmpmTempConstants = pbmpmConstants;
 
     while (!Window::get().getShouldClose()) {
@@ -38,6 +38,7 @@ int main() {
             Window::get().resize();
             camera->updateAspect((float)Window::get().getWidth() / (float)Window::get().getHeight());
         }
+
         //check keyboard state
         auto kState = keyboard->GetState();
         if (kState.W) {
@@ -120,8 +121,6 @@ int main() {
         Window::get().present();
 		context.resetCommandList(renderPipeline->getCommandListID());
     }
-
-    // Close
 
     // Scene should release all resources, including their pipelines
     scene.releaseResources();

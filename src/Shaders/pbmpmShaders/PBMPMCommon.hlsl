@@ -91,11 +91,6 @@ struct QuadraticWeightInfo
 };
 
 // Helper function for element-wise square (power of 2)
-//float2 pow2(float2 x)
-//{
-//    return x * x;
-//}
-
 float3 pow2(float3 x) {
 	return x * x;
 }
@@ -116,11 +111,6 @@ QuadraticWeightInfo quadraticWeightInit(float3 position)
 }
 
 // Helper function for element-wise cube (power of 3)
-//float2 pow3(float2 x)
-//{
-//    return x * x * x;
-//}
-
 float3 pow3(float3 x) {
 	return x * x * x;
 }
