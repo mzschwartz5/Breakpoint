@@ -343,9 +343,6 @@ void PBMPMScene::constructScene() {
 		(unsigned int)std::ceil(std::pow(10, 7)),
 		1, 4, 30, 0, 0,  0, 0, 0, 0, 0, 5, 0.9 };
 
-	// Create Model Matrix
-	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
-
 	float radius = 0.002;
 	float spacing = radius * 2.1;
 
@@ -356,12 +353,12 @@ void PBMPMScene::constructScene() {
 	particles.resize(maxParticles);
 	// Uniform for each particle for now
 	const float density = 1.f;
-	const float volume = 1.f / float(constants.particlesPerCellAxis * constants.particlesPerCellAxis);
+	const float volume = 1.f / float(constants.particlesPerCellAxis * constants.particlesPerCellAxis * constants.particlesPerCellAxis);
 	// Create initial particle data
 	for (int i = 0; i < instanceCount; ++i) {
 		XMFLOAT3 position ={ (((i % particlesPerRow) * spacing - (particlesPerRow - 1) * spacing / 2.f) + 0.4f) * 500,
-							  (((i / particlesPerRow) * spacing - (particlesPerCol - 1) * spacing / 2.f) + 0.4f) * 500 , 0.f};
-		particles[i] = { position, 1.0, {0.f, 0.f, 0.f}, density * volume, 0, volume, 0.0, 1.0, 1.0,
+							  (((i / particlesPerRow) * spacing - (particlesPerCol - 1) * spacing / 2.f) + 0.4f) * 500, 0.f};
+		particles[i] = {position, 1.0, {0.f, 0.f, 0.f}, density * volume, 0, volume, 0.0, 1.0, 1.0,
 						{ 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 },
 						{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } };
 	}
@@ -379,7 +376,6 @@ void PBMPMScene::constructScene() {
 		if (freeIndices[0] < 0) {
 			count.x++;
 		}
-		
 	}
 
 	particleCount = StructuredBuffer(&count, 1, sizeof(XMUINT4));
@@ -411,7 +407,7 @@ void PBMPMScene::constructScene() {
 	createBukkitSystem();
 
 	std::vector<int> gridBufferData;
-	gridBufferData.resize(constants.gridSize.x * constants.gridSize.y * 4);
+	gridBufferData.resize(constants.gridSize.x * constants.gridSize.y * constants.gridSize.z * 5); //LOOK : 4 or 5?
 
 	for (int i = 0; i < 3; i++) {
 		gridBuffers[i] = StructuredBuffer(gridBufferData.data(), gridBufferData.size(), sizeof(int));
