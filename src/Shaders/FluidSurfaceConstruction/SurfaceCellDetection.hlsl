@@ -4,7 +4,7 @@
 
 // TODO: should this be a constant? If not, what happens if we change it from frame to frame? Do we have to resize and reset buffers as well?
 struct Uniforms {
-    uint3 gridCellDimensions;
+    int3 gridCellDimensions;
 };
 
 struct Cell {
@@ -117,7 +117,7 @@ void main(uint3 globalThreadId : SV_DispatchThreadID, uint3 localThreadId : SV_G
     int3 edge = int3(trunc((localCellIndex3d - halfCellsPerBlockEdgeMinusOne) / halfCellsPerBlockEdgeMinusOne));
     // By converting neighbors to global-space here, we can clamp to the grid bounds and avoid 
     // out-of-bounds checks in every loop iteration.
-    int3 globalNeighborCells = clamp(globalCellIndex3d + edge, int3(0, 0, 0), int3(cb.gridCellDimensions - 1));
+    int3 globalNeighborCells = clamp(globalCellIndex3d + edge, int3(0, 0, 0), cb.gridCellDimensions - 1);
     int3 minSearchBounds = min(globalNeighborCells, globalCellIndex3d);
     int3 maxSearchBounds = max(globalNeighborCells, globalCellIndex3d);
 
@@ -148,16 +148,16 @@ void main(uint3 globalThreadId : SV_DispatchThreadID, uint3 localThreadId : SV_G
     // 2. All of its neighbors and itself are filled
     // It CAN be a surface cell EVEN if it has no particles itself.
     // As we iterate over all neighbors, if any one of them is different from the previous ones, the cell is a surface cell.
-    // To track this, initialize lastEmptyCell to the state of the current cell, from shared memory.
+    // To track this, initialize firstCellEmpty to the state of the current cell, from shared memory.
     bool firstCellEmpty = (cellParticleCounts[offsetLocalCellIdx1d] == 0);
     bool isSurfaceCell = false;
-    for (uint z = minSearchBounds.z; z <= maxSearchBounds.z; z++) {
-        for (uint y = minSearchBounds.y; y <= maxSearchBounds.y; y++) {
-            for (uint x = minSearchBounds.x; x <= maxSearchBounds.x; x++) {
+    for (int z = minSearchBounds.z; z <= maxSearchBounds.z; z++) {
+        for (int y = minSearchBounds.y; y <= maxSearchBounds.y; y++) {
+            for (int x = minSearchBounds.x; x <= maxSearchBounds.x; x++) {
                 int3 globalNeighborCellIndex3d = int3(x, y, z);
 
                 int3 localNeighborCellIndex3d = globalNeighborCellIndex3d - globalNeighborCellOrigin;
-                uint localNeighborCellIndex1d = to1D(localNeighborCellIndex3d, CELLS_PER_BLOCK_EDGE + 2);
+                int localNeighborCellIndex1d = to1D(localNeighborCellIndex3d, CELLS_PER_BLOCK_EDGE + 2);
 
                 bool isCellEmpty = (cellParticleCounts[localNeighborCellIndex1d] == 0);
                 if (isCellEmpty != firstCellEmpty) {

@@ -14,7 +14,7 @@ inline float cubic(float x) {
     return x * x * x;
 }
 
-inline uint divRoundUp(uint num, uint denom)
+inline int divRoundUp(int num, int denom)
 {
     return (num + denom - 1) / denom;
 }
