@@ -9,7 +9,7 @@ Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context)
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	pbmpmIC(100),
 	pbmpmScene(context, &pbmpmRP, pbmpmIC),
-	fluidRP("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", *context, CommandListID::BILEVEL_UNIFORM_GRID_COMPUTE_ID,
+	/*fluidRP("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", *context, CommandListID::BILEVEL_UNIFORM_GRID_COMPUTE_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	bilevelUniformGridCP("BilevelUniformGridRootSig.cso", "BilevelUniformGrid.cso", *context, CommandListID::BILEVEL_UNIFORM_GRID_COMPUTE_ID, 
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 5, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
@@ -26,6 +26,7 @@ Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context)
 	fluidMeshPipeline("FluidMeshShader.cso", "PixelShader.cso", "FluidMeshRootSig.cso", *context, CommandListID::FLUID_MESH_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	fluidScene(context, &fluidRP, &bilevelUniformGridCP, &surfaceBlockDetectionCP, &surfaceCellDetectionCP, &surfaceVertexCompactionCP, &surfaceVertexDensityCP, &surfaceVertexNormalCP, &fluidMeshPipeline),
+	*/
 	currentRP(),
 	currentCP()
 {
@@ -45,10 +46,10 @@ void Scene::setRenderScene(RenderScene renderScene) {
 		currentRP = &pbmpmRP;
 		//currentCP = &pbmpmCP;
 		break;
-	case Fluid:
-		currentRP = &fluidRP;
-		currentCP = &bilevelUniformGridCP;
-		break;
+	//case Fluid:
+	//	currentRP = &fluidRP;
+	//	currentCP = &bilevelUniformGridCP;
+	//	break;
 	case Object:
 		currentRP = &objectRP;
 		currentCP = nullptr;
@@ -61,9 +62,9 @@ void Scene::compute() {
 	case PBMPM:
 		pbmpmScene.compute();
 		break;
-	case Fluid:
-		fluidScene.compute();
-		break;
+	//case Fluid:
+	//	fluidScene.compute();
+	//	break;
 	case Object:
 	default:
 		break;
@@ -75,9 +76,9 @@ void Scene::draw() {
 	case PBMPM:
 		pbmpmScene.draw(camera);
 		break;
-	case Fluid:
-		fluidScene.draw(camera);
-		break;
+	//case Fluid:
+	//	fluidScene.draw(camera);
+	//	break;
 	default:
 	case Object:
 		objectScene.draw(camera);
@@ -88,7 +89,7 @@ void Scene::draw() {
 void Scene::releaseResources() {
 	objectScene.releaseResources();
 	pbmpmScene.releaseResources();
-	fluidScene.releaseResources();
+	//fluidScene.releaseResources();
 }
 
 void Scene::updatePBMPMConstants(PBMPMConstants& newConstants) {

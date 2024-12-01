@@ -119,6 +119,8 @@ private:
 	ComputePipeline bukkitAllocatePipeline;
 	ComputePipeline bukkitInsertPipeline;
 	ComputePipeline bufferClearPipeline;
+	ComputePipeline emissionPipeline;
+	ComputePipeline setIndirectArgsPipeline;
 
 	PBMPMConstants constants;
 	BukkitSystem bukkitSystem;
@@ -130,6 +132,7 @@ private:
 	IndexBuffer indexBuffer;
 	unsigned int instanceCount;
 	ID3D12CommandSignature* commandSignature = nullptr;
+	ID3D12CommandSignature* renderCommandSignature = nullptr;
 	UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
 	unsigned int indexCount = 0;
@@ -153,4 +156,6 @@ private:
 	void resetBuffers(bool resetGrids = false);
 
 	void bukkitizeParticles();
+
+	void doEmission(StructuredBuffer* gridBuffer);
 };

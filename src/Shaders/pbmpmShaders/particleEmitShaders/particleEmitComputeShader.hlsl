@@ -6,6 +6,12 @@
 // Root constants bound to b0
 ConstantBuffer<PBMPMConstants> g_simConstants : register(b0);
 
+// Define the constant buffer with an array of SimShapes
+cbuffer shapes : register(b1)
+{
+    SimShape g_shapes[1]; // Adjust the size of the array as needed
+};
+
 // Structured Buffer for particles (read-write UAV)
 RWStructuredBuffer<Particle> g_particles : register(u0);
 
@@ -16,10 +22,7 @@ RWStructuredBuffer<int> g_freeIndices : register(u1);
 RWStructuredBuffer<int> g_particleCount : register(u2);
 
 // Structured Buffer for grid source data (read-only SRV)
-StructuredBuffer<SimShape> g_shapes : register(t0);
-
-// Structured Buffer for grid source data (read-only SRV)
-StructuredBuffer<int> g_grid : register(t1);
+StructuredBuffer<int> g_grid : register(t0);
 
 uint hash(uint input)
 {

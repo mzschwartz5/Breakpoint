@@ -1,8 +1,8 @@
-﻿#include "setIndirectArgsRootSignature.hlsl"  // Includes the ROOTSIG definition
-
+#include "setIndirectArgsRootSignature.hlsl"  // Includes the ROOTSIG definition
+#include "../../pbmpmShaders/PBMPMCommon.hlsl"  // Includes the TileDataSize definition
 // UAVs and SRVs
-RWStructuredBuffer<uint> g_simDispatch : register(u0);
-RWStructuredBuffer<uint> g_renderDispatch : register(u1);
+RWStructuredBuffer<uint> g_simIndirectArgs : register(u0);
+RWStructuredBuffer<uint> g_renderIndirectArgs : register(u1);
 
 StructuredBuffer<uint> g_particleCount : register(t0);
 
