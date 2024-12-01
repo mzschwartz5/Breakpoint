@@ -492,9 +492,9 @@ void PBMPMScene::compute() {
 
 			updateSimUniforms(substepIdx);
 
-			auto currentGrid = gridBuffers[bufferIdx];
-			auto nextGrid = gridBuffers[(bufferIdx + 1) % 3];
-			auto nextNextGrid = gridBuffers[(bufferIdx + 2) % 3];
+			StructuredBuffer* currentGrid = &gridBuffers[bufferIdx];
+			StructuredBuffer* nextGrid = &gridBuffers[(bufferIdx + 1) % 3];
+			StructuredBuffer* nextNextGrid = &gridBuffers[(bufferIdx + 2) % 3];
 			bufferIdx = (bufferIdx + 1) % 3;
 
 			auto cmdList = g2p2gPipeline.getCommandList();
@@ -505,7 +505,7 @@ void PBMPMScene::compute() {
 			};
 			cmdList->ResourceBarrier(_countof(barriers), barriers);
 
-			auto currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid.getBuffer(),
+			auto currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid->getBuffer(),
 				D3D12_RESOURCE_STATE_UNORDERED_ACCESS, D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 			cmdList->ResourceBarrier(1, &currGridBarrier);
 
@@ -519,9 +519,9 @@ void PBMPMScene::compute() {
 
 			cmdList->SetComputeRootDescriptorTable(1, particleBuffer.getUAVGPUDescriptorHandle());
 			cmdList->SetComputeRootDescriptorTable(2, bukkitSystem.particleData.getSRVGPUDescriptorHandle());
-			cmdList->SetComputeRootDescriptorTable(3, currentGrid.getSRVGPUDescriptorHandle());
-			cmdList->SetComputeRootDescriptorTable(4, nextGrid.getUAVGPUDescriptorHandle());
-			cmdList->SetComputeRootDescriptorTable(5, nextNextGrid.getUAVGPUDescriptorHandle());
+			cmdList->SetComputeRootDescriptorTable(3, currentGrid->getSRVGPUDescriptorHandle());
+			cmdList->SetComputeRootDescriptorTable(4, nextGrid->getUAVGPUDescriptorHandle());
+			cmdList->SetComputeRootDescriptorTable(5, nextNextGrid->getUAVGPUDescriptorHandle());
 
 			// Transition dispatch buffer to an indirect argument
 			auto dispatchBarrier = CD3DX12_RESOURCE_BARRIER::Transition(bukkitSystem.dispatch.getBuffer(),
@@ -537,7 +537,7 @@ void PBMPMScene::compute() {
 			cmdList->ResourceBarrier(1, &dispatchBarrier);
 
 			// Transition currentGrid to UAV
-			currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid.getBuffer(),
+			currGridBarrier = CD3DX12_RESOURCE_BARRIER::Transition(currentGrid->getBuffer(),
 				D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
 			cmdList->ResourceBarrier(1, &currGridBarrier);
 
@@ -548,7 +548,7 @@ void PBMPMScene::compute() {
 			};
 			cmdList->ResourceBarrier(_countof(endBarriers), endBarriers);
 
-			//// Execute command list
+			// Execute command list
 			context->executeCommandList(g2p2gPipeline.getCommandListID());
 			context->signalAndWaitForFence(fence, fenceValue);
 
