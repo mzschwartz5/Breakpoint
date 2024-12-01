@@ -73,10 +73,24 @@ int main() {
 
         mouse->SetMode(mState.leftButton ? Mouse::MODE_RELATIVE : Mouse::MODE_ABSOLUTE);
 
-        if (mState.positionMode == Mouse::MODE_RELATIVE && kState.LeftControl) {
+        if (mState.positionMode == Mouse::MODE_RELATIVE && kState.LeftShift) {
             camera->rotateOnX(-mState.y * 0.01f);
             camera->rotateOnY(mState.x * 0.01f);
             camera->rotate();
+        }
+
+        if (mState.rightButton) {
+            //enable mouse force
+            pbmpmTempConstants.mouseActivation = 1;
+            POINT cursorPos;
+            GetCursorPos(&cursorPos);
+            pbmpmTempConstants.mousePosition = XMUINT2{ (unsigned int)cursorPos.x, (unsigned int)cursorPos.y };
+            pbmpmTempConstants.mouseFunction = 0;
+            pbmpmTempConstants.mouseRadius = 1000;
+            scene.updatePBMPMConstants(pbmpmTempConstants);
+        }
+        else {
+            pbmpmTempConstants.mouseActivation = 0;
         }
 
         //update camera

@@ -45,6 +45,13 @@ struct PBMPMConstants {
 	unsigned int iteration;
 	unsigned int iterationCount;
 	float borderFriction;
+
+    //mouse stuff
+    unsigned int mouseActivation;
+    uint2 mousePosition;
+    unsigned int mouseRadius;
+    unsigned int mouseFunction;
+    unsigned int mouseVelocity;
 };
 
 

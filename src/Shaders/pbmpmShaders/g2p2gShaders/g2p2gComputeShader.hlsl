@@ -328,6 +328,24 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 particle.position += particle.displacement;
                 
                 // Mouse Iteraction Here
+                if (g_simConstants.mouseActivation > 0)
+                {
+                    float2 offset = particle.position - g_simConstants.mousePosition;
+                    float lenOffset = max(length(offset), 0.0001);
+                    if (lenOffset < g_simConstants.mouseRadius)
+                    {
+                        float2 normOffset = offset / lenOffset;
+
+                        if (g_simConstants.mouseFunction == 0)
+                        {
+                            particle.displacement += normOffset * 500.0f;
+                        }
+                        else if (g_simConstants.mouseFunction == 1)
+                        {
+                            particle.displacement = g_simConstants.mouseVelocity * g_simConstants.deltaTime;
+                        }
+                    }
+                }
                 
                 // Gravity Acceleration is normalized to the vertical size of the window
                 particle.displacement.y -= float(g_simConstants.gridSize.y) * g_simConstants.gravityStrength * g_simConstants.deltaTime * g_simConstants.deltaTime;
