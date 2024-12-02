@@ -46,7 +46,11 @@ As of milestone 3 the 2D implementation has working bukkiting, mouse movement fo
 
 ## Fluid Mesh Shading
 
+
+
 ## PBD Voxelization
+
+The Mesh Mortal Kombat paper focuses on using PBD particles to seperate a mesh into pieces that can break apart like a realistic soft body. This works by enforcing distance constraints within the voxels and face to face constraints between them. We initially wanted to use PBMPM particles to cause the destruction of the soft body materials. However, as the project progressed and we hit milestone 2, we realized it was not realistic to get a working PBMPM and PBD integration. This is largely caused because there is not much detail on the math behind the constraints and approach used for the soft body destruction. We decided it was best to focus our time on a solid PBMPM rendering rather than trying to work out the details of the soft body destruction.
 
 Helpful resources: 
 - [PBMPM](https://www.ea.com/seed/news/siggraph2024-pbmpm)
