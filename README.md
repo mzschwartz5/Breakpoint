@@ -22,6 +22,14 @@ For milestone 3, the 3D framework for PBMPM was created. Additionally emission a
 
 [Presentation Slides: Milestone 3](https://docs.google.com/presentation/d/10rVP-IElwPZj0ps3fi2w58sSem8OLQtoXfR4WyeSV_s/edit?usp=sharing)
 
+## TODOs for Final Presentation
+
+The last steps for the final week of the project are as follows.
+- Fix volume loss and noise in 2D PBMPM
+- Fix force application and up-right movement in 3D PBMPM
+- Adapt fluid mesh shading to take liquid PBMPM particles as input
+- Build a demo scene
+
 # Project Overview
 
 ## DirectX Core
@@ -32,11 +40,15 @@ The DirectX core for this project is the rendering and compute framework for all
 
 The public repository for PBMPM includes a 2D, non-optimized version of the simulation. We hope to expand this to 3D, and add shared memory GPU optimizations to PBMPM to make it real time in DirectX. We have had trouble setting up the grid to play well with our camera and object scale as well as volume preservation, and moving to 3D has caused some further issues with particle movement.
 
+PBMPM works by putting particles into a grid of bukkits, allocating work per bukkit, and then enforcing movement constraints per material per bukkit. The bukkits have a halo range so the particles can react to the movement of particles within neighboring bukkits.
+
+As of milestone 3 the 2D implementation has working bukkiting, mouse movement for forces, and sand, snow, and liquid materials. In 2D gravity is applied and particles interact, but volume loss and noise are prevalent in the system. In 3D, the forces are not applied properly, and there is an unknown bug causing the particles to move up and to the right.
+
 ## Fluid Mesh Shading
 
 ## PBD Voxelization
 
 Helpful resources: 
-- PBMPM: [https://github.com/electronicarts/pbmpm](https://www.ea.com/seed/news/siggraph2024-pbmpm)
-- Fluid Mesh Shading: https://dl.acm.org/doi/10.1145/3651285
+- [PBMPM](https://www.ea.com/seed/news/siggraph2024-pbmpm)
+- [Fluid Mesh Shading](https://dl.acm.org/doi/10.1145/3651285)
 - For the DX12 basics and compointer class, we used this great tutorial series resource: https://github.com/Ohjurot/D3D12Ez
