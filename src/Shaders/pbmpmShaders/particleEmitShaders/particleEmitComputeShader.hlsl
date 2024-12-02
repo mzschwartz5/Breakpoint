@@ -69,7 +69,7 @@ Particle createParticle(float2 position, float material, float mass, float volum
 
 void addParticle(float2 position, float material, float volume, float density, float jitterScale)
 {
-    uint particleIndex;
+    uint particleIndex = 0;
     // First check the free list to see if we can reuse a particle slot
     int freeIndexSlot;
     InterlockedAdd(g_freeIndices[0], -1, freeIndexSlot);
@@ -82,7 +82,6 @@ void addParticle(float2 position, float material, float volume, float density, f
     else // If free list is empty then grow the particle count
     {
         InterlockedAdd(g_particleCount[0], 1, particleIndex);
-        particleIndex++;
     }
 
     uint jitterX = hash(particleIndex);

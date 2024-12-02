@@ -169,6 +169,11 @@ void PBMPMScene::resetBuffers(bool resetGrids) {
 			bufferClearPipeline.getCommandList()->SetComputeRootDescriptorTable(1, gridBuffers[i].getUAVGPUDescriptorHandle());
 			bufferClearPipeline.getCommandList()->Dispatch((numGridInts + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE, 1, 1);
 		}
+
+		// Also reset IndexStart at the beginning of each substep
+		bufferClearPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 1, &countSize, 0);
+		bufferClearPipeline.getCommandList()->SetComputeRootDescriptorTable(1, bukkitSystem.indexStart.getUAVGPUDescriptorHandle());
+		bufferClearPipeline.getCommandList()->Dispatch((countSize + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE, 1, 1);
 	}
 
 	// execute
@@ -407,14 +412,14 @@ void PBMPMScene::constructScene() {
 	auto computeId = g2p2gPipeline.getCommandListID();
 
 	// Create Constant Data
-	constants = { {512, 512}, 0.01, 2.5, 1.5, 0.01,
+	constants = { {512, 512}, 0.01, 2.5, 1.5, 0.05,
 		(unsigned int)std::ceil(std::pow(10, 7)),
 		1, 4, 30, 1, 0,  0, 0, 0, 0, 10, 0.9 };
 
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	float radius = 0.001;
+	float radius = 2;
 	// Create Vertex & Index Buffer
 	auto circleData = generateCircle(radius, 32);
 	indexCount = (unsigned int)circleData.second.size();
@@ -461,7 +466,7 @@ void PBMPMScene::constructScene() {
 
 	// Shape Buffer
 	std::vector<SimShape> shapes;
-	shapes.push_back(SimShape(0, { 200, 200, }, 0, { 20, 20 },
+	shapes.push_back(SimShape(0, { 30, 400, }, 0, { 1, 1 },
 		0, 3, 0, 1, 100));
 	shapeBuffer = StructuredBuffer(shapes.data(), shapes.size(), sizeof(SimShape));
 
