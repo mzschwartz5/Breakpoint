@@ -412,8 +412,8 @@ void PBMPMScene::constructScene() {
 	auto computeId = g2p2gPipeline.getCommandListID();
 
 	// Create Constant Data
-	constants = { {512, 512}, 0.01, 2.5, 1.5, 0.05,
-		(unsigned int)std::ceil(std::pow(10, 7)),
+	constants = { {512, 512}, 0.002, 2.5, 1.5, 0.05,
+		(unsigned int)std::ceil(std::pow(10, 9)),
 		1, 4, 30, 1, 0,  0, 0, 0, 0, 10, 0.9 };
 
 	// Create Model Matrix
@@ -466,7 +466,7 @@ void PBMPMScene::constructScene() {
 
 	// Shape Buffer
 	std::vector<SimShape> shapes;
-	shapes.push_back(SimShape(0, { 30, 400, }, 0, { 1, 1 },
+	shapes.push_back(SimShape(0, { 200, 200, }, 0, { 100, 100 },
 		0, 3, 0, 1, 100));
 	shapeBuffer = StructuredBuffer(shapes.data(), shapes.size(), sizeof(SimShape));
 
@@ -589,7 +589,7 @@ void PBMPMScene::compute() {
 
 		// Update simulation uniforms
 		constants.iteration = 0;
-		updateSimUniforms(substepIdx);
+		updateSimUniforms(0);
 		
 		// Copy particle data from the GPU
 		//std::vector<PBMPMParticle> particles;
@@ -617,7 +617,7 @@ void PBMPMScene::compute() {
 		for (int iterationIdx = 0; iterationIdx < constants.iterationCount; iterationIdx++) {
 			constants.iteration = iterationIdx;
 
-			updateSimUniforms(substepIdx);
+			updateSimUniforms(iterationIdx);
 
 			std::swap(currentGrid, nextGrid);
 			std::swap(nextGrid, nextNextGrid);

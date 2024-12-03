@@ -338,7 +338,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
 
                         if (g_simConstants.mouseFunction == 0)
                         {
-                            particle.displacement += normOffset * 500.0f;
+                            particle.displacement += normOffset * 0.05f;
                         }
                         else if (g_simConstants.mouseFunction == 1)
                         {

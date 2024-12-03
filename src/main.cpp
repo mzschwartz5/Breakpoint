@@ -120,7 +120,7 @@ int main() {
         //ImGui::Render();
         if (!PBMPMScene::constantsEqual(pbmpmTempConstants, pbmpmConstants)) {
             //scene.updatePBMPMConstants(pbmpmTempConstants);
-            pbmpmConstants = pbmpmTempConstants;
+            //pbmpmConstants = pbmpmTempConstants;
         }
 
         renderPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
