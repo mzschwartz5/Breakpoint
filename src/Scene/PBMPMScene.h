@@ -17,7 +17,7 @@ const unsigned int BukkitSize = 6;
 const unsigned int BukkitHaloSize = 1;
 const unsigned int GuardianSize = 3;
 
-const unsigned int maxParticles = 50000;
+const unsigned int maxParticles = 500000;
 const unsigned int maxTimestampCount = 2048;
 
 struct PBMPMConstants {

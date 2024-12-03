@@ -412,8 +412,8 @@ void PBMPMScene::constructScene() {
 	auto computeId = g2p2gPipeline.getCommandListID();
 
 	// Create Constant Data
-	constants = { {512, 512}, 0.002, 2.5, 1.5, 0.05,
-		(unsigned int)std::ceil(std::pow(10, 9)),
+	constants = { {512, 512}, 0.002, 2.5, 1.5, 0.2,
+		(unsigned int)std::ceil(std::pow(10, 7)),
 		1, 4, 30, 1, 0,  0, 0, 0, 0, 10, 0.9 };
 
 	// Create Model Matrix
@@ -466,7 +466,7 @@ void PBMPMScene::constructScene() {
 
 	// Shape Buffer
 	std::vector<SimShape> shapes;
-	shapes.push_back(SimShape(0, { 200, 200, }, 0, { 100, 100 },
+	shapes.push_back(SimShape(0, { 200, 200, }, 0, { 50, 50 },
 		0, 3, 0, 1, 100));
 	shapeBuffer = StructuredBuffer(shapes.data(), shapes.size(), sizeof(SimShape));
 
