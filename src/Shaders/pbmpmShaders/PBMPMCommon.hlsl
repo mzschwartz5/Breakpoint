@@ -83,9 +83,9 @@ struct BukkitThreadData {
 
 struct SimShape {
 	int id;
-	float2 position;
+	float3 position;
 	float rotation;
-	float2 halfSize;
+	float3 halfSize;
 
 	int shapeType;
 	int functionality;
@@ -196,7 +196,42 @@ float2x2 rot(float angle)
     return float2x2(c, -s, s, c);
 }
 
-
+float3x3 rotX(float theta)
+{
+    float ct = cos(theta);
+    float st = sin(theta);
+    return float3x3(
+        1, 0, 0,
+        0, ct, -st,
+        0, st, ct
+    );
+}
+float3x3 rotY(float theta)
+{
+    float ct = cos(theta);
+    float st = sin(theta);
+    return float3x3(
+        ct, 0, st,
+        0, 1, 0,
+        -st, 0, ct
+    );
+}
+float3x3 rotZ(float theta)
+{
+    float ct = cos(theta);
+    float st = sin(theta);
+    return float3x3(
+        ct, -st, 0,
+        st, ct, 0,
+        0, 0, 1
+    );
+}
+// Function to create a rotation matrix from Euler angles
+float3x3 rot3D(float3 angles) // angles in radians (x, y, z)
+{
+    // Compose rotations in ZYX order
+    return mul(rotZ(angles.z), mul(rotY(angles.y), rotX(angles.x)));
+}
 
 struct CollideResult
 {
@@ -206,14 +241,14 @@ struct CollideResult
     float2 pointOnCollider;
 };
 
-CollideResult collide(SimShape shape, float2 pos)
+CollideResult collide(SimShape shape, float3 pos)
 {
     CollideResult result;
     if (shape.shapeType == ShapeTypeCircle)
     {
-        float2 offset = shape.position - pos;
+        float3 offset = shape.position - pos;
         float offsetLen = length(offset);
-        float2 normal = offset * (offsetLen == 0 ? 0 : 1.0 / offsetLen);
+        float3 normal = offset * (offsetLen == 0 ? 0 : 1.0 / offsetLen);
         result.collides = offsetLen <= shape.radius;
         result.penetration = -(offsetLen - shape.radius);
         result.normal = normal;
@@ -221,18 +256,19 @@ CollideResult collide(SimShape shape, float2 pos)
     }
     else if (shape.shapeType == ShapeTypeBox)
     {
-        float2 offset = pos - shape.position;
-        float2x2 R = rot(shape.rotation / 180.0f * 3.14159f); // Assuming `rot` is a 2D rotation matrix function
-        float2 rotOffset = mul(R, offset); // Matrix-vector multiplication
+        float3 offset = pos - shape.position;
+        float3x3 R = rot3D(float3(0, 0, shape.rotation / 180.0f * 3.14159f)); // Assuming `rot` is a 2D rotation matrix function
+        float3 rotOffset = mul(R, offset); // Matrix-vector multiplication
         float sx = sign(rotOffset.x);
         float sy = sign(rotOffset.y);
-        float2 penetration = -(abs(rotOffset) - shape.halfSize);
-        float2 normal = mul(transpose(R), 
-            (penetration.y < penetration.x ? float2(sx, 0) : float2(0, sy)));
+		float sz = sign(rotOffset.z);
+        float3 penetration = -(abs(rotOffset) - shape.halfSize);
+        float3 normal = mul(transpose(R), 
+            (penetration.y < penetration.x ? float3(sx, 0, 0) : float3(0, sy, 0)));
 
-        float minPen = min(penetration.x, penetration.y);
+        float minPen = min(min(penetration.x, penetration.y), penetration.z);
 
-        float2 pointOnBox = shape.position + mul(transpose(R), clamp(rotOffset, -shape.halfSize, shape.halfSize));
+        float3 pointOnBox = shape.position + mul(transpose(R), clamp(rotOffset, -shape.halfSize, shape.halfSize));
 
         result.collides = minPen > 0;
         result.penetration = minPen;
@@ -243,8 +279,8 @@ CollideResult collide(SimShape shape, float2 pos)
     {
         result.collides = false;
         result.penetration = 0.0;
-        result.normal = float2(0, 0);
-        result.pointOnCollider = float2(0, 0);
+        result.normal = float3(0, 0, 0);
+        result.pointOnCollider = float3(0, 0, 0);
     }
 
     return result;

@@ -66,42 +66,6 @@ float tr(float2x2 m)
 float tr3D(float3x3 m) {
     return m[0][0] + m[1][1] + m[2][2];
 }
-float3x3 rotX(float theta)
-{
-    float ct = cos(theta);
-    float st = sin(theta);
-    return float3x3(
-        1, 0, 0,
-        0, ct, -st,
-        0, st, ct
-    );
-}
-float3x3 rotY(float theta)
-{
-    float ct = cos(theta);
-    float st = sin(theta);
-    return float3x3(
-        ct, 0, st,
-        0, 1, 0,
-        -st, 0, ct
-    );
-}
-float3x3 rotZ(float theta)
-{
-    float ct = cos(theta);
-    float st = sin(theta);
-    return float3x3(
-        ct, -st, 0,
-        st, ct, 0,
-        0, 0, 1
-    );
-}
-// Function to create a rotation matrix from Euler angles
-float3x3 rot3D(float3 angles) // angles in radians (x, y, z)
-{
-    // Compose rotations in ZYX order
-    return mul(rotZ(angles.z), mul(rotY(angles.y), rotX(angles.x)));
-}
 
 // Function to compute the inverse of a 3x3 matrix
 float3x3 inverse(float3x3 m) {

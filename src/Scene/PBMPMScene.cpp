@@ -194,6 +194,7 @@ void PBMPMScene::resetBuffers(bool resetGrids) {
 void PBMPMScene::doEmission(StructuredBuffer* gridBuffer) {
 	unsigned int threadGroupCountX = std::floor((constants.gridSize.x + GridDispatchSize - 1) / GridDispatchSize);
 	unsigned int threadGroupCountY = std::floor((constants.gridSize.y + GridDispatchSize - 1) / GridDispatchSize);
+	unsigned int threadGroupCountZ = std::floor((constants.gridSize.z + GridDispatchSize - 1) / GridDispatchSize);
 
 	auto emissionCmd = emissionPipeline.getCommandList();
 	auto indirectCmd = setIndirectArgsPipeline.getCommandList();
@@ -215,7 +216,7 @@ void PBMPMScene::doEmission(StructuredBuffer* gridBuffer) {
 	emissionCmd->SetComputeRootDescriptorTable(2, particleBuffer.getUAVGPUDescriptorHandle());
 	emissionCmd->SetComputeRootDescriptorTable(3, gridBuffer->getSRVGPUDescriptorHandle());
 
-	emissionCmd->Dispatch(threadGroupCountX, threadGroupCountY, 1);
+	emissionCmd->Dispatch(threadGroupCountX, threadGroupCountY, threadGroupCountZ);
 
 	// Transition grid back to UAV
 	D3D12_RESOURCE_BARRIER gridBufferBarrierBack = CD3DX12_RESOURCE_BARRIER::Transition(gridBuffer->getBuffer(), D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_UNORDERED_ACCESS);
@@ -416,7 +417,7 @@ void PBMPMScene::constructScene() {
 	auto computeId = g2p2gPipeline.getCommandListID();
 
 	// Create Constant Data
-	constants = { {512, 512, 512}, 0.01, 2.5, 1.5, 0.01,
+	constants = { {128, 128, 128}, 0.01, 2.5, 1.5, 0.01,
 		(unsigned int)std::ceil(std::pow(10, 7)),
 		1, 4, 30, 1, 0, 0, 0, 0, 0, 0, 10, 0.9 };
 
@@ -459,7 +460,7 @@ void PBMPMScene::constructScene() {
 
 	// Shape Buffer
 	std::vector<SimShape> shapes;
-	shapes.push_back(SimShape(0, { 200, 200, }, 0, { 50, 50 },
+	shapes.push_back(SimShape(0, { 50, 50, 50}, 0, { 10, 10, 10 },
 		0, 3, 0, 1, 100));
 	shapeBuffer = StructuredBuffer(shapes.data(), shapes.size(), sizeof(SimShape));
 
@@ -579,25 +580,6 @@ void PBMPMScene::compute() {
 		constants.iteration = 0;
 		updateSimUniforms(0);
 		
-		// Copy particle data from the GPU
-		//std::vector<PBMPMParticle> particles;
-		//particles.resize(maxParticles);
-		//particleBuffer.copyDataFromGPU(*context, particles.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//// Copy free indices from the GPU
-		//std::vector<int> freeIndices;
-		//freeIndices.resize(1 + maxParticles);
-		//particleFreeIndicesBuffer.copyDataFromGPU(*context, freeIndices.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		// Copy the three grids from GPU
-		//gridBuffers[0].copyDataFromGPU(*context, gridBufferData.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//// second grid
-		//gridBuffers[1].copyDataFromGPU(*context, gridBufferData2.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
-		//// third grid
-		//gridBuffers[2].copyDataFromGPU(*context, gridBufferData3.data(), g2p2gPipeline.getCommandList(), D3D12_RESOURCE_STATE_UNORDERED_ACCESS, g2p2gPipeline.getCommandListID());
-
 		StructuredBuffer* currentGrid = &gridBuffers[0];
 		StructuredBuffer* nextGrid = &gridBuffers[1];
 		StructuredBuffer* nextNextGrid = &gridBuffers[2];

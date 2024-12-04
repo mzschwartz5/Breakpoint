@@ -54,9 +54,9 @@ struct PBMPMConstants {
 
 struct SimShape {
 	int id;
-	XMFLOAT2 position;
+	XMFLOAT3 position;
 	float rotation;
-	XMFLOAT2 halfSize;
+	XMFLOAT3 halfSize;
 
 	int shapeType;
 	int functionality;
