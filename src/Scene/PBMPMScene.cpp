@@ -424,9 +424,9 @@ void PBMPMScene::constructScene() {
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	float radius = 2;
+	float radius = 5;
 	// Create Vertex & Index Buffer
-	auto circleData = generateCircle(radius, 32);
+	auto circleData = generateSphere(radius, 16, 16);
 	indexCount = (unsigned int)circleData.second.size();
 	//float spacing = radius * 2.1;
 
@@ -460,7 +460,7 @@ void PBMPMScene::constructScene() {
 
 	// Shape Buffer
 	std::vector<SimShape> shapes;
-	shapes.push_back(SimShape(0, { 50, 50, 50}, 0, { 10, 10, 10 },
+	shapes.push_back(SimShape(0, { 50, 50, 50}, 0, { 5, 5, 5 },
 		0, 3, 0, 1, 100));
 	shapeBuffer = StructuredBuffer(shapes.data(), shapes.size(), sizeof(SimShape));
 

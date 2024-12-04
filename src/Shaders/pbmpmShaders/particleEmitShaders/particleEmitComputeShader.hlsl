@@ -101,7 +101,7 @@ void addParticle(float3 position, float material, float volume, float density, f
     g_particles[particleIndex] = newParticle;
 }
 
-[numthreads(GridDispatchSize, GridDispatchSize, 1)]
+[numthreads(GridDispatchSize, GridDispatchSize, GridDispatchSize)]
 void main(uint3 id : SV_DispatchThreadID)
 {
     if (!insideGuardian(id.xyz, g_simConstants.gridSize, GuardianSize + 1))
