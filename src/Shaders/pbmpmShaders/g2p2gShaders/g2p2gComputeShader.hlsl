@@ -103,15 +103,6 @@ float3x3 rot3D(float3 angles) // angles in radians (x, y, z)
     return mul(rotZ(angles.z), mul(rotY(angles.y), rotX(angles.x)));
 }
 
-// Function to create a 2x2 rotation matrix
-float2x2 rot(float theta)
-{
-    float ct = cos(theta);
-    float st = sin(theta);
-
-    return float2x2(ct, st, -st, ct);
-}
-
 // Function to compute the inverse of a 3x3 matrix
 float3x3 inverse(float3x3 m) {
     float d = det(m);
@@ -152,36 +143,12 @@ float2x2 truncate(float4x4 m)
     return float2x2(m[0].xy, m[1].xy);
 }
 
-float4x4 expandToFloat4x4(float2x2 m)
-{
-    return float4x4(
-        m[0][0], m[0][1], 0.0, 0.0,
-        m[1][0], m[1][1], 0.0, 0.0,
-        0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 0.0
-    );
-}
-
-float4x4 expandToFloat4x4(float3x3 m)
-{
-    return float4x4(
-        m[0][0], m[0][1], m[0][2], 0.0,
-        m[1][0], m[1][1], m[1][2], 0.0,
-        m[2][0], m[2][1], m[2][2], 0.0,
-        0.0, 0.0, 0.0, 0.0
-    );
-}
-
 struct SVDResult
 {
     float3x3 U;
     float3 Sigma;
     float3x3 Vt;
 };
-
-// Define constants for identity and zero matrices
-static const float3x3 Identity = float3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);
-static const float3x3 ZeroMatrix = float3x3(0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 float3x3 givensRotation(float c, float s, int i, int j, int n) {
     float3x3 G = Identity;
@@ -497,13 +464,13 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 particle.position += particle.displacement;
                 
                 // Mouse Iteraction Here
-                if (g_simConstants.mouseActivation > 0)
+                /*if (g_simConstants.mouseActivation > 0)
                 {
-                    float2 offset = particle.position - g_simConstants.mousePosition;
+                    float3 offset = particle.position - g_simConstants.mousePosition;
                     float lenOffset = max(length(offset), 0.0001);
                     if (lenOffset < g_simConstants.mouseRadius)
                     {
-                        float2 normOffset = offset / lenOffset;
+                        float3 normOffset = offset / lenOffset;
 
                         if (g_simConstants.mouseFunction == 0)
                         {
@@ -514,7 +481,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                             particle.displacement = g_simConstants.mouseVelocity * g_simConstants.deltaTime;
                         }
                     }
-                }
+                }*/
                 
                 // Gravity Acceleration is normalized to the vertical size of the window
                 particle.displacement.y -= float(g_simConstants.gridSize.y) * g_simConstants.gravityStrength * g_simConstants.deltaTime * g_simConstants.deltaTime;

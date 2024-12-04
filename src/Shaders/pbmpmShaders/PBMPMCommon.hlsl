@@ -55,10 +55,9 @@ struct PBMPMConstants {
     unsigned int mouseVelocity;
 };
 
-
 // Define constants for identity and zero matrices
-static const float2x2 Identity = float2x2(1, 0, 0, 1);
-static const float2x2 ZeroMatrix = float2x2(0, 0, 0, 0);
+static const float3x3 Identity = float3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);
+static const float3x3 ZeroMatrix = float3x3(0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 struct Particle {
 	float3 position; //2->3
@@ -249,4 +248,25 @@ CollideResult collide(SimShape shape, float2 pos)
     }
 
     return result;
+}
+
+float4x4 expandToFloat4x4(float2x2 m)
+{
+    return float4x4(
+        m[0][0], m[0][1], 0.0, 0.0,
+        m[1][0], m[1][1], 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0,
+        0.0, 0.0, 0.0, 0.0
+    );
+}
+
+
+float4x4 expandToFloat4x4(float3x3 m)
+{
+    return float4x4(
+        m[0][0], m[0][1], m[0][2], 0.0,
+        m[1][0], m[1][1], m[1][2], 0.0,
+        m[2][0], m[2][1], m[2][2], 0.0,
+        0.0, 0.0, 0.0, 0.0
+    );
 }
