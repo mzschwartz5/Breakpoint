@@ -26,7 +26,7 @@ int main() {
 
     PBMPMConstants pbmpmConstants{ {512, 512}, 0.01F, 2.5F, 1.5F, 0.01F,
         (unsigned int)std::ceil(std::pow(10, 7)),
-        1, 4, 30, 0, 0,  0, 0, 0, 0, 5, 0.9F };
+        1, 8, 30, 0, 0,  0, 0, 0, 0, 5, 0.9F };
     PBMPMConstants pbmpmTempConstants = pbmpmConstants;
 
     while (!Window::get().getShouldClose()) {
@@ -73,10 +73,24 @@ int main() {
 
         mouse->SetMode(mState.leftButton ? Mouse::MODE_RELATIVE : Mouse::MODE_ABSOLUTE);
 
-        if (mState.positionMode == Mouse::MODE_RELATIVE && kState.LeftControl) {
+        if (mState.positionMode == Mouse::MODE_RELATIVE && kState.LeftShift) {
             camera->rotateOnX(-mState.y * 0.01f);
             camera->rotateOnY(mState.x * 0.01f);
             camera->rotate();
+        }
+
+        if (mState.rightButton) {
+            //enable mouse force
+            pbmpmTempConstants.mouseActivation = 1;
+            POINT cursorPos;
+            GetCursorPos(&cursorPos);
+            pbmpmTempConstants.mousePosition = XMUINT2{ (unsigned int)cursorPos.x, (unsigned int)cursorPos.y };
+            pbmpmTempConstants.mouseFunction = 0;
+            pbmpmTempConstants.mouseRadius = 1000;
+            scene.updatePBMPMConstants(pbmpmTempConstants);
+        }
+        else {
+            pbmpmTempConstants.mouseActivation = 0;
         }
 
         //update camera
