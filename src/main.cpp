@@ -109,22 +109,22 @@ int main() {
         scene.draw();
 
         //set up ImGUI for frame
-        //ImGui_ImplDX12_NewFrame();
-        //ImGui_ImplWin32_NewFrame();
-        //ImGui::NewFrame();
+        ImGui_ImplDX12_NewFrame();
+        ImGui_ImplWin32_NewFrame();
+        ImGui::NewFrame();
 
         //draw ImGUI
-        //drawImGUIWindow(pbmpmTempConstants, io);
+        drawImGUIWindow(pbmpmTempConstants, io);
 
         //render ImGUI
-        //ImGui::Render();
+        ImGui::Render();
         if (!PBMPMScene::constantsEqual(pbmpmTempConstants, pbmpmConstants)) {
-            //scene.updatePBMPMConstants(pbmpmTempConstants);
-            //pbmpmConstants = pbmpmTempConstants;
+            scene.updatePBMPMConstants(pbmpmTempConstants);
+            pbmpmConstants = pbmpmTempConstants;
         }
 
         renderPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
-        //ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
+        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
 
         Window::get().endFrame(renderPipeline->getCommandList());
 

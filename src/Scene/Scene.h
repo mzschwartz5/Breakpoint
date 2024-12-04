@@ -39,7 +39,7 @@ private:
 	unsigned int pbmpmIC;
 	PBMPMScene pbmpmScene;
 
-	/*RenderPipeline fluidRP;
+	RenderPipeline fluidRP;
 	ComputePipeline bilevelUniformGridCP;
 	ComputePipeline surfaceBlockDetectionCP;
 	ComputePipeline surfaceCellDetectionCP;
@@ -47,7 +47,7 @@ private:
 	ComputePipeline surfaceVertexDensityCP;
 	ComputePipeline surfaceVertexNormalCP;
 	MeshPipeline fluidMeshPipeline;
-	FluidScene fluidScene;*/
+	FluidScene fluidScene;
 
 	RenderScene scene;
 
