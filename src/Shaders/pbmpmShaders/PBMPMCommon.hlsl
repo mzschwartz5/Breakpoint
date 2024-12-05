@@ -2,7 +2,7 @@
 
 #define ParticleDispatchSize 64
 #define GridDispatchSize 8
-#define BukkitSize 6
+#define BukkitSize 1
 #define BukkitHaloSize 1
 #define GuardianSize 3
 
@@ -21,7 +21,7 @@
 
 #define TotalBukkitEdgeLength (BukkitSize + BukkitHaloSize * 2)
 #define TileDataSizePerEdge (TotalBukkitEdgeLength * 5) //4->5
-#define TileDataSize (TileDataSizePerEdge * TileDataSizePerEdge)
+#define TileDataSize (TileDataSizePerEdge * TileDataSizePerEdge * TileDataSizePerEdge)
 
 struct PBMPMConstants {
 	uint3 gridSize; //2 -> 3
@@ -237,8 +237,8 @@ struct CollideResult
 {
     bool collides;
     float penetration;
-    float2 normal;
-    float2 pointOnCollider;
+    float3 normal;
+    float3 pointOnCollider;
 };
 
 CollideResult collide(SimShape shape, float3 pos)

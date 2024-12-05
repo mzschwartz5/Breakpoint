@@ -53,7 +53,7 @@ void PBMPMScene::createBukkitSystem() {
 	bukkitSystem.particleData = StructuredBuffer(particleData.data(), particleData.size(), sizeof(int));
 
 	std::vector<BukkitThreadData> threadData;
-	threadData.resize(40 * bukkitCountX * bukkitCountY * bukkitCountZ); //idk why this is 40
+	threadData.resize(5 * 10 * bukkitCountX * bukkitCountY * bukkitCountZ); //ik why this is 50
 	bukkitSystem.threadData = StructuredBuffer(threadData.data(), threadData.size(), sizeof(BukkitThreadData));
 
 	XMUINT4 allocator = { 0, 0, 0, 0 };
@@ -142,7 +142,7 @@ void PBMPMScene::resetBuffers(bool resetGrids) {
 	bufferClearPipeline.getCommandList()->Dispatch((particleDataSize + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE, 1, 1);
 
 	// Reset ThreadData:
-	UINT threadDataSize = 40 * bukkitSystem.count; // The total number of elements in the buffer - this was also 40
+	UINT threadDataSize = 5 * 10 * bukkitSystem.count; // The total number of elements in the buffer - this was also 40
 	bufferClearPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 1, &threadDataSize, 0);
 	bufferClearPipeline.getCommandList()->SetComputeRootDescriptorTable(1, bukkitSystem.threadData.getUAVGPUDescriptorHandle());
 	bufferClearPipeline.getCommandList()->Dispatch((threadDataSize + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE, 1, 1);
@@ -417,14 +417,14 @@ void PBMPMScene::constructScene() {
 	auto computeId = g2p2gPipeline.getCommandListID();
 
 	// Create Constant Data
-	constants = { {128, 128, 128}, 0.01, 2.5, 1.5, 0.01,
+	constants = { {128, 128, 128}, 0.001, 2.5, 1.5, 0.01,
 		(unsigned int)std::ceil(std::pow(10, 7)),
 		1, 4, 30, 1, 0, 0, 0, 0, 0, 0, 10, 0.9 };
 
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	float radius = 5;
+	float radius = 2;
 	// Create Vertex & Index Buffer
 	auto circleData = generateSphere(radius, 16, 16);
 	indexCount = (unsigned int)circleData.second.size();
@@ -460,7 +460,7 @@ void PBMPMScene::constructScene() {
 
 	// Shape Buffer
 	std::vector<SimShape> shapes;
-	shapes.push_back(SimShape(0, { 50, 50, 50}, 0, { 5, 5, 5 },
+	shapes.push_back(SimShape(0, { 50, 50, 50}, 0, { 3, 3, 3 },
 		0, 3, 0, 1, 100));
 	shapeBuffer = StructuredBuffer(shapes.data(), shapes.size(), sizeof(SimShape));
 

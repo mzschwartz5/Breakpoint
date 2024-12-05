@@ -109,7 +109,6 @@ void main(uint3 id : SV_DispatchThreadID)
         return;
     }
 
-    uint2 gridSize = g_simConstants.gridSize;
     float3 pos = float3(id.xyz);
 
     QuadraticWeightInfo weightInfo = quadraticWeightInit(pos);

@@ -235,10 +235,10 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     int3 localGridOrigin = BukkitSize * int3(threadData.bukkitX, threadData.bukkitY, threadData.bukkitZ)
         - int3(BukkitHaloSize, BukkitHaloSize, BukkitHaloSize);
     int3 idInGroup = int3(
-        int(indexInGroup) % TotalBukkitEdgeLength,
-        (int(indexInGroup) / TotalBukkitEdgeLength) % TotalBukkitEdgeLength,
-        int(indexInGroup) / (TotalBukkitEdgeLength * TotalBukkitEdgeLength)
-    );
+        indexInGroup % TotalBukkitEdgeLength,
+        int(indexInGroup / TotalBukkitEdgeLength),
+        int(indexInGroup / (TotalBukkitEdgeLength * TotalBukkitEdgeLength)));
+   
     int3 gridVertex = idInGroup + localGridOrigin;
     float3 gridPosition = float3(gridVertex);
 
@@ -414,7 +414,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                     // ending up with det(F^n+1) = (1+tr(D))*det(F^n)
                     // Then we directly set particle.liquidDensity to reflect the approximately integrated volume.
                     // The liquid material does not actually use the deformation gradient matrix.
-                    particle.liquidDensity *= (tr(particle.deformationDisplacement) + 1.0);
+                    particle.liquidDensity *= (tr3D(particle.deformationDisplacement) + 1.0);
 
                     // Safety clamp to avoid instability with very small densities.
                     particle.liquidDensity = max(particle.liquidDensity, 0.05);
@@ -469,7 +469,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 float3x3 deviatoric = -1.0 * (particle.deformationDisplacement + transpose(particle.deformationDisplacement));
                 particle.deformationDisplacement += expandToFloat4x4(g_simConstants.liquidViscosity * 0.5 * deviatoric);
 
-                float alpha = 0.5 * (1.0 / particle.liquidDensity - tr(particle.deformationDisplacement) - 1.0);
+                float alpha = 0.5 * (1.0 / particle.liquidDensity - tr3D(particle.deformationDisplacement) - 1.0);
                 particle.deformationDisplacement += expandToFloat4x4(g_simConstants.liquidRelaxation * alpha * Identity);
             }
 
