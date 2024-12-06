@@ -154,6 +154,7 @@ private:
 	StructuredBuffer particleSimDispatch;
 	StructuredBuffer renderDispatchBuffer;
 	StructuredBuffer shapeBuffer;
+	StructuredBuffer tempTileDataBuffer;
 
 	std::array<StructuredBuffer, 3> gridBuffers;
 
