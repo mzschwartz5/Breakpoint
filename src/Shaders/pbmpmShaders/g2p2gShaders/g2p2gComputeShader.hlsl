@@ -300,6 +300,27 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
             gridDisplacement = tangential * (1.0 - g_simConstants.borderFriction);
         }
 
+        /*if (projectedDifference.x != 0)
+        {
+            gridDisplacement.x = 0;
+            gridDisplacement.y = lerp(gridDisplacement.y, 0, g_simConstants.borderFriction);
+            gridDisplacement.z = lerp(gridDisplacement.z, 0, g_simConstants.borderFriction);
+        }
+
+        if (projectedDifference.y != 0)
+        {
+            gridDisplacement.y = 0;
+            gridDisplacement.x = lerp(gridDisplacement.x, 0, g_simConstants.borderFriction);
+            gridDisplacement.z = lerp(gridDisplacement.z, 0, g_simConstants.borderFriction);
+        }
+
+        if (projectedDifference.z != 0)
+        {
+            gridDisplacement.z = 0;
+            gridDisplacement.x = lerp(gridDisplacement.x, 0, g_simConstants.borderFriction);
+            gridDisplacement.y = lerp(gridDisplacement.y, 0, g_simConstants.borderFriction);
+        }*/
+
         dx = gridDisplacement.x;
         dy = gridDisplacement.y;
         dz = gridDisplacement.z;
@@ -548,16 +569,16 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
         InterlockedAdd(g_gridDst[gridVertexAddress + 4], vi);
     
     // Clear the entries in g_gridToBeCleared
-        //g_gridToBeCleared[gridVertexAddress + 0] = 0;
-        //g_gridToBeCleared[gridVertexAddress + 1] = 0;
-        //g_gridToBeCleared[gridVertexAddress + 2] = 0;
-        //g_gridToBeCleared[gridVertexAddress + 3] = 0;
-        //g_gridToBeCleared[gridVertexAddress + 4] = 0;
-		g_gridToBeCleared[(groupId.x * TileDataSize) + tileDataIndex + 0] = 0;
+        g_gridToBeCleared[gridVertexAddress + 0] = 0;
+        g_gridToBeCleared[gridVertexAddress + 1] = 0;
+        g_gridToBeCleared[gridVertexAddress + 2] = 0;
+        g_gridToBeCleared[gridVertexAddress + 3] = 0;
+        g_gridToBeCleared[gridVertexAddress + 4] = 0;
+		/*g_gridToBeCleared[(groupId.x * TileDataSize) + tileDataIndex + 0] = 0;
 		g_gridToBeCleared[(groupId.x * TileDataSize) + tileDataIndex + 1] = 0;
 		g_gridToBeCleared[(groupId.x * TileDataSize) + tileDataIndex + 2] = 0;
 		g_gridToBeCleared[(groupId.x * TileDataSize) + tileDataIndex + 3] = 0;
-		g_gridToBeCleared[(groupId.x * TileDataSize) + tileDataIndex + 4] = 0;
+		g_gridToBeCleared[(groupId.x * TileDataSize) + tileDataIndex + 4] = 0;*/
     }
 
 }
