@@ -13,7 +13,7 @@
 
 const unsigned int ParticleDispatchSize = 64;
 const unsigned int GridDispatchSize = 8;
-const unsigned int BukkitSize = 1;
+const unsigned int BukkitSize = 2;
 const unsigned int BukkitHaloSize = 1;
 const unsigned int GuardianSize = 3;
 

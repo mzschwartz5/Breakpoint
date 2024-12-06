@@ -417,7 +417,7 @@ void PBMPMScene::constructScene() {
 	auto computeId = g2p2gPipeline.getCommandListID();
 
 	// Create Constant Data
-	constants = { {128, 128, 128}, 0.001, 2.5, 1.5, 0.01,
+	constants = { {128, 128, 128}, 0.1, 2.5, 1.5, 0.01,
 		(unsigned int)std::ceil(std::pow(10, 7)),
 		1, 4, 30, 1, 0, 0, 0, 0, 0, 0, 10, 0.9 };
 
@@ -460,7 +460,7 @@ void PBMPMScene::constructScene() {
 
 	// Shape Buffer
 	std::vector<SimShape> shapes;
-	shapes.push_back(SimShape(0, { 50, 50, 50}, 0, { 3, 3, 3 },
+	shapes.push_back(SimShape(0, { 50, 50, 50}, 0, { 5, 5, 5 },
 		0, 3, 0, 1, 100));
 	shapeBuffer = StructuredBuffer(shapes.data(), shapes.size(), sizeof(SimShape));
 
@@ -649,6 +649,22 @@ void PBMPMScene::compute() {
 
 			// Reinitialize command list
 			context->resetCommandList(g2p2gPipeline.getCommandListID());
+
+			//// Clear nextNextGrid
+			//bufferClearPipeline.getCommandList()->SetPipelineState(bufferClearPipeline.getPSO());
+			//bufferClearPipeline.getCommandList()->SetComputeRootSignature(bufferClearPipeline.getRootSignature());
+
+			//bufferClearPipeline.getCommandList()->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
+
+			//UINT THREAD_GROUP_SIZE = 256;
+			//UINT numGridInts = constants.gridSize.x * constants.gridSize.y * constants.gridSize.z * sizeof(UINT); // The total number of elements in the buffers
+			//bufferClearPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 1, &numGridInts, 0);
+			//bufferClearPipeline.getCommandList()->SetComputeRootDescriptorTable(1, nextNextGrid->getUAVGPUDescriptorHandle());
+			//bufferClearPipeline.getCommandList()->Dispatch((numGridInts + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE, 1, 1);
+
+			//context->executeCommandList(bufferClearPipeline.getCommandListID());
+			//context->signalAndWaitForFence(fence, fenceValue);
+			//context->resetCommandList(bufferClearPipeline.getCommandListID());
 		}
 
 		// TODO: Add Emission function
