@@ -236,7 +236,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
         - int3(BukkitHaloSize, BukkitHaloSize, BukkitHaloSize);
     int3 idInGroup = int3(
         indexInGroup % TotalBukkitEdgeLength,
-        int(indexInGroup / TotalBukkitEdgeLength),
+        int(indexInGroup / TotalBukkitEdgeLength) % TotalBukkitEdgeLength,
         int(indexInGroup / (TotalBukkitEdgeLength * TotalBukkitEdgeLength)));
    
     int3 gridVertex = idInGroup + localGridOrigin;
@@ -321,11 +321,12 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     InterlockedExchange(g_gridToBeCleared[(groupId.x * TileDataSize) + tileDataIndex + 4], encodeFixedPoint(v, g_simConstants.fixedPointMultiplier), originalValue);
     
     // Make sure all values in destination grid are 0
-    InterlockedExchange(s_tileDataDst[tileDataIndex], 0, originalValue);
-    InterlockedExchange(s_tileDataDst[tileDataIndex + 1], 0, originalValue);
-    InterlockedExchange(s_tileDataDst[tileDataIndex + 2], 0, originalValue);
-    InterlockedExchange(s_tileDataDst[tileDataIndex + 3], 0, originalValue);
-    InterlockedExchange(s_tileDataDst[tileDataIndex + 4], 0, originalValue);
+    s_tileDataDst[tileDataIndex] = 0;
+    s_tileDataDst[tileDataIndex + 1] = 0;
+    s_tileDataDst[tileDataIndex + 2] = 0;
+    s_tileDataDst[tileDataIndex + 3] = 0;
+    s_tileDataDst[tileDataIndex + 4] = 0;
+
     // Synchronize all threads in the group
     GroupMemoryBarrierWithGroupSync();
     
@@ -406,7 +407,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 }
             }
             
-            // Save the deformation gradient as a 4x4 matrix by adding the identity matrix to the rest
+            // Save the deformation gradient as a 3x3 matrix by adding the identity matrix to the rest
             particle.deformationDisplacement = B * 4.0;
             particle.displacement = d;
             
@@ -533,13 +534,11 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
         uint gridVertexAddress = gridVertexIndex(uint3(gridVertex), g_simConstants.gridSize);
 
         // Atomic loads from shared memory using InterlockedAdd with 0
-
-        int dxi, dyi, dzi, wi, vi;
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 0], 0, dxi);
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 1], 0, dyi);
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 2], 0, dzi);
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 3], 0, wi);
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 4], 0, vi);
+        int dxi = s_tileDataDst[tileDataIndex + 0];
+        int dyi = s_tileDataDst[tileDataIndex + 1];
+        int dzi = s_tileDataDst[tileDataIndex + 2];
+        int wi = s_tileDataDst[tileDataIndex + 3];
+        int vi = s_tileDataDst[tileDataIndex + 4];
 
     // Atomic adds to the destination buffer
         InterlockedAdd(g_gridDst[gridVertexAddress + 0], dxi);
