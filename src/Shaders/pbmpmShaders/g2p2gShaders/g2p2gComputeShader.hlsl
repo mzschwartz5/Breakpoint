@@ -407,7 +407,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
             }
             
             // Save the deformation gradient as a 4x4 matrix by adding the identity matrix to the rest
-            particle.deformationDisplacement = expandToFloat4x4(B) * 4.0;
+            particle.deformationDisplacement = B * 4.0;
             particle.displacement = d;
             
             // Integration
@@ -430,7 +430,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 }
                 else
                 {
-                    particle.deformationDisplacement = expandToFloat4x4((Identity + particle.deformationDisplacement) * particle.deformationGradient);
+                    particle.deformationDisplacement = (Identity + particle.deformationDisplacement) * particle.deformationGradient;
                 }
                 
                 // Update particle position
@@ -476,10 +476,10 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
             {
                 // Simple liquid viscosity: just remove deviatoric part of the deformation displacement
                 float3x3 deviatoric = -1.0 * (particle.deformationDisplacement + transpose(particle.deformationDisplacement));
-                particle.deformationDisplacement += expandToFloat4x4(g_simConstants.liquidViscosity * 0.5 * deviatoric);
+                particle.deformationDisplacement += g_simConstants.liquidViscosity * 0.5 * deviatoric;
 
                 float alpha = 0.5 * (1.0 / particle.liquidDensity - tr3D(particle.deformationDisplacement) - 1.0);
-                particle.deformationDisplacement += expandToFloat4x4(g_simConstants.liquidRelaxation * alpha * Identity);
+                particle.deformationDisplacement += g_simConstants.liquidRelaxation * alpha * Identity;
             }
 
             // P2G

@@ -12,13 +12,13 @@ struct Particle
 	float liquidDensity;
 	float3 displacement; //2->3
 	float mass;
+	float3x3 deformationGradient;
 	float material;
 	float volume;
 	float lambda;
+	float3x3 deformationDisplacement;
 	float logJp;
 	float enabled;
-	float4x4 deformationGradient;
-	float4x4 deformationDisplacement;
 };
 
 // Particle positions as an SRV at register t0

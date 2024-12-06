@@ -70,13 +70,13 @@ struct PBMPMParticle {
 	float liquidDensity;
 	XMFLOAT3 displacement; //2->3
 	float mass;
+	XMFLOAT3X3 deformationGradient;
 	float material;
 	float volume;
 	float lambda;
+	XMFLOAT3X3 deformationDisplacement;
 	float logJp;
 	float enabled;
-	XMFLOAT4X4 deformationGradient;
-	XMFLOAT4X4 deformationDisplacement;
 };
 
 struct BukkitSystem {

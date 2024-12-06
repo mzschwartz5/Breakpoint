@@ -54,8 +54,8 @@ Particle createParticle(float3 position, float material, float mass, float volum
 
     particle.position = position;
     particle.displacement = float3(0, 0, 0);
-    particle.deformationGradient = expandToFloat4x4(Identity);
-    particle.deformationDisplacement = expandToFloat4x4(ZeroMatrix);
+    particle.deformationGradient = Identity;
+    particle.deformationDisplacement = ZeroMatrix;
 
     particle.liquidDensity = 1.0;
     particle.mass = mass;
