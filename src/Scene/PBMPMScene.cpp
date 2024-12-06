@@ -167,7 +167,7 @@ void PBMPMScene::resetBuffers(bool resetGrids) {
 	// Reset grid buffers
 	if (resetGrids) {
 		for (int i = 0; i < 3; i++) {
-			UINT numGridInts = constants.gridSize.x * constants.gridSize.y * constants.gridSize.z * sizeof(UINT); // The total number of elements in the buffers
+			UINT numGridInts = constants.gridSize.x * constants.gridSize.y * constants.gridSize.z * 5; // The total number of elements in the buffers
 			bufferClearPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 1, &numGridInts, 0);
 			bufferClearPipeline.getCommandList()->SetComputeRootDescriptorTable(1, gridBuffers[i].getUAVGPUDescriptorHandle());
 			bufferClearPipeline.getCommandList()->Dispatch((numGridInts + THREAD_GROUP_SIZE - 1) / THREAD_GROUP_SIZE, 1, 1);
