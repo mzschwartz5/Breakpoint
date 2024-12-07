@@ -66,8 +66,6 @@ struct SimShape {
 };
 
 struct PBMPMParticle {
-	XMFLOAT3 position; //2->3
-	float liquidDensity;
 	XMFLOAT3 displacement; //2->3
 	float mass;
 	XMFLOAT3X3 deformationGradient;
@@ -146,6 +144,9 @@ private:
 	unsigned int indexCount = 0;
 
 	unsigned int substepIndex = 0;
+
+	// Particle Buffers
+	StructuredBuffer positionBuffer;
 
 	// Scene Buffers
 	StructuredBuffer particleBuffer;

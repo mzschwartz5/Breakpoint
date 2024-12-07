@@ -8,6 +8,7 @@ ConstantBuffer<PBMPMConstants> g_simConstants : register(b0);
 // CBV, UAVs and SRVs
 StructuredBuffer<uint> g_particleCount : register(t0);
 StructuredBuffer<Particle> g_particles : register(t1);
+StructuredBuffer<float4> g_positions : register(t2);
 RWStructuredBuffer<uint> g_bukkitCounts : register(u0);
 
 // Compute Shader Entry Point
@@ -31,7 +32,7 @@ void main(uint3 id : SV_DispatchThreadID)
     }
 
     // Get particle position
-    float3 position = particle.position;
+    float3 position = g_positions[id.x].xyz;
 
     // Calculate the bukkit ID for this particle
     int3 particleBukkit = positionToBukkitId(position);

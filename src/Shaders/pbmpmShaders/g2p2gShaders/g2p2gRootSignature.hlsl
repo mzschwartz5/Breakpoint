@@ -6,5 +6,6 @@
 "DescriptorTable(SRV(t2, numDescriptors=1))," /* Table for curr grid */ \
 "DescriptorTable(UAV(u2, numDescriptors=1))," /* Table for next grid */ \
 "DescriptorTable(UAV(u3, numDescriptors=1))," /* Table for nextnext grid */ \
-"DescriptorTable(UAV(u4, numDescriptors=1))" /* Table for temp tile data */
+"DescriptorTable(UAV(u4, numDescriptors=1))," /* Table for temp tile data */ \
+"DescriptorTable(UAV(u5, numDescriptors=1))" /* Table for g_positions */
 
