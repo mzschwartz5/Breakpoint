@@ -44,6 +44,7 @@ public:
 	void resize();
 
 	void beginFrame(ID3D12GraphicsCommandList6* cmdList);
+	void setRT(ID3D12GraphicsCommandList6* cmdList);
 	void endFrame(ID3D12GraphicsCommandList6* cmdList);
 
 	void shutdown();

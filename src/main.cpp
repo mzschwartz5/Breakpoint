@@ -105,22 +105,32 @@ int main() {
         //update camera
         camera->updateViewMat();
 
-        //draw to window
+        //get pipelines
         auto renderPipeline = scene.getRenderPipeline();
         auto meshPipeline = scene.getMeshPipeline();
+        //whichever pipeline renders first should begin and end the frame
+        auto firstPipeline = meshPipeline;
+
+        //compute pbmpm + mesh shader
         scene.compute();
 
         //begin frame
-        Window::get().beginFrame(meshPipeline->getCommandList());
+        Window::get().beginFrame(firstPipeline->getCommandList());
+
+        //create viewport
         D3D12_VIEWPORT vp;
-        Window::get().createViewport(vp, meshPipeline->getCommandList());
+        Window::get().createViewport(vp, firstPipeline->getCommandList());
+
+        //mesh render pass
+        Window::get().setRT(meshPipeline->getCommandList());
         Window::get().setViewport(vp, meshPipeline->getCommandList());
-
-        //draw scene
-        // scene.draw();
-
-        // Window::get().setViewport(vp, scene.getMeshPipeline()->getCommandList());
         scene.drawFluid();
+        context.executeCommandList(meshPipeline->getCommandListID());
+
+        //first render pass
+        Window::get().setRT(renderPipeline->getCommandList());
+        Window::get().setViewport(vp, renderPipeline->getCommandList());
+        scene.draw();
 
         //set up ImGUI for frame
         ImGui_ImplDX12_NewFrame();
@@ -137,18 +147,17 @@ int main() {
             pbmpmConstants = pbmpmTempConstants;
         }
 
-        meshPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
-        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), meshPipeline->getCommandList());
+        renderPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
+        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
 
-        Window::get().endFrame(meshPipeline->getCommandList());
+        context.executeCommandList(renderPipeline->getCommandListID());
 
-        //finish draw, present, reset
-        // context.executeCommandList(renderPipeline->getCommandListID());
-        context.executeCommandList(scene.getMeshPipeline()->getCommandListID());
+        //end frame
+        Window::get().endFrame(firstPipeline->getCommandList());
 
         Window::get().present();
-		// context.resetCommandList(renderPipeline->getCommandListID());
-        context.resetCommandList(scene.getMeshPipeline()->getCommandListID());
+		context.resetCommandList(renderPipeline->getCommandListID());
+        context.resetCommandList(meshPipeline->getCommandListID());
     }
 
     // Scene should release all resources, including their pipelines
