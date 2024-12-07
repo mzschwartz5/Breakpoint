@@ -5,7 +5,7 @@
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
-#define MOVE_SCALAR 0.05f
+#define MOVE_SCALAR 50.f
 
 using namespace DirectX;
 
@@ -28,6 +28,9 @@ public:
 	XMMATRIX getViewProjMat();
 	XMFLOAT3 getPosition() { return position; }
 
+	XMMATRIX getInvViewProjMat();
+	
+
 private:
 	float FOVY;
 	float aspect;
@@ -37,7 +40,7 @@ private:
 	float rotateX{ 0 };
 	float rotateY{ 0 };
 
-	XMFLOAT3 position{ 250, 200, -500 };
+	XMFLOAT3 position{ 250, 250, -500 };
 	XMFLOAT3 up{ 0, 1, 0 };
 	XMFLOAT3 forward{ 0, 0, 1 };
 	XMFLOAT3 right{ 1, 0, 0 };

@@ -27,19 +27,23 @@ RWStructuredBuffer<int> g_gridDst : register(u2);
 // Structured Buffer for grid cells to be cleared (read-write UAV)
 RWStructuredBuffer<int> g_gridToBeCleared : register(u3);
 
-groupshared int s_tileData[TileDataSize];
+RWStructuredBuffer<int> g_tempTileData : register(u4);
+
+RWStructuredBuffer<float4> g_positions : register(u5);
+
+//groupshared int s_tileData[TileDataSize];
 groupshared int s_tileDataDst[TileDataSize];
 
-unsigned int localGridIndex(uint2 index) {
-	return (index.y * TotalBukkitEdgeLength + index.x) * 4;
+unsigned int localGridIndex(uint3 index) {
+	return (index.z * TotalBukkitEdgeLength * TotalBukkitEdgeLength + index.y * TotalBukkitEdgeLength + index.x) * 5;
 }
 
 // Function to clamp a particle's position inside the guardian region of the grid
-float2 projectInsideGuardian(float2 p, uint2 gridSize, float guardianSize)
+float3 projectInsideGuardian(float3 p, uint3 gridSize, float guardianSize)
 {
     // Define the minimum and maximum clamp boundaries
-    float2 clampMin = float2(guardianSize, guardianSize);
-    float2 clampMax = float2(gridSize) - float2(guardianSize, guardianSize) - float2(1.0, 1.0);
+    float3 clampMin = float3(guardianSize, guardianSize, guardianSize);
+    float3 clampMax = float3(gridSize) - float3(guardianSize, guardianSize, guardianSize) - float3(1.0, 1.0, 1.0);
 
     // Clamp the position `p` to be within the defined boundaries
     return clamp(p, clampMin, clampMax);
@@ -49,10 +53,11 @@ float2 projectInsideGuardian(float2 p, uint2 gridSize, float guardianSize)
 
 // Structure to hold the SVD result
 
-// Function to compute the determinant of a 2x2 matrix
-float det(float2x2 m)
-{
-    return m[0][0] * m[1][1] - m[0][1] * m[1][0];
+// Function to compute the determinant of a  3x3 matrix
+float det(float3x3 m) {
+    return m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
+        - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
+        + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
 }
 
 // Function to compute the trace of a 2x2 matrix
@@ -61,26 +66,43 @@ float tr(float2x2 m)
     return m[0][0] + m[1][1];
 }
 
-// Function to compute the inverse of a 2x2 matrix
-float2x2 inverse(float2x2 m)
-{
-    float a = m[0][0];
-    float b = m[1][0];
-    float c = m[0][1];
-    float d = m[1][1];
-    return (1.0 / det(m)) * float2x2(d, -c, -b, a);
+// Function to compute the trace of a 3x3 matrix
+float tr3D(float3x3 m) {
+    return m[0][0] + m[1][1] + m[2][2];
 }
 
-// Function to compute the outer product of two float2 vectors
-float2x2 outerProduct(float2 x, float2 y)
-{
-    return float2x2(x.x * y.x, x.x * y.y, x.y * y.x, x.y * y.y);
+// Function to compute the inverse of a 3x3 matrix
+float3x3 inverse(float3x3 m) {
+    float d = det(m);
+    float3x3 adj;
+    adj[0][0] = +(m[1][1] * m[2][2] - m[2][1] * m[1][2]);
+    adj[0][1] = -(m[0][1] * m[2][2] - m[2][1] * m[0][2]);
+    adj[0][2] = +(m[0][1] * m[1][2] - m[1][1] * m[0][2]);
+    adj[1][0] = -(m[1][0] * m[2][2] - m[2][0] * m[1][2]);
+    adj[1][1] = +(m[0][0] * m[2][2] - m[2][0] * m[0][2]);
+    adj[1][2] = -(m[0][0] * m[1][2] - m[1][0] * m[0][2]);
+    adj[2][0] = +(m[1][0] * m[2][1] - m[2][0] * m[1][1]);
+    adj[2][1] = -(m[0][0] * m[2][1] - m[2][0] * m[0][1]);
+    adj[2][2] = +(m[0][0] * m[1][1] - m[1][0] * m[0][1]);
+    return adj * (1.0 / d);
 }
 
-// Function to create a diagonal 2x2 matrix from a float2 vector
-float2x2 diag(float2 d)
+float3x3 outerProduct(float3 x, float3 y) {
+    return float3x3(
+        x.x * y.x, x.x * y.y, x.x * y.z,
+        x.y * y.x, x.y * y.y, x.y * y.z,
+        x.z * y.x, x.z * y.y, x.z * y.z
+    );
+}
+
+// Function to create a diagonal 3x3 matrix from a float3 vector
+float3x3 diag(float3 d)
 {
-    return float2x2(d.x, 0, 0, d.y);
+    return float3x3(
+        d.x, 0, 0,
+        0, d.y, 0,
+        0, 0, d.z
+    );
 }
 
 // Function to truncate 4x4 matrix to 2x2 matrix
@@ -89,100 +111,201 @@ float2x2 truncate(float4x4 m)
     return float2x2(m[0].xy, m[1].xy);
 }
 
-float4x4 expandToFloat4x4(float2x2 m)
-{
-    return float4x4(
-        m[0][0], m[0][1], 0.0, 0.0,
-        m[1][0], m[1][1], 0.0, 0.0,
-        0.0, 0.0, 0.0, 0.0,
-        0.0, 0.0, 0.0, 0.0
-    );
-}
-
 struct SVDResult
 {
-    float2x2 U;
-    float2 Sigma;
-    float2x2 Vt;
+    float3x3 U;
+    float3 Sigma;
+    float3x3 Vt;
 };
 
-// Function to compute SVD for a 2x2 matrix
-SVDResult svd(float2x2 m)
-{
-    float E = (m[0][0] + m[1][1]) * 0.5;
-    float F = (m[0][0] - m[1][1]) * 0.5;
-    float G = (m[0][1] + m[1][0]) * 0.5;
-    float H = (m[0][1] - m[1][0]) * 0.5;
+float3x3 givensRotation(float c, float s, int i, int j, int n) {
+    float3x3 G = Identity;
+    G[i][i] = c;
+    G[i][j] = -s;
+    G[j][i] = s;
+    G[j][j] = c;
+    return G;
+}
 
-    float Q = sqrt(E * E + H * H);
-    float R = sqrt(F * F + G * G);
-    float sx = Q + R;
-    float sy = Q - R;
+// Compute off-diagonal sum of squares
+float offDiagonalSum(float3x3 mat) {
+    float sum = 0.0f;
+    for (int i = 0; i < 3; i++) {
+        for (int j = i + 1; j < 3; j++) {
+            sum += mat[i][j] * mat[i][j] + mat[j][i] * mat[j][i];
+        }
+    }
+    return sum;
+}
 
-    float a1 = atan2(G, F);
-    float a2 = atan2(H, E);
-
-    float theta = (a2 - a1) * 0.5;
-    float phi = (a2 + a1) * 0.5;
-
-    float2x2 U = rot(phi);
-    float2 Sigma = float2(sx, sy);
-    float2x2 Vt = rot(theta);
-
+// Function to compute SVD for a 3x3 matrix
+SVDResult svd(float3x3 A) {
     SVDResult result;
-    result.U = U;
-    result.Sigma = Sigma;
-    result.Vt = Vt;
+    float3x3 U = Identity;
+    float3x3 V = Identity;
+    float3x3 At = transpose(A);
+    float3x3 AtA = mul(At, A);
+    const int MAX_ITERATIONS = 8;
+    const float EPSILON = 1e-6;
+    // Jacobi iteration
+    for (int iter = 0; iter < MAX_ITERATIONS; iter++) {
+        float offDiag = offDiagonalSum(AtA);
+        if (offDiag < EPSILON) break;
+        // Process each upper triangular element
+        for (int p = 0; p < 3; p++) {
+            for (int q = p + 1; q < 3; q++) {
+                float pp = AtA[p][p];
+                float qq = AtA[q][q];
+                float pq = AtA[p][q];
+                // Compute Jacobi rotation
+                float theta = 0.5f * atan2(2.0f * pq, pp - qq);
+                float c = cos(theta);
+                float s = sin(theta);
+                // Apply rotation
+                float3x3 J = givensRotation(c, s, p, q, 3);
+                float3x3 Jt = transpose(J);
+                AtA = mul(mul(Jt, AtA), J);
+                V = mul(V, J);
+            }
+        }
+    }
+    // Extract singular values and ensure they're positive
+    float3 singularValues;
+    for (int i = 0; i < 3; i++) {
+        singularValues[i] = sqrt(max(AtA[i][i], 0.0f));
+    }
+    // Sort singular values in descending order and adjust matrices
+    for (int i = 0; i < 2; i++) {
+        for (int j = 0; j < 2 - i; j++) {
+            if (singularValues[j] < singularValues[j + 1]) {
+                // Swap singular values
+                float temp = singularValues[j];
+                singularValues[j] = singularValues[j + 1];
+                singularValues[j + 1] = temp;
+                // Swap columns in V
+                float3 tempCol = float3(V[0][j], V[1][j], V[2][j]);
+                V[0][j] = V[0][j + 1];
+                V[1][j] = V[1][j + 1];
+                V[2][j] = V[2][j + 1];
+                V[0][j + 1] = tempCol.x;
+                V[1][j + 1] = tempCol.y;
+                V[2][j + 1] = tempCol.z;
+            }
+        }
+    }
 
+    // Compute U = AV/Sigma
+    float3x3 Vt = transpose(V);
+    U = float3x3(0, 0, 0, 0, 0, 0, 0, 0, 0);
+    for (int i = 0; i < 3; i++) {
+        float sigma = singularValues[i];
+        if (sigma > EPSILON) {
+            float3 col = float3(0, 0, 0);
+            for (int j = 0; j < 3; j++) {
+                col.x += A[0][j] * V[j][i];
+                col.y += A[1][j] * V[j][i];
+                col.z += A[2][j] * V[j][i];
+            }
+            float invSigma = 1.0f / sigma;
+            U[0][i] = col.x * invSigma;
+            U[1][i] = col.y * invSigma;
+            U[2][i] = col.z * invSigma;
+        }
+    }
+
+    // Ensure right-handed coordinate system
+    float det_U = det(U);
+    float det_V = det(V);
+    if (det_U * det_V < 0) {
+        U[0][2] = -U[0][2];
+        U[1][2] = -U[1][2];
+        U[2][2] = -U[2][2];
+        singularValues[2] = -singularValues[2];
+    }
+
+    result.U = U;
+    result.Sigma = singularValues;
+    result.Vt = Vt;
     return result;
 }
 
+bool intersectRaySphere(float3 rayOrigin, float3 rayDir, float3 sphereCenter, float sphereRadius, out float t) {
+    float3 oc = rayOrigin - sphereCenter;
+
+    float a = dot(rayDir, rayDir);
+    float b = 2.0f * dot(oc, rayDir);
+    float c = dot(oc, oc) - (sphereRadius * sphereRadius);
+
+    float discriminant = b * b - 4.0f * a * c;
+
+    if (discriminant < 0.0f) {
+        return false;
+    }
+
+    t = (-b - sqrt(discriminant)) / (2.0f * a);
+    if (t < 0.0f) {
+        t = (-b + sqrt(discriminant)) / (2.0f * a);
+        if (t < 0.0f) {
+            return false;
+        }
+    }
+
+    return true;
+}
 
 [numthreads(ParticleDispatchSize, 1, 1)]
 void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
 {
-
     // Load thread-specific data
     BukkitThreadData threadData = g_bukkitThreadData[groupId.x];
 
     // Calculate grid origin
-    int2 localGridOrigin = BukkitSize * int2(uint2(threadData.bukkitX, threadData.bukkitY)) - int2(BukkitHaloSize, BukkitHaloSize);
-    int2 idInGroup = int2(int(indexInGroup) % TotalBukkitEdgeLength, int(indexInGroup) / TotalBukkitEdgeLength);
-    int2 gridVertex = idInGroup + localGridOrigin;
-    float2 gridPosition = float2(gridVertex);
+    int3 localGridOrigin = BukkitSize * int3(threadData.bukkitX, threadData.bukkitY, threadData.bukkitZ)
+        - int3(BukkitHaloSize, BukkitHaloSize, BukkitHaloSize);
+    int3 idInGroup = int3(
+        indexInGroup % TotalBukkitEdgeLength,
+        int(indexInGroup / TotalBukkitEdgeLength) % TotalBukkitEdgeLength,
+        int(indexInGroup / (TotalBukkitEdgeLength * TotalBukkitEdgeLength)));
+   
+    int3 gridVertex = idInGroup + localGridOrigin;
+    float3 gridPosition = float3(gridVertex);
 
     // Initialize variables
     float dx = 0.0;
     float dy = 0.0;
-    float w = 0.0;
-    float v = 0.0;
+    float dz = 0.0;
+    float w = 0.0; //weight
+    float v = 0.0; //volume
 
     // Check if grid vertex is within valid bounds
-    bool gridVertexIsValid = all(gridVertex >= int2(0, 0)) && all(gridVertex <= g_simConstants.gridSize);
+    bool gridVertexIsValid = all(gridVertex >= int3(0, 0, 0)) && all(gridVertex <= g_simConstants.gridSize);
 
     if (gridVertexIsValid)
     {
-        uint gridVertexAddress = gridVertexIndex(uint2(gridVertex), g_simConstants.gridSize);
+        uint gridVertexAddress = gridVertexIndex(uint3(gridVertex), g_simConstants.gridSize);
 
 		// Load grid data
         dx = decodeFixedPoint(g_gridSrc[gridVertexAddress + 0], g_simConstants.fixedPointMultiplier);
         dy = decodeFixedPoint(g_gridSrc[gridVertexAddress + 1], g_simConstants.fixedPointMultiplier);
-        w = decodeFixedPoint(g_gridSrc[gridVertexAddress + 2], g_simConstants.fixedPointMultiplier);
-        v = decodeFixedPoint(g_gridSrc[gridVertexAddress + 3], g_simConstants.fixedPointMultiplier);
+        dz = decodeFixedPoint(g_gridSrc[gridVertexAddress + 2], g_simConstants.fixedPointMultiplier);
+        w = decodeFixedPoint(g_gridSrc[gridVertexAddress + 3], g_simConstants.fixedPointMultiplier);
+        v = decodeFixedPoint(g_gridSrc[gridVertexAddress + 4], g_simConstants.fixedPointMultiplier);
 
         // Grid update
         if (w < 1e-5f)
         {
             dx = 0.0f;
             dy = 0.0f;
+            dz = 0.0f;
         }
         else
         {
             dx /= w;
             dy /= w;
+            dz /= w;
         }
 
-        float2 gridDisplacement = float2(dx, dy);
+        float3 gridDisplacement = float3(dx, dy, dz);
 
         // Collision detection against guardian shape
 
@@ -191,40 +314,41 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
         // We do this by finding whether a grid vertex would be inside the guardian region after displacement
         // with the current velocity and, if it is, setting the displacement so that no further penetration can occur.
 
-        float2 displacedGridPosition = gridPosition + gridDisplacement;
-        float2 projectedGridPosition = projectInsideGuardian(displacedGridPosition, g_simConstants.gridSize, GuardianSize + 1);
-        float2 projectedDifference = projectedGridPosition - displacedGridPosition;
+        float3 displacedGridPosition = gridPosition + gridDisplacement;
+        float3 projectedGridPosition = projectInsideGuardian(displacedGridPosition, g_simConstants.gridSize, GuardianSize + 1);
+        float3 projectedDifference = projectedGridPosition - displacedGridPosition;
 
-        if (projectedDifference.x != 0)
+        if (any(projectedDifference != 0))
         {
-            gridDisplacement.x = 0;
-            gridDisplacement.y = lerp(gridDisplacement.y, 0, g_simConstants.borderFriction);
-        }
-
-        if (projectedDifference.y != 0)
-        {
-            gridDisplacement.y = 0;
-            gridDisplacement.x = lerp(gridDisplacement.x, 0, g_simConstants.borderFriction);
+            // Calculate normal direction
+            float3 normal = normalize(projectedDifference);
+            // Project out the normal component
+            float3 tangential = gridDisplacement - normal * dot(gridDisplacement, normal);
+            // Apply friction to tangential component
+            gridDisplacement = tangential * (1.0 - g_simConstants.borderFriction);
         }
 
         dx = gridDisplacement.x;
         dy = gridDisplacement.y;
+        dz = gridDisplacement.z;
     }
 
     // Save grid to local memory
     unsigned int tileDataIndex = localGridIndex(idInGroup);
     // Store encoded fixed-point values atomically
     int originalValue;
-    InterlockedExchange(s_tileData[tileDataIndex], encodeFixedPoint(dx, g_simConstants.fixedPointMultiplier), originalValue);
-    InterlockedExchange(s_tileData[tileDataIndex + 1], encodeFixedPoint(dy, g_simConstants.fixedPointMultiplier), originalValue);
-    InterlockedExchange(s_tileData[tileDataIndex + 2], encodeFixedPoint(w, g_simConstants.fixedPointMultiplier), originalValue);
-    InterlockedExchange(s_tileData[tileDataIndex + 3], encodeFixedPoint(v, g_simConstants.fixedPointMultiplier), originalValue);
+    InterlockedExchange(g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex], encodeFixedPoint(dx, g_simConstants.fixedPointMultiplier), originalValue);
+    InterlockedExchange(g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 1], encodeFixedPoint(dy, g_simConstants.fixedPointMultiplier), originalValue);
+    InterlockedExchange(g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 2], encodeFixedPoint(dz, g_simConstants.fixedPointMultiplier), originalValue);
+    InterlockedExchange(g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 3], encodeFixedPoint(w, g_simConstants.fixedPointMultiplier), originalValue);
+    InterlockedExchange(g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 4], encodeFixedPoint(v, g_simConstants.fixedPointMultiplier), originalValue);
     
     // Make sure all values in destination grid are 0
-    InterlockedExchange(s_tileDataDst[tileDataIndex], 0, originalValue);
-    InterlockedExchange(s_tileDataDst[tileDataIndex + 1], 0, originalValue);
-    InterlockedExchange(s_tileDataDst[tileDataIndex + 2], 0, originalValue);
-    InterlockedExchange(s_tileDataDst[tileDataIndex + 3], 0, originalValue);
+    s_tileDataDst[tileDataIndex] = 0;
+    s_tileDataDst[tileDataIndex + 1] = 0;
+    s_tileDataDst[tileDataIndex + 2] = 0;
+    s_tileDataDst[tileDataIndex + 3] = 0;
+    s_tileDataDst[tileDataIndex + 4] = 0;
 
     // Synchronize all threads in the group
     GroupMemoryBarrierWithGroupSync();
@@ -235,15 +359,16 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
         uint myParticleIndex = g_bukkitParticleData[threadData.rangeStart + indexInGroup];
         
         Particle particle = g_particles[myParticleIndex];
+        float liquidDensity = g_positions[myParticleIndex].w;
         
-        float2 p = particle.position;
+        float3 p = g_positions[myParticleIndex].xyz;
         QuadraticWeightInfo weightInfo = quadraticWeightInit(p);
         
         if (g_simConstants.iteration != 0)
         {
             // G2P
-            float2x2 B = ZeroMatrix;
-            float2 d = float2(0, 0);
+            float3x3 B = ZeroMatrix;
+            float3 d = float3(0, 0, 0);
             float volume = 0.0;
             
             // Iterate over local 3x3 neighborhood
@@ -251,36 +376,41 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    // Weight corresponding to this neighborhood cell
-                    float weight = weightInfo.weights[i].x * weightInfo.weights[j].y;
-                    
-                    // Grid vertex index
-                    int2 neighborCellIndex = int2(weightInfo.cellIndex) + int2(i, j);
-                    
-                    // 2D index relative to the corner of the local grid
-                    int2 neighborCellIndexLocal = neighborCellIndex - localGridOrigin;
-                    
-                    // Linear Index in the local grid
-                    uint gridVertexIdx = localGridIndex(uint2(neighborCellIndexLocal));
-                    
-                    int fixedPoint0;
-                    InterlockedAdd(s_tileData[gridVertexIdx + 0], 0, fixedPoint0);
-                    int fixedPoint1;
-                    InterlockedAdd(s_tileData[gridVertexIdx + 1], 0, fixedPoint1);
-                    
-                    float2 weightedDisplacement = weight * float2(
-                        decodeFixedPoint(fixedPoint0, g_simConstants.fixedPointMultiplier),
-                        decodeFixedPoint(fixedPoint1, g_simConstants.fixedPointMultiplier));
+                    for (int k = 0; k < 3; k++) {
+                        // Weight corresponding to this neighborhood cell
+                        float weight = weightInfo.weights[i].x * weightInfo.weights[j].y * weightInfo.weights[k].z;
 
-                    float2 offset = float2(neighborCellIndex) - p + 0.5;
-                    B += outerProduct(weightedDisplacement, offset);
-                    d += weightedDisplacement;
-                    
-                    if (g_simConstants.useGridVolumeForLiquid != 0)
-                    {
-                        int fixedPoint3;
-                        InterlockedAdd(s_tileData[gridVertexIdx + 3], 0, fixedPoint3);
-                        volume += weight * decodeFixedPoint(fixedPoint3, g_simConstants.fixedPointMultiplier);
+                        // Grid vertex index
+                        int3 neighborCellIndex = int3(weightInfo.cellIndex) + int3(i, j, k);
+
+                        // 3D index relative to the corner of the local grid
+                        int3 neighborCellIndexLocal = neighborCellIndex - localGridOrigin;
+
+                        // Linear Index in the local grid
+                        uint gridVertexIdx = localGridIndex(uint3(neighborCellIndexLocal));
+
+                        int fixedPoint0;
+                        InterlockedAdd(g_tempTileData[(groupId.x * TileDataSize) + gridVertexIdx + 0], 0, fixedPoint0);
+                        int fixedPoint1;
+                        InterlockedAdd(g_tempTileData[(groupId.x * TileDataSize) + gridVertexIdx + 1], 0, fixedPoint1);
+                        int fixedPoint2;
+                        InterlockedAdd(g_tempTileData[(groupId.x * TileDataSize) + gridVertexIdx + 2], 0, fixedPoint2);
+
+                        float3 weightedDisplacement = weight * float3(
+                            decodeFixedPoint(fixedPoint0, g_simConstants.fixedPointMultiplier),
+                            decodeFixedPoint(fixedPoint1, g_simConstants.fixedPointMultiplier),
+                            decodeFixedPoint(fixedPoint2, g_simConstants.fixedPointMultiplier));
+
+                        float3 offset = float3(neighborCellIndex) - p + 0.5;
+                        B += outerProduct(weightedDisplacement, offset);
+                        d += weightedDisplacement;
+
+                        if (g_simConstants.useGridVolumeForLiquid != 0)
+                        {
+                            int fixedPoint4;
+                            InterlockedAdd(g_tempTileData[(groupId.x * TileDataSize) + gridVertexIdx + 4], 0, fixedPoint4);
+                            volume += weight * decodeFixedPoint(fixedPoint4, g_simConstants.fixedPointMultiplier);
+                        }
                     }
                 }
 
@@ -291,13 +421,13 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 // Update particle volume
                 
                 volume = 1.0 / volume;
-                if (volume < 1)
+                if (volume < 1.0)
                 {
-                    particle.liquidDensity = lerp(particle.liquidDensity, volume, 0.1);
+                    liquidDensity = lerp(liquidDensity, volume, 0.1);
                 }
             }
             
-            // Save the deformation gradient as a 4x4 matrix by adding the identity matrix to the rest
+            // Save the deformation gradient as a 3x3 matrix by adding the identity matrix to the rest
             particle.deformationDisplacement = B * 4.0;
             particle.displacement = d;
             
@@ -314,10 +444,10 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                     // ending up with det(F^n+1) = (1+tr(D))*det(F^n)
                     // Then we directly set particle.liquidDensity to reflect the approximately integrated volume.
                     // The liquid material does not actually use the deformation gradient matrix.
-                    particle.liquidDensity *= (tr(particle.deformationDisplacement) + 1.0);
+                    liquidDensity *= (tr3D(particle.deformationDisplacement) + 1.0);
 
                     // Safety clamp to avoid instability with very small densities.
-                    particle.liquidDensity = max(particle.liquidDensity, 0.05);
+                    liquidDensity = max(liquidDensity, 0.05);
                 }
                 else
                 {
@@ -325,16 +455,17 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 }
                 
                 // Update particle position
-                particle.position += particle.displacement;
+                p += particle.displacement;
                 
-                // Mouse Iteraction Here
-                if (g_simConstants.mouseActivation > 0)
-                {
-                    float2 offset = particle.position - g_simConstants.mousePosition;
+                // Mouse Iteraction
+                if (g_simConstants.mouseActivation == 1) {
+                    float t;
+                    bool intersected = intersectRaySphere(g_simConstants.mousePosition.xyz, float3(0, 0, 1), p, 2.f, t);
+                    float3 offset = p - float3(g_simConstants.mousePosition.xyz);
                     float lenOffset = max(length(offset), 0.0001);
-                    if (lenOffset < g_simConstants.mouseRadius)
+                    if (intersected)
                     {
-                        float2 normOffset = offset / lenOffset;
+                        float3 normOffset = offset / lenOffset;
 
                         if (g_simConstants.mouseFunction == 0)
                         {
@@ -354,21 +485,23 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 int originalMax; // Needed for InterlockedMax output parameter
                 InterlockedMax(g_freeIndices[0], 0, originalMax); 
                 
-                particle.position = projectInsideGuardian(particle.position, g_simConstants.gridSize, GuardianSize);
+                p = projectInsideGuardian(p, g_simConstants.gridSize, GuardianSize);
             }
             
             // Save the particle back to the buffer
-            g_particles[myParticleIndex] = particle;        }
+            g_particles[myParticleIndex] = particle;
+			g_positions[myParticleIndex] = float4(p, liquidDensity);
+        }
         
         {
             // Particle update
             if (particle.material == MaterialLiquid)
             {
                 // Simple liquid viscosity: just remove deviatoric part of the deformation displacement
-                float2x2 deviatoric = -1.0 * (particle.deformationDisplacement + transpose(particle.deformationDisplacement));
+                float3x3 deviatoric = -1.0 * (particle.deformationDisplacement + transpose(particle.deformationDisplacement));
                 particle.deformationDisplacement += g_simConstants.liquidViscosity * 0.5 * deviatoric;
 
-                float alpha = 0.5 * (1.0 / particle.liquidDensity - tr(particle.deformationDisplacement) - 1.0);
+                float alpha = 0.5 * (1.0 / liquidDensity - tr3D(particle.deformationDisplacement) - 1.0);
                 particle.deformationDisplacement += g_simConstants.liquidRelaxation * alpha * Identity;
             }
 
@@ -379,35 +512,37 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
             {
                 for (int j = 0; j < 3; j++)
                 {
-                    // Weight corresponding to this neighborhood cell
-                    float weight = weightInfo.weights[i].x * weightInfo.weights[j].y;
-
-                    // Grid vertex index
-                    int2 neighborCellIndex = int2(weightInfo.cellIndex) + int2(i, j);
-
-                    // 2D index relative to the corner of the local grid
-                    int2 neighborCellIndexLocal = neighborCellIndex - localGridOrigin;
-
-                    // Linear Index in the local grid
-                    uint gridVertexIdx = localGridIndex(uint2(neighborCellIndexLocal));
-
-                    // Update grid data
-                    float2 offset = float2(neighborCellIndex) - p + 0.5;
-
-                    float weightedMass = weight * particle.mass;
-                    float2 momentum = weightedMass * (particle.displacement + mul(particle.deformationDisplacement, offset));
-
-                    InterlockedAdd(s_tileDataDst[gridVertexIdx + 0], encodeFixedPoint(momentum.x, g_simConstants.fixedPointMultiplier));
-                    InterlockedAdd(s_tileDataDst[gridVertexIdx + 1], encodeFixedPoint(momentum.y, g_simConstants.fixedPointMultiplier));
-                    InterlockedAdd(s_tileDataDst[gridVertexIdx + 2], encodeFixedPoint(weightedMass, g_simConstants.fixedPointMultiplier));
-
-
-                    if (g_simConstants.useGridVolumeForLiquid != 0)
+                    for (int k = 0; k < 3; k++) 
                     {
-                        InterlockedAdd(s_tileDataDst[gridVertexIdx + 3], encodeFixedPoint(weight * particle.volume, g_simConstants.fixedPointMultiplier));
+                        // Weight corresponding to this neighborhood cell
+                        float weight = weightInfo.weights[i].x * weightInfo.weights[j].y * weightInfo.weights[k].z;
+
+                        // Grid vertex index
+                        int3 neighborCellIndex = int3(weightInfo.cellIndex) + int3(i, j, k);
+
+                        // 3D index relative to the corner of the local grid
+                        int3 neighborCellIndexLocal = neighborCellIndex - localGridOrigin;
+
+                        // Linear Index in the local grid
+                        uint gridVertexIdx = localGridIndex(uint3(neighborCellIndexLocal));
+
+                        // Update grid data
+                        float3 offset = float3(neighborCellIndex) - p + 0.5;
+
+                        float weightedMass = weight * particle.mass;
+                        float3 momentum = weightedMass * (particle.displacement + mul(particle.deformationDisplacement, offset));
+
+                        InterlockedAdd(s_tileDataDst[gridVertexIdx + 0], encodeFixedPoint(momentum.x, g_simConstants.fixedPointMultiplier));
+                        InterlockedAdd(s_tileDataDst[gridVertexIdx + 1], encodeFixedPoint(momentum.y, g_simConstants.fixedPointMultiplier));
+                        InterlockedAdd(s_tileDataDst[gridVertexIdx + 2], encodeFixedPoint(momentum.z, g_simConstants.fixedPointMultiplier));
+                        InterlockedAdd(s_tileDataDst[gridVertexIdx + 3], encodeFixedPoint(weightedMass, g_simConstants.fixedPointMultiplier));
+
+                        if (g_simConstants.useGridVolumeForLiquid != 0)
+                        {
+                            InterlockedAdd(s_tileDataDst[gridVertexIdx + 4], encodeFixedPoint(weight * particle.volume, g_simConstants.fixedPointMultiplier));
+                        }
                     }
                 }
-
             }
         }
     }
@@ -418,27 +553,34 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     // Save Grid
     if (gridVertexIsValid)
     {
-        uint gridVertexAddress = gridVertexIndex(uint2(gridVertex), g_simConstants.gridSize);
+        uint gridVertexAddress = gridVertexIndex(uint3(gridVertex), g_simConstants.gridSize);
 
         // Atomic loads from shared memory using InterlockedAdd with 0
-
-        int dxi, dyi, wi, vi;
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 0], 0, dxi);
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 1], 0, dyi);
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 2], 0, wi);
-        InterlockedAdd(s_tileDataDst[tileDataIndex + 3], 0, vi);
+        int dxi = s_tileDataDst[tileDataIndex + 0];
+        int dyi = s_tileDataDst[tileDataIndex + 1];
+        int dzi = s_tileDataDst[tileDataIndex + 2];
+        int wi = s_tileDataDst[tileDataIndex + 3];
+        int vi = s_tileDataDst[tileDataIndex + 4];
 
     // Atomic adds to the destination buffer
         InterlockedAdd(g_gridDst[gridVertexAddress + 0], dxi);
         InterlockedAdd(g_gridDst[gridVertexAddress + 1], dyi);
-        InterlockedAdd(g_gridDst[gridVertexAddress + 2], wi);
-        InterlockedAdd(g_gridDst[gridVertexAddress + 3], vi);
+        InterlockedAdd(g_gridDst[gridVertexAddress + 2], dzi);
+        InterlockedAdd(g_gridDst[gridVertexAddress + 3], wi);
+        InterlockedAdd(g_gridDst[gridVertexAddress + 4], vi);
     
     // Clear the entries in g_gridToBeCleared
         g_gridToBeCleared[gridVertexAddress + 0] = 0;
         g_gridToBeCleared[gridVertexAddress + 1] = 0;
         g_gridToBeCleared[gridVertexAddress + 2] = 0;
         g_gridToBeCleared[gridVertexAddress + 3] = 0;
+        g_gridToBeCleared[gridVertexAddress + 4] = 0;
+
+        g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 0] = 0;
+        g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 1] = 0;
+        g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 2] = 0;
+        g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 3] = 0;
+        g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 4] = 0;
     }
 
 }

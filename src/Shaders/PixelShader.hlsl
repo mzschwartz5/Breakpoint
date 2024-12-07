@@ -3,5 +3,5 @@
 [RootSignature(ROOTSIG)]
 float4 main() : SV_Target
 {
-    return float4(1.0, 0.25, 0.4, 1.0f);
+    return float4(0.00, 0.63, 0.98, 1.0f);
 }

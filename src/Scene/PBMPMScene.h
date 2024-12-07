@@ -13,7 +13,7 @@
 
 const unsigned int ParticleDispatchSize = 64;
 const unsigned int GridDispatchSize = 8;
-const unsigned int BukkitSize = 6;
+const unsigned int BukkitSize = 2;
 const unsigned int BukkitHaloSize = 1;
 const unsigned int GuardianSize = 3;
 
@@ -21,7 +21,7 @@ const unsigned int maxParticles = 500000;
 const unsigned int maxTimestampCount = 2048;
 
 struct PBMPMConstants {
-	XMUINT2 gridSize;
+	XMUINT3 gridSize; //2 -> 3
 	float deltaTime;
 	float gravityStrength;
 
@@ -39,13 +39,14 @@ struct PBMPMConstants {
 	unsigned int bukkitCount;
 	unsigned int bukkitCountX;
 	unsigned int bukkitCountY;
+	unsigned int bukkitCountZ; //added
 	unsigned int iteration;
 	unsigned int iterationCount;
 	float borderFriction;
 
 	//mouse stuff
+	XMFLOAT4 mousePosition;
 	unsigned int mouseActivation;
-	XMUINT2 mousePosition;
 	unsigned int mouseRadius;
 	unsigned int mouseFunction;
 	unsigned int mouseVelocity;
@@ -53,9 +54,9 @@ struct PBMPMConstants {
 
 struct SimShape {
 	int id;
-	XMFLOAT2 position;
+	XMFLOAT3 position;
 	float rotation;
-	XMFLOAT2 halfSize;
+	XMFLOAT3 halfSize;
 
 	int shapeType;
 	int functionality;
@@ -65,17 +66,13 @@ struct SimShape {
 };
 
 struct PBMPMParticle {
-	XMFLOAT2 position;
-	XMFLOAT2 displacement;
-	XMFLOAT4 deformationGradient;
-	XMFLOAT4 deformationDisplacement;
-
-	float liquidDensity;
+	XMFLOAT3 displacement; //2->3
 	float mass;
+	XMFLOAT3X3 deformationGradient;
 	float material;
 	float volume;
-	
 	float lambda;
+	XMFLOAT3X3 deformationDisplacement;
 	float logJp;
 	float enabled;
 };
@@ -83,6 +80,7 @@ struct PBMPMParticle {
 struct BukkitSystem {
 	unsigned int countX;
 	unsigned int countY;
+	unsigned int countZ; //added Z
 	unsigned int count;
 	StructuredBuffer countBuffer;
 	StructuredBuffer countBuffer2;
@@ -99,6 +97,7 @@ struct BukkitThreadData {
 	unsigned int rangeCount;
 	unsigned int bukkitX;
 	unsigned int bukkitY;
+	unsigned int bukkitZ; //added Z
 };
 
 class PBMPMScene : public Drawable {
@@ -146,6 +145,9 @@ private:
 
 	unsigned int substepIndex = 0;
 
+	// Particle Buffers
+	StructuredBuffer positionBuffer;
+
 	// Scene Buffers
 	StructuredBuffer particleBuffer;
 	StructuredBuffer particleFreeIndicesBuffer;
@@ -153,6 +155,7 @@ private:
 	StructuredBuffer particleSimDispatch;
 	StructuredBuffer renderDispatchBuffer;
 	StructuredBuffer shapeBuffer;
+	StructuredBuffer tempTileDataBuffer;
 
 	std::array<StructuredBuffer, 3> gridBuffers;
 

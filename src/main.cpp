@@ -24,7 +24,7 @@ int main() {
     //initialize scene
     Scene scene{PBMPM, camera.get(), &context};
 
-    PBMPMConstants pbmpmConstants{ {512, 512}, 0.01F, 2.5F, 1.5F, 0.01F,
+    PBMPMConstants pbmpmConstants{ {512, 512, 512}, 0.01F, 2.5F, 1.5F, 0.01F,
         (unsigned int)std::ceil(std::pow(10, 7)),
         1, 8, 30, 0, 0,  0, 0, 0, 0, 5, 0.9F };
     PBMPMConstants pbmpmTempConstants = pbmpmConstants;
@@ -38,6 +38,7 @@ int main() {
             Window::get().resize();
             camera->updateAspect((float)Window::get().getWidth() / (float)Window::get().getHeight());
         }
+
         //check keyboard state
         auto kState = keyboard->GetState();
         if (kState.W) {
@@ -82,9 +83,17 @@ int main() {
         if (mState.rightButton) {
             //enable mouse force
             pbmpmTempConstants.mouseActivation = 1;
+
             POINT cursorPos;
             GetCursorPos(&cursorPos);
-            pbmpmTempConstants.mousePosition = XMUINT2{ (unsigned int)cursorPos.x, (unsigned int)cursorPos.y };
+
+            float ndcX = (2.0f * cursorPos.x) / SCREEN_WIDTH - 1.0f;
+            float ndcY = -(2.0f * cursorPos.y) / SCREEN_HEIGHT + 1.0f;
+
+            XMVECTOR screenCursorPos = XMVectorSet(ndcX, ndcY, 0.0f, 1.0f);
+            XMVECTOR worldCursorPos = XMVector4Transform(screenCursorPos, camera->getInvViewProjMat());
+            XMStoreFloat4(&(pbmpmTempConstants.mousePosition), worldCursorPos);
+
             pbmpmTempConstants.mouseFunction = 0;
             pbmpmTempConstants.mouseRadius = 1000;
             scene.updatePBMPMConstants(pbmpmTempConstants);
@@ -134,8 +143,6 @@ int main() {
         Window::get().present();
 		context.resetCommandList(renderPipeline->getCommandListID());
     }
-
-    // Close
 
     // Scene should release all resources, including their pipelines
     scene.releaseResources();
