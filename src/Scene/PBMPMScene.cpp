@@ -400,14 +400,14 @@ void PBMPMScene::constructScene() {
 	auto computeId = g2p2gPipeline.getCommandListID();
 
 	// Create Constant Data
-	constants = { {32, 64, 32}, 0.01, 2.5, 1.5, 0.1,
+	constants = { {64, 64, 64}, 0.01, 9.8, 0.2, 0.02,
 		(unsigned int)std::ceil(std::pow(10, 7)),
 		1, 4, 30, 1, 0, 0, 0, 0, 0, 0, 10, 0.2 };
 
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 
-	float radius = 0.1;
+	float radius = 1;
 	// Create Vertex & Index Buffer
 	auto circleData = generateSphere(radius, 16, 16);
 	indexCount = (unsigned int)circleData.second.size();
@@ -447,7 +447,7 @@ void PBMPMScene::constructScene() {
 
 	// Shape Buffer
 	std::vector<SimShape> shapes;
-	shapes.push_back(SimShape(0, { 8, 56, 8}, 0, { 4, 4, 1 },
+	shapes.push_back(SimShape(0, { 16, 40, 16}, 0, { 2, 2, 2 },
 		0, 0, 0, 1, 100));
 	shapeBuffer = StructuredBuffer(shapes.data(), shapes.size(), sizeof(SimShape));
 

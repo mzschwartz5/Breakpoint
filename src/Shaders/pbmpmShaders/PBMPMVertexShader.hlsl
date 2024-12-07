@@ -19,7 +19,7 @@ struct VSInput
 float4 main(VSInput input) : SV_Position
 {
     // Retrieve the particle position for the current instance
-    float3 particlePosition = positions[input.InstanceID].xyz;
+    float3 particlePosition = positions[input.InstanceID].xyz * 8;
 
     // Apply the model, view, and projection transformations
     float4 worldPos = mul(modelMatrix, float4(input.Position + particlePosition, 1.0));
