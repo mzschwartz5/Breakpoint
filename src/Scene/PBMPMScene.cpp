@@ -784,3 +784,16 @@ bool PBMPMScene::constantsEqual(PBMPMConstants& one, PBMPMConstants& two) {
 		one.frictionAngle == two.frictionAngle &&
 		one.borderFriction == two.borderFriction;
 }
+
+int PBMPMScene::getParticleCount() {
+	XMINT4 count;
+	particleCount.copyDataFromGPU(
+		*context, 
+		&count,
+		g2p2gPipeline.getCommandList(),
+		D3D12_RESOURCE_STATE_UNORDERED_ACCESS,
+		g2p2gPipeline.getCommandListID()
+	);
+
+	return count.x;
+}

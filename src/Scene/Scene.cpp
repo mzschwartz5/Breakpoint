@@ -37,6 +37,10 @@ RenderPipeline* Scene::getRenderPipeline() {
 	return currentRP;
 }
 
+MeshPipeline* Scene::getMeshPipeline() {
+	return &fluidMeshPipeline;
+}
+
 void Scene::setRenderScene(RenderScene renderScene) {
 	scene = renderScene;
 
@@ -57,17 +61,11 @@ void Scene::setRenderScene(RenderScene renderScene) {
 }
 
 void Scene::compute() {
-	switch (scene) {
-	case PBMPM:
-		pbmpmScene.compute();
-		break;
-	case Fluid:
-		fluidScene.compute();
-		break;
-	case Object:
-	default:
-		break;
-	}
+	pbmpmScene.compute();
+	fluidScene.compute(
+		pbmpmScene.getPositionBuffer(),
+		pbmpmScene.getParticleCount()
+	);
 }
 
 void Scene::draw() {
@@ -75,14 +73,14 @@ void Scene::draw() {
 	case PBMPM:
 		pbmpmScene.draw(camera);
 		break;
-	case Fluid:
-		fluidScene.draw(camera);
-		break;
-	default:
 	case Object:
 		objectScene.draw(camera);
 		break;
 	}
+}
+
+void Scene::drawFluid() {
+	fluidScene.draw(camera);
 }
 
 void Scene::releaseResources() {

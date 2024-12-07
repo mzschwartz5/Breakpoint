@@ -20,10 +20,12 @@ public:
 	Scene(RenderScene renderScene, Camera* camera, DXContext* context);
 
 	RenderPipeline* getRenderPipeline();
+	MeshPipeline* getMeshPipeline();
 
 	void setRenderScene(RenderScene renderScene);
 	void compute();
 	void draw();
+	void drawFluid();
 
 	void releaseResources();
 

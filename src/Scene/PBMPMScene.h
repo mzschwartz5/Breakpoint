@@ -116,6 +116,10 @@ public:
 
 	static bool constantsEqual(PBMPMConstants& one, PBMPMConstants& two);
 
+	StructuredBuffer* getPositionBuffer() { return &positionBuffer; }
+
+	int getParticleCount();
+
 private:
 	DXContext* context;
 	RenderPipeline* renderPipeline;
