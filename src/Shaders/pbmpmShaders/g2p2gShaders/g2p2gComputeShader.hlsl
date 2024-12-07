@@ -229,6 +229,30 @@ SVDResult svd(float3x3 A) {
     return result;
 }
 
+bool intersectRaySphere(float3 rayOrigin, float3 rayDir, float3 sphereCenter, float sphereRadius, out float t) {
+    float3 oc = rayOrigin - sphereCenter;
+
+    float a = dot(rayDir, rayDir);
+    float b = 2.0f * dot(oc, rayDir);
+    float c = dot(oc, oc) - (sphereRadius * sphereRadius);
+
+    float discriminant = b * b - 4.0f * a * c;
+
+    if (discriminant < 0.0f) {
+        return false;
+    }
+
+    t = (-b - sqrt(discriminant)) / (2.0f * a);
+    if (t < 0.0f) {
+        t = (-b + sqrt(discriminant)) / (2.0f * a);
+        if (t < 0.0f) {
+            return false;
+        }
+    }
+
+    return true;
+}
+
 [numthreads(ParticleDispatchSize, 1, 1)]
 void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
 {
@@ -304,27 +328,6 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
             gridDisplacement = tangential * (1.0 - g_simConstants.borderFriction);
         }
 
-        /*if (projectedDifference.x != 0)
-        {
-            gridDisplacement.x = 0;
-            gridDisplacement.y = lerp(gridDisplacement.y, 0, g_simConstants.borderFriction);
-            gridDisplacement.z = lerp(gridDisplacement.z, 0, g_simConstants.borderFriction);
-        }
-
-        if (projectedDifference.y != 0)
-        {
-            gridDisplacement.y = 0;
-            gridDisplacement.x = lerp(gridDisplacement.x, 0, g_simConstants.borderFriction);
-            gridDisplacement.z = lerp(gridDisplacement.z, 0, g_simConstants.borderFriction);
-        }
-
-        if (projectedDifference.z != 0)
-        {
-            gridDisplacement.z = 0;
-            gridDisplacement.x = lerp(gridDisplacement.x, 0, g_simConstants.borderFriction);
-            gridDisplacement.y = lerp(gridDisplacement.y, 0, g_simConstants.borderFriction);
-        }*/
-
         dx = gridDisplacement.x;
         dy = gridDisplacement.y;
         dz = gridDisplacement.z;
@@ -334,11 +337,6 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
     unsigned int tileDataIndex = localGridIndex(idInGroup);
     // Store encoded fixed-point values atomically
     int originalValue;
-    //InterlockedExchange(s_tileData[tileDataIndex], encodeFixedPoint(dx, g_simConstants.fixedPointMultiplier), originalValue);
-    //InterlockedExchange(s_tileData[tileDataIndex + 1], encodeFixedPoint(dy, g_simConstants.fixedPointMultiplier), originalValue);
-    //InterlockedExchange(s_tileData[tileDataIndex + 2], encodeFixedPoint(dz, g_simConstants.fixedPointMultiplier), originalValue);
-    //InterlockedExchange(s_tileData[tileDataIndex + 3], encodeFixedPoint(w, g_simConstants.fixedPointMultiplier), originalValue);
-    //InterlockedExchange(s_tileData[tileDataIndex + 4], encodeFixedPoint(v, g_simConstants.fixedPointMultiplier), originalValue);
     InterlockedExchange(g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex], encodeFixedPoint(dx, g_simConstants.fixedPointMultiplier), originalValue);
     InterlockedExchange(g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 1], encodeFixedPoint(dy, g_simConstants.fixedPointMultiplier), originalValue);
     InterlockedExchange(g_tempTileData[(groupId.x * TileDataSize) + tileDataIndex + 2], encodeFixedPoint(dz, g_simConstants.fixedPointMultiplier), originalValue);
@@ -392,13 +390,10 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                         uint gridVertexIdx = localGridIndex(uint3(neighborCellIndexLocal));
 
                         int fixedPoint0;
-                        //InterlockedAdd(s_tileData[gridVertexIdx + 0], 0, fixedPoint0);
                         InterlockedAdd(g_tempTileData[(groupId.x * TileDataSize) + gridVertexIdx + 0], 0, fixedPoint0);
                         int fixedPoint1;
-                        //InterlockedAdd(s_tileData[gridVertexIdx + 1], 0, fixedPoint1);
                         InterlockedAdd(g_tempTileData[(groupId.x * TileDataSize) + gridVertexIdx + 1], 0, fixedPoint1);
                         int fixedPoint2;
-                        //InterlockedAdd(s_tileData[gridVertexIdx + 2], 0, fixedPoint2);
                         InterlockedAdd(g_tempTileData[(groupId.x * TileDataSize) + gridVertexIdx + 2], 0, fixedPoint2);
 
                         float3 weightedDisplacement = weight * float3(
@@ -413,7 +408,6 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                         if (g_simConstants.useGridVolumeForLiquid != 0)
                         {
                             int fixedPoint4;
-                            //InterlockedAdd(s_tileData[gridVertexIdx + 4], 0, fixedPoint4);
                             InterlockedAdd(g_tempTileData[(groupId.x * TileDataSize) + gridVertexIdx + 4], 0, fixedPoint4);
                             volume += weight * decodeFixedPoint(fixedPoint4, g_simConstants.fixedPointMultiplier);
                         }
@@ -463,12 +457,13 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 // Update particle position
                 p += particle.displacement;
                 
-                // Mouse Iteraction Here
-                /*if (g_simConstants.mouseActivation > 0)
-                {
-                    float3 offset = particle.position - g_simConstants.mousePosition;
+                // Mouse Iteraction
+                if (g_simConstants.mouseActivation == 1) {
+                    float t;
+                    bool intersected = intersectRaySphere(g_simConstants.mousePosition.xyz, float3(0, 0, 1), p, 2.f, t);
+                    float3 offset = p - float3(g_simConstants.mousePosition.xyz);
                     float lenOffset = max(length(offset), 0.0001);
-                    if (lenOffset < g_simConstants.mouseRadius)
+                    if (intersected)
                     {
                         float3 normOffset = offset / lenOffset;
 
@@ -481,7 +476,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                             particle.displacement = g_simConstants.mouseVelocity * g_simConstants.deltaTime;
                         }
                     }
-                }*/
+                }
                 
                 // Gravity Acceleration is normalized to the vertical size of the window
                 particle.displacement.y -= float(g_simConstants.gridSize.y) * g_simConstants.gravityStrength * g_simConstants.deltaTime * g_simConstants.deltaTime;

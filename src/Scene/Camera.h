@@ -27,6 +27,9 @@ public:
 	XMMATRIX getProjMat();
 	XMMATRIX getViewProjMat();
 
+	XMMATRIX getInvViewProjMat();
+	
+
 private:
 	float FOVY;
 	float aspect;

@@ -45,8 +45,8 @@ struct PBMPMConstants {
 	float borderFriction;
 
 	//mouse stuff
+	XMFLOAT4 mousePosition;
 	unsigned int mouseActivation;
-	XMUINT2 mousePosition;
 	unsigned int mouseRadius;
 	unsigned int mouseFunction;
 	unsigned int mouseVelocity;

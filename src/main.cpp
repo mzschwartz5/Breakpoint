@@ -83,9 +83,17 @@ int main() {
         if (mState.rightButton) {
             //enable mouse force
             pbmpmTempConstants.mouseActivation = 1;
+
             POINT cursorPos;
             GetCursorPos(&cursorPos);
-            pbmpmTempConstants.mousePosition = XMUINT2{ (unsigned int)cursorPos.x, (unsigned int)cursorPos.y };
+
+            float ndcX = (2.0f * cursorPos.x) / SCREEN_WIDTH - 1.0f;
+            float ndcY = -(2.0f * cursorPos.y) / SCREEN_HEIGHT + 1.0f;
+
+            XMVECTOR screenCursorPos = XMVectorSet(ndcX, ndcY, 0.0f, 1.0f);
+            XMVECTOR worldCursorPos = XMVector4Transform(screenCursorPos, camera->getInvViewProjMat());
+            XMStoreFloat4(&(pbmpmTempConstants.mousePosition), worldCursorPos);
+
             pbmpmTempConstants.mouseFunction = 0;
             pbmpmTempConstants.mouseRadius = 1000;
             scene.updatePBMPMConstants(pbmpmTempConstants);

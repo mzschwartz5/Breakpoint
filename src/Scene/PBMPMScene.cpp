@@ -211,7 +211,7 @@ void PBMPMScene::doEmission(StructuredBuffer* gridBuffer) {
 	emissionCmd->ResourceBarrier(1, &gridBufferBarrier);
 
 	// Set Root Descriptors
-	emissionCmd->SetComputeRoot32BitConstants(0, 26, &constants, 0);
+	emissionCmd->SetComputeRoot32BitConstants(0, 28, &constants, 0);
 	emissionCmd->SetComputeRootConstantBufferView(1, shapeBuffer.getGPUVirtualAddress());
 	emissionCmd->SetComputeRootDescriptorTable(2, particleBuffer.getUAVGPUDescriptorHandle());
 	emissionCmd->SetComputeRootDescriptorTable(3, gridBuffer->getSRVGPUDescriptorHandle());
@@ -275,7 +275,7 @@ void PBMPMScene::bukkitizeParticles() {
 	bukkitCountPipeline.getCommandList()->ResourceBarrier(1, &particlePositionsBarrier);
 
 	// Properly set the Descriptors & Resource Transitions
-	bukkitCountPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 26, &constants, 0);
+	bukkitCountPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 28, &constants, 0);
 	bukkitCountPipeline.getCommandList()->SetComputeRootDescriptorTable(1, particleCount.getSRVGPUDescriptorHandle());
 	bukkitCountPipeline.getCommandList()->SetComputeRootDescriptorTable(2, particleBuffer.getSRVGPUDescriptorHandle());
 	bukkitCountPipeline.getCommandList()->SetComputeRootDescriptorTable(3, positionBuffer.getSRVGPUDescriptorHandle());
@@ -313,7 +313,7 @@ void PBMPMScene::bukkitizeParticles() {
 	bukkitAllocatePipeline.getCommandList()->ResourceBarrier(1, &bukkitCountBarrier);
 
 	// Properly set the Descriptors & Resource Transitions
-	bukkitAllocatePipeline.getCommandList()->SetComputeRoot32BitConstants(0, 26, &constants, 0);
+	bukkitAllocatePipeline.getCommandList()->SetComputeRoot32BitConstants(0, 28, &constants, 0);
 	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(1, bukkitSystem.countBuffer.getSRVGPUDescriptorHandle());
 	bukkitAllocatePipeline.getCommandList()->SetComputeRootDescriptorTable(2, bukkitSystem.threadData.getUAVGPUDescriptorHandle());
 
@@ -351,7 +351,7 @@ void PBMPMScene::bukkitizeParticles() {
 	bukkitInsertPipeline.getCommandList()->ResourceBarrier(2, barriers);
 
 	// Properly set the Descriptors
-	bukkitInsertPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 26, &constants, 0);
+	bukkitInsertPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 28, &constants, 0);
 	bukkitInsertPipeline.getCommandList()->SetComputeRootDescriptorTable(1, particleBuffer.getSRVGPUDescriptorHandle());
 	bukkitInsertPipeline.getCommandList()->SetComputeRootDescriptorTable(2, bukkitSystem.countBuffer2.getUAVGPUDescriptorHandle());
 	bukkitInsertPipeline.getCommandList()->SetComputeRootDescriptorTable(3, bukkitSystem.indexStart.getSRVGPUDescriptorHandle());
@@ -604,7 +604,7 @@ void PBMPMScene::compute() {
 			cmdList->SetPipelineState(g2p2gPipeline.getPSO());
 			cmdList->SetComputeRootSignature(g2p2gPipeline.getRootSignature());
 
-			g2p2gPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 26, &constants, 0);
+			g2p2gPipeline.getCommandList()->SetComputeRoot32BitConstants(0, 28, &constants, 0);
 
 			ID3D12DescriptorHeap* computeDescriptorHeaps[] = { g2p2gPipeline.getDescriptorHeap()->Get() };
 			cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);

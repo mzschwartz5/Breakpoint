@@ -131,3 +131,8 @@ XMMATRIX Camera::getProjMat() {
 XMMATRIX Camera::getViewProjMat() {
 	return XMLoadFloat4x4(&viewProjMat);
 }
+
+XMMATRIX Camera::getInvViewProjMat()
+{
+	return XMMatrixInverse(nullptr, XMLoadFloat4x4(&viewProjMat));
+}
