@@ -9,6 +9,7 @@ ConstantBuffer<PBMPMConstants> g_simConstants : register(b0);
 StructuredBuffer<Particle> g_particles : register(t0);
 StructuredBuffer<uint> g_particleCount : register(t1);
 StructuredBuffer<uint> g_bukkitIndexStart : register(t2);
+StructuredBuffer<float4> g_positions : register(t3);
 RWStructuredBuffer<uint> g_particleInsertCounters : register(u0);
 RWStructuredBuffer<uint> g_particleData : register(u1);
 
@@ -32,7 +33,7 @@ void main(uint3 id : SV_DispatchThreadID)
     }
 
     // Get particle position
-    float3 position = particle.position;
+    float3 position = g_positions[id.x].xyz;
 
     // Calculate the bukkit ID for this particle
     int3 particleBukkit = positionToBukkitId(position);

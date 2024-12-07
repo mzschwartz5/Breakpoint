@@ -29,6 +29,8 @@ RWStructuredBuffer<int> g_gridToBeCleared : register(u3);
 
 RWStructuredBuffer<int> g_tempTileData : register(u4);
 
+RWStructuredBuffer<float4> g_positions : register(u5);
+
 //groupshared int s_tileData[TileDataSize];
 groupshared int s_tileDataDst[TileDataSize];
 
@@ -359,8 +361,9 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
         uint myParticleIndex = g_bukkitParticleData[threadData.rangeStart + indexInGroup];
         
         Particle particle = g_particles[myParticleIndex];
+        float liquidDensity = g_positions[myParticleIndex].w;
         
-        float3 p = particle.position;
+        float3 p = g_positions[myParticleIndex].xyz;
         QuadraticWeightInfo weightInfo = quadraticWeightInit(p);
         
         if (g_simConstants.iteration != 0)
@@ -426,7 +429,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 volume = 1.0 / volume;
                 if (volume < 1.0)
                 {
-                    particle.liquidDensity = lerp(particle.liquidDensity, volume, 0.1);
+                    liquidDensity = lerp(liquidDensity, volume, 0.1);
                 }
             }
             
@@ -447,10 +450,10 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                     // ending up with det(F^n+1) = (1+tr(D))*det(F^n)
                     // Then we directly set particle.liquidDensity to reflect the approximately integrated volume.
                     // The liquid material does not actually use the deformation gradient matrix.
-                    particle.liquidDensity *= (tr3D(particle.deformationDisplacement) + 1.0);
+                    liquidDensity *= (tr3D(particle.deformationDisplacement) + 1.0);
 
                     // Safety clamp to avoid instability with very small densities.
-                    particle.liquidDensity = max(particle.liquidDensity, 0.05);
+                    liquidDensity = max(liquidDensity, 0.05);
                 }
                 else
                 {
@@ -458,7 +461,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 }
                 
                 // Update particle position
-                particle.position += particle.displacement;
+                p += particle.displacement;
                 
                 // Mouse Iteraction Here
                 /*if (g_simConstants.mouseActivation > 0)
@@ -487,11 +490,12 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 int originalMax; // Needed for InterlockedMax output parameter
                 InterlockedMax(g_freeIndices[0], 0, originalMax); 
                 
-                particle.position = projectInsideGuardian(particle.position, g_simConstants.gridSize, GuardianSize);
+                p = projectInsideGuardian(p, g_simConstants.gridSize, GuardianSize);
             }
             
             // Save the particle back to the buffer
-            g_particles[myParticleIndex] = particle;        
+            g_particles[myParticleIndex] = particle;
+			g_positions[myParticleIndex] = float4(p, liquidDensity);
         }
         
         {
@@ -502,7 +506,7 @@ void main(uint indexInGroup : SV_GroupIndex, uint3 groupId : SV_GroupID)
                 float3x3 deviatoric = -1.0 * (particle.deformationDisplacement + transpose(particle.deformationDisplacement));
                 particle.deformationDisplacement += g_simConstants.liquidViscosity * 0.5 * deviatoric;
 
-                float alpha = 0.5 * (1.0 / particle.liquidDensity - tr3D(particle.deformationDisplacement) - 1.0);
+                float alpha = 0.5 * (1.0 / liquidDensity - tr3D(particle.deformationDisplacement) - 1.0);
                 particle.deformationDisplacement += g_simConstants.liquidRelaxation * alpha * Identity;
             }
 

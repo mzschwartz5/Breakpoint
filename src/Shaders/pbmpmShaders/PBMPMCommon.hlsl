@@ -60,8 +60,6 @@ static const float3x3 Identity = float3x3(1, 0, 0, 0, 1, 0, 0, 0, 1);
 static const float3x3 ZeroMatrix = float3x3(0, 0, 0, 0, 0, 0, 0, 0, 0);
 
 struct Particle {
-	float3 position; //2->3
-	float liquidDensity;
 	float3 displacement; //2->3
 	float mass;
     float3x3 deformationGradient;
