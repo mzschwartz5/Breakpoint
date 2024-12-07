@@ -5,12 +5,14 @@
 // Inputs
 // SRV for positions buffer (input buffer)
 StructuredBuffer<float4> positionsBuffer : register(t0);
-// SRV for the surface cells
-StructuredBuffer<Cell> cells : register(t1);
+// SRV for the surface cell particle counts
+StructuredBuffer<int> cellParticleCounts : register(t1);
+// SRV for the surface cell particle indices
+StructuredBuffer<int> cellParticleIndices : register(t2);
 // SRV for the surface vertex indices
-StructuredBuffer<int> surfaceVertexIndices : register(t2);
+StructuredBuffer<int> surfaceVertexIndices : register(t3);
 // Root SRV for dispatch params for this pass
-StructuredBuffer<int3> surfaceVertDensityDispatch : register(t3);
+StructuredBuffer<int3> surfaceVertDensityDispatch : register(t4);
 
 // Root constants
 ConstantBuffer<BilevelUniformGridConstants> cb : register(b0);
@@ -72,9 +74,9 @@ void main( uint3 globalThreadId : SV_DispatchThreadID ) {
                 int3 neighborCellIdx3d = int3(x, y, z);
                 int neighborCellIdx1d = to1D(neighborCellIdx3d, cb.dimensions);
 
-                int particleCount = cells[neighborCellIdx1d].particleCount;
+                int particleCount = cellParticleCounts[neighborCellIdx1d];
                 for (int i = 0; i < particleCount; i++) {
-                    int particleIdx = cells[neighborCellIdx1d].particleIndices[i];
+                    int particleIdx = cellParticleIndices[neighborCellIdx1d * MAX_PARTICLES_PER_CELL + i];
                     float3 particlePos = positionsBuffer[particleIdx].xyz;
                     float3 r = vertPos - particlePos;
                     totalDensity += isotropicKernel(r, cb.resolution); // (In the paper, they use kernel radius here, which is defaulted to 0.99 * cell resolution)

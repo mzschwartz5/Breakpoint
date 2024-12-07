@@ -12,7 +12,7 @@ ConstantBuffer<Uniforms> cb : register(b0);
 // SRV for surface block indices
 StructuredBuffer<int> surfaceBlockIndices : register(t0);
 // SRV for the surface cells
-StructuredBuffer<Cell> cells : register(t1);
+StructuredBuffer<int> cellParticleCounts : register(t1);
 // SRV for the surface block dispatch
 StructuredBuffer<int3> surfaceBlockDispatch : register(t2);
 
@@ -22,7 +22,7 @@ RWStructuredBuffer<int> surfaceVertices : register(u0);
 RWStructuredBuffer<int3> surfaceHalfBlockDispatch : register(u1); // piggy-backing off this pass to set up an indirect dispatch for the mesh shading step
 
 // At a typical value of FILLED_BLOCK = 216, (4 + 2)^3, this is well within the limits of shared memory. 
-groupshared int cellParticleCounts[FILLED_BLOCK];
+groupshared int s_cellParticleCounts[FILLED_BLOCK];
 
 // Since surface cells share vertices, keep track of whether the verts are surface verts in shared memory first,
 // then write them to the output buffer. This avoids excess global memory writes.
@@ -101,7 +101,7 @@ void main(uint3 localThreadId : SV_GroupThreadID, uint3 groupId : SV_GroupID) {
     // (Skip the cells on edges, we'll get them later)
     int offsetLocalCellIdx1d = to1D(localCellIndex3d + int3(1, 1, 1), CELLS_PER_BLOCK_EDGE + 2);
     if (all(localCellIndex3d < (CELLS_PER_BLOCK_EDGE - 1) * int3(1, 1, 1)) && all(localCellIndex3d > int3(0, 0, 0))) {
-        cellParticleCounts[offsetLocalCellIdx1d] = cells[globalThreadId].particleCount;
+        s_cellParticleCounts[offsetLocalCellIdx1d] = cellParticleCounts[globalThreadId];
     }
 
     // We also need the particle counts for the cells surrounding the surface block. Let each edge cell in the surface block
@@ -125,7 +125,7 @@ void main(uint3 localThreadId : SV_GroupThreadID, uint3 groupId : SV_GroupID) {
                 int3 localNeighborCellIndex3d = globalNeighborCellIndex3d - globalNeighborCellOrigin;
                 int localNeighborCellIndex1d = to1D(localNeighborCellIndex3d, CELLS_PER_BLOCK_EDGE + 2);
                 
-                cellParticleCounts[localNeighborCellIndex1d] = cells[globalNeighborCellIndex1d].particleCount;
+                s_cellParticleCounts[localNeighborCellIndex1d] = cellParticleCounts[globalNeighborCellIndex1d];
             }
         }
     }
@@ -143,7 +143,7 @@ void main(uint3 localThreadId : SV_GroupThreadID, uint3 groupId : SV_GroupID) {
     // It CAN be a surface cell EVEN if it has no particles itself.
     // As we iterate over all neighbors, if any one of them is different from the previous ones, the cell is a surface cell.
     // To track this, initialize firstCellEmpty to the state of the current cell, from shared memory.
-    bool firstCellEmpty = (cellParticleCounts[offsetLocalCellIdx1d] == 0);
+    bool firstCellEmpty = (s_cellParticleCounts[offsetLocalCellIdx1d] == 0);
     bool isSurfaceCell = false;
     for (int z = minSearchBounds.z; z <= maxSearchBounds.z; z++) {
         for (int y = minSearchBounds.y; y <= maxSearchBounds.y; y++) {
@@ -153,7 +153,7 @@ void main(uint3 localThreadId : SV_GroupThreadID, uint3 groupId : SV_GroupID) {
                 int3 localNeighborCellIndex3d = globalNeighborCellIndex3d - globalNeighborCellOrigin;
                 int localNeighborCellIndex1d = to1D(localNeighborCellIndex3d, CELLS_PER_BLOCK_EDGE + 2);
 
-                bool isCellEmpty = (cellParticleCounts[localNeighborCellIndex1d] == 0);
+                bool isCellEmpty = (s_cellParticleCounts[localNeighborCellIndex1d] == 0);
                 if (isCellEmpty != firstCellEmpty) {
                     isSurfaceCell = true;
                     break;

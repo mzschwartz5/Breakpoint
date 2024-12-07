@@ -6,8 +6,9 @@
 StructuredBuffer<float4> positionsBuffer : register(t0);
 
 // UAV for the bilevel uniform grid (output buffers)
-RWStructuredBuffer<Cell> cells : register(u0);
-RWStructuredBuffer<int> blocks : register(u1);
+RWStructuredBuffer<int> cellParticleCounts : register(u0);
+RWStructuredBuffer<int> cellParticleIndices : register(u1);
+RWStructuredBuffer<int> blocks : register(u2);
 
 ConstantBuffer<BilevelUniformGridConstants> cb : register(b0);
 
@@ -40,9 +41,9 @@ void main(uint3 globalThreadId : SV_DispatchThreadID) {
 
     // Add this particle to the cell
     int particleIndexInCell;
-    InterlockedAdd(cells[cellIndex1D].particleCount, 1, particleIndexInCell);
+    InterlockedAdd(cellParticleCounts[cellIndex1D], 1, particleIndexInCell);
     if (particleIndexInCell < MAX_PARTICLES_PER_CELL) {
-        cells[cellIndex1D].particleIndices[particleIndexInCell] = globalThreadId.x;
+        cellParticleIndices[cellIndex1D * MAX_PARTICLES_PER_CELL + particleIndexInCell] = globalThreadId.x;
     }
 
     // Do this only once per cell, when the first particle is added to the cell

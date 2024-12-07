@@ -34,11 +34,6 @@ static const int EDGES_PER_HALFBLOCK = 170; // equal to max verts; just giving i
 
 // This is just for shaders, types will not compile in C++ code
 #ifndef __cplusplus
-struct Cell {
-    int particleCount;
-    int particleIndices[MAX_PARTICLES_PER_CELL];
-};
-
 struct BilevelUniformGridConstants {
     int numParticles;
     int3 dimensions;

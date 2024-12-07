@@ -5,6 +5,11 @@
 #include "../D3D/Pipeline/MeshPipeline.h"
 #include "../D3D/StructuredBuffer.h"
 #include "../Shaders/constants.h"
+#include <Alembic/AbcCoreFactory/All.h>
+#include <Alembic/AbcGeom/All.h>
+
+using namespace Alembic::Abc;
+using namespace Alembic::AbcGeom;
 
 struct GridConstants {
     int numParticles;
@@ -81,7 +86,8 @@ private:
     ID3D12CommandSignature* meshCommandSignature = nullptr;
 
     StructuredBuffer* positionBuffer;
-    StructuredBuffer cellsBuffer;
+    StructuredBuffer cellParticleCountBuffer;
+    StructuredBuffer cellParticleIndicesBuffer;
     StructuredBuffer blocksBuffer;
     StructuredBuffer surfaceBlockIndicesBuffer;
     StructuredBuffer surfaceBlockDispatch;
@@ -92,7 +98,8 @@ private:
     StructuredBuffer surfaceVertDensityBuffer;
     StructuredBuffer surfaceVertexNormalBuffer;
 
-    StructuredBuffer blankCellsBuffer;
+    StructuredBuffer blankCellParticleCountBuffer;
+    StructuredBuffer blankCellParticleIndicesBuffer;
     StructuredBuffer blankBlocksBuffer;
     StructuredBuffer blankSurfaceVerticesBuffer;
     StructuredBuffer blankSurfaceVertDensityBuffer;
