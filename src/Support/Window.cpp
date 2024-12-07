@@ -183,6 +183,10 @@ void Window::beginFrame(ID3D12GraphicsCommandList6* cmdList) {
     cmdList->ClearRenderTargetView(rtvHandles[currentSwapChainBufferIdx], clearColor, 0, nullptr);
     cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
 
+    setRT(cmdList);
+}
+
+void Window::setRT(ID3D12GraphicsCommandList6* cmdList) {
     cmdList->OMSetRenderTargets(1, &rtvHandles[currentSwapChainBufferIdx], false, &dsvHandle);
 }
 

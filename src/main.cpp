@@ -111,16 +111,16 @@ int main() {
         scene.compute();
 
         //begin frame
-        Window::get().beginFrame(meshPipeline->getCommandList());
+        Window::get().beginFrame(renderPipeline->getCommandList());
+
+        //create viewport
         D3D12_VIEWPORT vp;
-        Window::get().createViewport(vp, meshPipeline->getCommandList());
-        Window::get().setViewport(vp, meshPipeline->getCommandList());
+        Window::get().createViewport(vp, renderPipeline->getCommandList());
 
-        //draw scene
-        // scene.draw();
-
-        // Window::get().setViewport(vp, scene.getMeshPipeline()->getCommandList());
-        scene.drawFluid();
+        //first render pass
+        Window::get().setRT(renderPipeline->getCommandList());
+        Window::get().setViewport(vp, renderPipeline->getCommandList());
+        scene.draw();
 
         //set up ImGUI for frame
         ImGui_ImplDX12_NewFrame();
@@ -138,16 +138,22 @@ int main() {
         }
 
         meshPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
-        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), meshPipeline->getCommandList());
-
-        Window::get().endFrame(meshPipeline->getCommandList());
+        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
 
         //finish draw, present, reset
-        // context.executeCommandList(renderPipeline->getCommandListID());
-        context.executeCommandList(scene.getMeshPipeline()->getCommandListID());
+        context.executeCommandList(renderPipeline->getCommandListID());
+
+        //mesh render pass
+        Window::get().setRT(scene.getMeshPipeline()->getCommandList());
+        Window::get().setViewport(vp, scene.getMeshPipeline()->getCommandList());
+        scene.drawFluid();
+        context.executeCommandList(scene.getMeshPipeline()->getCommandListID()); 
+
+        //end frame
+        Window::get().endFrame(scene.getMeshPipeline()->getCommandList());
 
         Window::get().present();
-		// context.resetCommandList(renderPipeline->getCommandListID());
+		context.resetCommandList(renderPipeline->getCommandListID());
         context.resetCommandList(scene.getMeshPipeline()->getCommandListID());
     }
 
