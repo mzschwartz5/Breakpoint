@@ -7,7 +7,7 @@ struct Block {
 };
 
 // SRV for positions buffer (input buffer)
-StructuredBuffer<float3> positionsBuffer : register(t0);
+StructuredBuffer<float4> positionsBuffer : register(t0);
 
 // UAV for the bilevel uniform grid (output buffers)
 RWStructuredBuffer<Cell> cells : register(u0);
@@ -30,7 +30,7 @@ void main(uint3 globalThreadId : SV_DispatchThreadID) {
         return;
     }
 
-    float3 position = positionsBuffer[globalThreadId.x];
+    float3 position = positionsBuffer[globalThreadId.x].xyz;
     int3 cellIndices = getCellIndex(position);
     int cellIndex1D = to1D(cellIndices, cb.dimensions);
     int3 blockIndices = cellIndices / CELLS_PER_BLOCK_EDGE;

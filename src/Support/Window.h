@@ -50,7 +50,8 @@ public:
 
 	void updateTitle(std::wstring text);
 
-	static void createAndSetDefaultViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList);
+	static void createViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList);
+	static void setViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList);
 
 private:
 	Window() = default;

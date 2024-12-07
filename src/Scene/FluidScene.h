@@ -45,7 +45,10 @@ public:
                ComputePipeline* surfaceVertexNormalCP,
                MeshPipeline* fluidMeshPipeline);
 
-    void compute();
+    void compute(
+        StructuredBuffer* positionsBuffer,
+        int numParticles
+    );
     void draw(Camera* camera);
     void constructScene();
     void computeBilevelUniformGrid();
@@ -77,8 +80,7 @@ private:
 	ID3D12CommandSignature* commandSignature = nullptr;
     ID3D12CommandSignature* meshCommandSignature = nullptr;
 
-    std::vector<XMFLOAT3> positions;
-	StructuredBuffer positionBuffer;
+    StructuredBuffer* positionBuffer;
     StructuredBuffer cellsBuffer;
     StructuredBuffer blocksBuffer;
     StructuredBuffer surfaceBlockIndicesBuffer;

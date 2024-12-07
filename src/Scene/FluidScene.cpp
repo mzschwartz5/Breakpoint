@@ -108,36 +108,8 @@ float getRandomFloatInRange(float min, float max) {
 }
 
 void FluidScene::constructScene() {
-    int blocksPerEdge = 16;
-    int numParticlesPerCell = 8;
-    int numParticles = numParticlesPerCell * blocksPerEdge * CELLS_PER_BLOCK_EDGE * blocksPerEdge * CELLS_PER_BLOCK_EDGE * blocksPerEdge * CELLS_PER_BLOCK_EDGE;
-    numParticles -= numParticlesPerCell * blocksPerEdge * CELLS_PER_BLOCK_EDGE * blocksPerEdge * CELLS_PER_BLOCK_EDGE; // Skip the top level of cells
-    gridConstants = { numParticles, {blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE}, {0.f, 0.f, 0.f}, 0.01f };
-
-    // Populate position data. Place a particle per-cell in a 12x12x12 block of cells, each at a random position in a cell.
-    // (Temporary, eventually, position data will come from simulation)
-    for (int u = 0; u < numParticlesPerCell; ++u) {
-        for (int i = 0; i < gridConstants.gridDim.x; ++i) {
-            for (int j = 0; j < gridConstants.gridDim.y; ++j) {
-                for (int k = 0; k < gridConstants.gridDim.z; ++k) {
-                    // Skip i,j,k = top level of cells, that way the top level is empty and the second-to-top level becomes the "surface"
-                    if (j == gridConstants.gridDim.z - 1) {
-                        continue;
-                    }
-
-                    positions.push_back({ 
-                        gridConstants.minBounds.x + gridConstants.resolution * i + getRandomFloatInRange(0.f, gridConstants.resolution),
-                        gridConstants.minBounds.y + gridConstants.resolution * j + getRandomFloatInRange(0.f, gridConstants.resolution),
-                        gridConstants.minBounds.z + gridConstants.resolution * k + getRandomFloatInRange(0.f, gridConstants.resolution) 
-                    });
-                }
-            }
-        }
-    }
-
-    positionBuffer = StructuredBuffer(positions.data(), gridConstants.numParticles, sizeof(XMFLOAT3));
-    positionBuffer.passDataToGPU(*context, bilevelUniformGridCP->getCommandList(), bilevelUniformGridCP->getCommandListID());
-    positionBuffer.createSRV(*context, bilevelUniformGridCP->getDescriptorHeap());
+    int blocksPerEdge = 32;
+    gridConstants = { 0, {blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE}, {0.f, 0.f, 0.f}, 2.0f };
 
     // Create cells and blocks buffers
     int numCells = gridConstants.gridDim.x * gridConstants.gridDim.y * gridConstants.gridDim.z;
@@ -255,7 +227,13 @@ void FluidScene::constructScene() {
     context->resetCommandList(bilevelUniformGridCP->getCommandListID());
 }
 
-void FluidScene::compute() {
+void FluidScene::compute(
+    StructuredBuffer* pbmpmPositionsBuffer,
+    int numParticles
+) {
+    gridConstants.numParticles = numParticles;
+    positionBuffer = pbmpmPositionsBuffer;
+
     computeBilevelUniformGrid();
     computeSurfaceBlockDetection();
     computeSurfaceCellDetection();
@@ -275,7 +253,7 @@ void FluidScene::computeBilevelUniformGrid() {
     cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
 
     // Set compute root descriptor table
-    cmdList->SetComputeRootDescriptorTable(0, positionBuffer.getSRVGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(0, positionBuffer->getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(1, cellsBuffer.getUAVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(2, blocksBuffer.getUAVGPUDescriptorHandle());
     cmdList->SetComputeRoot32BitConstants(3, 8, &gridConstants, 0);
@@ -461,7 +439,7 @@ void FluidScene::computeSurfaceVertexDensity() {
     cmdList->ResourceBarrier(3, barriers);
 
     // Set compute root descriptor table
-    cmdList->SetComputeRootDescriptorTable(0, positionBuffer.getSRVGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(0, positionBuffer->getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(1, cellsBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(2, surfaceVertexIndicesBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootShaderResourceView(3, surfaceVertDensityDispatch.getGPUVirtualAddress());
@@ -545,7 +523,6 @@ void FluidScene::releaseResources() {
     bilevelUniformGridCP->releaseResources();
     surfaceBlockDetectionCP->releaseResources();
     surfaceCellDetectionCP->releaseResources();
-    positionBuffer.releaseResources();
     cellsBuffer.releaseResources();
     blocksBuffer.releaseResources();
     surfaceBlockIndicesBuffer.releaseResources();

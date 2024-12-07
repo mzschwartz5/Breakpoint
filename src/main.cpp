@@ -107,15 +107,20 @@ int main() {
 
         //draw to window
         auto renderPipeline = scene.getRenderPipeline();
+        auto meshPipeline = scene.getMeshPipeline();
         scene.compute();
 
         //begin frame
-        Window::get().beginFrame(renderPipeline->getCommandList());
+        Window::get().beginFrame(meshPipeline->getCommandList());
         D3D12_VIEWPORT vp;
-        Window::get().createAndSetDefaultViewport(vp, renderPipeline->getCommandList());
+        Window::get().createViewport(vp, meshPipeline->getCommandList());
+        Window::get().setViewport(vp, meshPipeline->getCommandList());
 
         //draw scene
-        scene.draw();
+        // scene.draw();
+
+        // Window::get().setViewport(vp, scene.getMeshPipeline()->getCommandList());
+        scene.drawFluid();
 
         //set up ImGUI for frame
         ImGui_ImplDX12_NewFrame();
@@ -132,16 +137,18 @@ int main() {
             pbmpmConstants = pbmpmTempConstants;
         }
 
-        renderPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
-        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
+        meshPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
+        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), meshPipeline->getCommandList());
 
-        Window::get().endFrame(renderPipeline->getCommandList());
+        Window::get().endFrame(meshPipeline->getCommandList());
 
         //finish draw, present, reset
-        context.executeCommandList(renderPipeline->getCommandListID());
+        // context.executeCommandList(renderPipeline->getCommandListID());
+        context.executeCommandList(scene.getMeshPipeline()->getCommandListID());
 
         Window::get().present();
-		context.resetCommandList(renderPipeline->getCommandListID());
+		// context.resetCommandList(renderPipeline->getCommandListID());
+        context.resetCommandList(scene.getMeshPipeline()->getCommandListID());
     }
 
     // Scene should release all resources, including their pipelines
