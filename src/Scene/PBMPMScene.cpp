@@ -402,7 +402,7 @@ void PBMPMScene::constructScene() {
 	// Create Constant Data
 	constants = { {64, 64, 64}, 0.01, 9.8, 0.2, 0.02,
 		(unsigned int)std::ceil(std::pow(10, 7)),
-		1, 4, 30, 1, 0, 0, 0, 0, 0, 0, 10, 0.2 };
+		1, 4, 30, 1, 0, 0, 0, 0, 0, 0, 5, 0.2 };
 
 	// Create Model Matrix
 	modelMat *= XMMatrixTranslation(0.0f, 0.0f, 0.0f);
@@ -570,7 +570,7 @@ void PBMPMScene::compute() {
 	resetBuffers(true);
 
 	// Could be 20?
-	int substepCount = 10;
+	int substepCount = 5;
 	for (int substepIdx = 0; substepIdx < substepCount; substepIdx++) {
 
 		// Update simulation uniforms
