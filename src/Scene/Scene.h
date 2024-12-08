@@ -48,6 +48,7 @@ private:
 	ComputePipeline surfaceVertexCompactionCP;
 	ComputePipeline surfaceVertexDensityCP;
 	ComputePipeline surfaceVertexNormalCP;
+	ComputePipeline bufferClearCP;
 	MeshPipeline fluidMeshPipeline;
 	FluidScene fluidScene;
 
