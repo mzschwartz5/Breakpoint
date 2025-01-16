@@ -24,7 +24,7 @@ static const int SURFACE_VERTEX_COMPACTION_THREADS_X = 64;
 // we no longer have block-level coherency of vertices anyway. But use this as a starting point - can adjust it later.
 static const int SURFACE_VERTEX_DENSITY_THREADS_X = 32;
 static const int SURFACE_VERTEX_NORMAL_THREADS_X = 16;
-static const int KERNEL_SCALE = 1; // not exactly sure what the significance of this is, copied from paper's repo. (it can vary between 0.05 and 20.0f via a UI in the repo)
+static const int KERNEL_SCALE = 15; // not exactly sure what the significance of this is, copied from paper's repo. (it can vary between 0.05 and 20.0f via a UI in the repo)
 // Given the method of mesh shading half-blocks, we can place these upper limits on the outputs of each mesh shader workgroup:
 static const float ISOVALUE = 0.03f; // also copied from the paper
 static const float EPSILON = 0.00001f;

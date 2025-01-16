@@ -5,7 +5,7 @@
 #define SCREEN_WIDTH 1280
 #define SCREEN_HEIGHT 720
 
-#define MOVE_SCALAR 5.f
+#define MOVE_SCALAR 0.01f
 
 using namespace DirectX;
 
@@ -40,9 +40,9 @@ private:
 	float rotateX{ 0 };
 	float rotateY{ 0 };
 
-	XMFLOAT3 position{ 30, 30, -60 };
+	XMFLOAT3 position{ 0, 0, -15 };
 	XMFLOAT3 up{ 0, 1, 0 };
-	XMFLOAT3 forward{ 0, 0, 1 };
+	XMFLOAT3 forward{ 0, 5, 0 };
 	XMFLOAT3 right{ 1, 0, 0 };
 
 	XMFLOAT4X4 viewMat;

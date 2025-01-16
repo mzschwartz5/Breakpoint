@@ -1,7 +1,7 @@
 #include "Camera.h"
 
 Camera::Camera() {
-	setFOV(0.25f * XM_PI, float(SCREEN_WIDTH) / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
+	setFOV(0.4f * XM_PI, float(SCREEN_WIDTH) / (float)SCREEN_HEIGHT, 0.1f, 1000.0f);
 	updateProjMat();
 	updateViewMat();
 }
