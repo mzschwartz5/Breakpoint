@@ -49,6 +49,7 @@ public:
                ComputePipeline* surfaceVertexDensityCP,
                ComputePipeline* surfaceVertexNormalCP,
                ComputePipeline* bufferClearCP,
+               ComputePipeline* dispatchArgDivideCP,
                MeshPipeline* fluidMeshPipeline);
 
     void compute(
@@ -68,6 +69,7 @@ public:
 private:
     void transitionBuffers(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState);
     void resetBuffers();
+    void divNumThreadsByGroupSize(StructuredBuffer* divNumThreadsByGroupSize, int groupSize);
 
     GridConstants gridConstants;
     
@@ -78,6 +80,7 @@ private:
     ComputePipeline* surfaceVertexDensityCP;
     ComputePipeline* surfaceVertexNormalCP;
     ComputePipeline* bufferClearCP;
+    ComputePipeline* dispatchArgDivideCP;
 
     MeshPipeline* fluidMeshPipeline;
     

@@ -9,6 +9,7 @@ FluidScene::FluidScene(DXContext* context,
                        ComputePipeline* surfaceVertexDensityCP,
                        ComputePipeline* surfaceVertexNormalCP,
                        ComputePipeline* bufferClearCP,
+                       ComputePipeline* dispatchArgDivideCP,
                        MeshPipeline* fluidMeshPipeline)
     : Drawable(context, pipeline), 
       bilevelUniformGridCP(bilevelUniformGridCP), 
@@ -18,7 +19,9 @@ FluidScene::FluidScene(DXContext* context,
       surfaceVertexDensityCP(surfaceVertexDensityCP),
       surfaceVertexNormalCP(surfaceVertexNormalCP),
       bufferClearCP(bufferClearCP),
-      fluidMeshPipeline(fluidMeshPipeline)
+      dispatchArgDivideCP(dispatchArgDivideCP),
+      fluidMeshPipeline(fluidMeshPipeline),
+      positionHeap(*context, D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE)
 {
     constructScene();
 }
@@ -395,6 +398,8 @@ void FluidScene::compactSurfaceVertices() {
     context->signalAndWaitForFence(fence, fenceValue);
 
     context->resetCommandList(surfaceVertexCompactionCP->getCommandListID());
+
+    divNumThreadsByGroupSize(&surfaceVertDensityDispatch, SURFACE_VERTEX_DENSITY_THREADS_X);
 }
 
 void FluidScene::computeSurfaceVertexDensity() {
@@ -656,4 +661,33 @@ void FluidScene::resetBuffers() {
     context->executeCommandList(bufferClearCP->getCommandListID());
     context->signalAndWaitForFence(fence, fenceValue);
     context->resetCommandList(bufferClearCP->getCommandListID());
+}
+
+/**
+ * In one stream compaction step (detecting surface vertices), we end up with a total number (vertices),
+ * which equals the number of the threads needed in subsequent compute steps (via indirect dispatch).
+ * 
+ * What we *need*, however, is the total number of thread groups, not threads. To avoid the latency of shuttling this data back and forth between the CPU and GPU,
+ * we use a simple, one-thread compute pass to do the division, thus keeping the data on the GPU. To generalize this function for potential reuse, it accepts any dispatch buffer and any groupSize divisor.
+ * 
+ * This method assumes the dispatchArgs buffer is already a UAV.
+ */
+void FluidScene::divNumThreadsByGroupSize(StructuredBuffer* dispatchArgs, int groupSize) {
+    auto cmdList = dispatchArgDivideCP->getCommandList();
+
+    cmdList->SetPipelineState(dispatchArgDivideCP->getPSO());
+    cmdList->SetComputeRootSignature(dispatchArgDivideCP->getRootSignature());
+
+    // Set descriptor heap
+    ID3D12DescriptorHeap* computeDescriptorHeaps[] = { bilevelUniformGridCP->getDescriptorHeap()->Get() };
+    cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
+
+    cmdList->SetComputeRootUnorderedAccessView(0, dispatchArgs->getGPUVirtualAddress());
+    cmdList->SetComputeRoot32BitConstants(1, 1, &groupSize, 0);
+
+    cmdList->Dispatch(1, 1, 1);
+
+    context->executeCommandList(dispatchArgDivideCP->getCommandListID());
+    context->signalAndWaitForFence(fence, fenceValue);
+    context->resetCommandList(dispatchArgDivideCP->getCommandListID());
 }

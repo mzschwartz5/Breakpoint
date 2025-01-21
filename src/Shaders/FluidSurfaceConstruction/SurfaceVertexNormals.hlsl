@@ -18,7 +18,7 @@ RWStructuredBuffer<float3> surfaceVertexNormals : register(u0);
 
 [numthreads(SURFACE_VERTEX_NORMAL_THREADS_X, 1, 1)]
 void main(uint3 globalThreadId : SV_DispatchThreadID) {
-    if (globalThreadId.x >= surfaceVertDensityDispatch[0].x) {
+    if (globalThreadId.x >= (surfaceVertDensityDispatch[0].x * SURFACE_VERTEX_DENSITY_THREADS_X)) { // TODO: this might overshoot. Need total number of surface verts.
         return;
     }
 

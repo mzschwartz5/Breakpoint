@@ -34,6 +34,10 @@ void main(int3 globalThreadId : SV_DispatchThreadID) {
     int surfaceBlockWaveCount = WaveActiveCountBits(isSurfaceBlock);
     int surfaceBlockGlobalStartIdx;
 
+    if (surfaceBlockWaveCount <= 0) {
+        return;
+    }
+
     if (WaveIsFirstLane()) {
         InterlockedAdd(surfaceBlockDispatch[0].x, surfaceBlockWaveCount, surfaceBlockGlobalStartIdx);
         // No synchronziation is necessary, because we only care about the value within a wave.

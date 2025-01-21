@@ -47,7 +47,7 @@ float isotropicKernel(float3 r, float h)
 // to make sure the non-retired threads are contiguous.) It's a tradeoff between extra threads for non-surface verts and extra global memory access.
 [numthreads(SURFACE_VERTEX_DENSITY_THREADS_X, 1, 1)]
 void main( uint3 globalThreadId : SV_DispatchThreadID ) {
-    if (globalThreadId.x >= surfaceVertDensityDispatch[0].x) {
+    if (globalThreadId.x >= (surfaceVertDensityDispatch[0].x * SURFACE_VERTEX_DENSITY_THREADS_X)) { // TODO: this might overshoot. Need total number of surface verts.
         return;
     }
 

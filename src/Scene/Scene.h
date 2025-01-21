@@ -49,6 +49,7 @@ private:
 	ComputePipeline surfaceVertexDensityCP;
 	ComputePipeline surfaceVertexNormalCP;
 	ComputePipeline bufferClearCP;
+	ComputePipeline dispatchArgDivideCP;
 	MeshPipeline fluidMeshPipeline;
 	FluidScene fluidScene;
 

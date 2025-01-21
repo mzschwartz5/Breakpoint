@@ -33,6 +33,10 @@ void main(uint3 globalThreadId : SV_DispatchThreadID) {
     int surfaceVertexWaveCount = WaveActiveCountBits(isSurfaceVertex);
     int surfaceVertexGlobalStartIdx;
 
+    if (surfaceVertexWaveCount <= 0) {
+        return;
+    }
+
     if (WaveIsFirstLane()) {
         InterlockedAdd(surfaceVertDensityDispatch[0].x, surfaceVertexWaveCount, surfaceVertexGlobalStartIdx);
         // No synchronziation is necessary, because we only care about the value within a wave.
