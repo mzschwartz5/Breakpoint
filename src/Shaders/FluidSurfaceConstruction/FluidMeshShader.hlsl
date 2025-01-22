@@ -27,7 +27,6 @@ groupshared int outputVertexIndices[MAX_VERTICES];
 groupshared float3 vertexWorldPositions[MAX_VERTICES];
 groupshared float3 vertexNormalsShared[MAX_VERTICES];
 groupshared float4 vertexClipPositions[MAX_VERTICES];
-groupshared float vertexMeshletIndices[MAX_VERTICES];
 
 // Define the payload structure
 struct VertexOutput
@@ -35,7 +34,9 @@ struct VertexOutput
     float4 clipPos : SV_POSITION;
     float3 normal : NORMAL0;
     float3 worldPos : POSITION1;
+#ifdef OUTPUT_MESHLETS
     int meshletIndex : COLOR0;
+#endif
 };
 
 // Get the global grid vertex index of both endpoints from the edge index in the block
@@ -189,14 +190,11 @@ void main(
         vertexWorldPositions[outputVertexIndex] = vertPosWorld;
         vertexClipPositions[outputVertexIndex] = vertPosClip;
         vertexNormalsShared[outputVertexIndex] = vertNormal;
-        vertexMeshletIndices[outputVertexIndex] = workgroupId.x;
     }
 
     GroupMemoryBarrierWithGroupSync();
 
-    // From here on out, every thread acts as a single cell (TODO: this is where I want to try optimizing; return early for non-surface cells)
-    int3 localCellIdx3d = to3D(localCellIdx1d, CELLS_PER_BLOCK_EDGE * int3(1, 1, 1)); // TODO: can we avoid this conversion with 3D dispatch?
-    int3 globalCellIdx3d = blockIdx3d * CELLS_PER_BLOCK_EDGE + localCellIdx3d;
+    // From here on out, every thread acts as a single cell
 
     // Every surface block has surface vertices, but since each workgroup represents a *half*-blocks,
     // it's possible for a workgroup's half block to have no surface vertices. 
@@ -208,6 +206,8 @@ void main(
         mcCase = 0;
         numTris = 0;
     } else {
+        int3 localCellIdx3d = to3D(localCellIdx1d, CELLS_PER_BLOCK_EDGE * int3(1, 1, 1));
+        int3 globalCellIdx3d = blockIdx3d * CELLS_PER_BLOCK_EDGE + localCellIdx3d;
         mcCase = computeMarchingCubesCase(globalCellIdx3d);
         numTris = triangleCounts[mcCase];
     }
@@ -237,7 +237,9 @@ void main(
             verts[outputVertexIndex].clipPos = vertexClipPositions[outputVertexIndex];
             verts[outputVertexIndex].normal = vertexNormalsShared[outputVertexIndex];
             verts[outputVertexIndex].worldPos = vertexWorldPositions[outputVertexIndex];
-            verts[outputVertexIndex].meshletIndex = blockIdx1d;
+#ifdef OUTPUT_MESHLETS
+            verts[outputVertexIndex].meshletIndex = blockIdx1d; // technically, this isn't the meshlet index. But it's a close visualization. The actual meshlet index changes every frame, so it manifests as flickering colors.
+#endif
         }
 
         // Write the triangle to the output buffer
