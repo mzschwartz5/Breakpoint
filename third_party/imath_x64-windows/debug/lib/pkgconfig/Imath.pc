@@ -1,0 +1,18 @@
+prefix=${pcfiledir}/../..
+##
+## SPDX-License-Identifier: BSD-3-Clause
+## Copyright Contributors to the OpenEXR Project.
+##
+
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+includedir=${prefix}/../include
+libsuffix=-3_1_d
+Name: Imath
+Description: Imath library: vector/matrix and math operations, plus the half type.
+Version: 3.1.12
+Requires:
+Conflicts:
+Libs: "-L${libdir}" "-lImath${libsuffix}"
+Cflags: "-I${includedir}" "-I${includedir}/Imath"
+
