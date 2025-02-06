@@ -20,7 +20,7 @@ FluidScene::FluidScene(DXContext* context,
       surfaceVertexNormalCP(surfaceVertexNormalCP),
       bufferClearCP(bufferClearCP),
       dispatchArgDivideCP(dispatchArgDivideCP),
-      fluidMeshPipeline(fluidMeshPipeline),
+      fluidMeshPipeline(fluidMeshPipeline)
 {
     constructScene();
 }
@@ -107,13 +107,9 @@ void FluidScene::draw(Camera* camera) {
     resetBuffers();
 }
 
-float getRandomFloatInRange(float min, float max) {
-    return min + static_cast <float> (rand()) / (static_cast <float> (RAND_MAX / (max - min)));
-}
-
 void FluidScene::constructScene() {
     int blocksPerEdge = 32;
-    gridConstants = { 0, {blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE}, {0.f, 0.f, 0.f}, 2.0f };
+    gridConstants = { static_cast<int>(AlembicLoader::getInstance().getMaxParticleCount()), {blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE}, {-8.0f, -8.0f, -8.0f}, 0.125f };
 
     // Create cells and blocks buffers
     int numCells = gridConstants.gridDim.x * gridConstants.gridDim.y * gridConstants.gridDim.z;
@@ -129,6 +125,10 @@ void FluidScene::constructScene() {
     std::vector<int> surfaceVertexIndices(numVerts, 0);
     std::vector<float> surfaceVertexDensities(numVerts, 0.f);
     std::vector<XMFLOAT3> surfaceVertexNormals(numVerts, { 0.f, 0.f, 0.f });
+
+    positionBuffer = StructuredBuffer(AlembicLoader::getInstance().getParticlesForNextFrame(), AlembicLoader::getInstance().getMaxParticleCount(), sizeof(XMFLOAT3));
+    positionBuffer.passDataToGPU(*context, bilevelUniformGridCP->getCommandList(), bilevelUniformGridCP->getCommandListID());
+    positionBuffer.createSRV(*context, bilevelUniformGridCP->getDescriptorHeap());
 
     // Use the descriptor heap for the bilevelUniformGridCP for pretty much everything. Simplifies sharing resources
     blocksBuffer = StructuredBuffer(blocks.data(), numBlocks, sizeof(Block));
@@ -221,12 +221,10 @@ void FluidScene::constructScene() {
     context->resetCommandList(bilevelUniformGridCP->getCommandListID());
 }
 
-void FluidScene::compute(
-    StructuredBuffer* pbmpmPositionsBuffer,
-    int numParticles
-) {
-    gridConstants.numParticles = numParticles;
-    positionBuffer = pbmpmPositionsBuffer;
+void FluidScene::compute() {
+    positionBuffer.updateDataOnGPU(*context, bilevelUniformGridCP->getCommandList(), bilevelUniformGridCP->getCommandListID(), AlembicLoader::getInstance().getParticlesForNextFrame());
+
+    gridConstants.numParticles = AlembicLoader::getInstance().getParticleCountForCurrentFrame();
 
     computeBilevelUniformGrid();
     computeSurfaceBlockDetection();
@@ -247,7 +245,7 @@ void FluidScene::computeBilevelUniformGrid() {
     cmdList->SetDescriptorHeaps(_countof(computeDescriptorHeaps), computeDescriptorHeaps);
 
     // Set compute root descriptor table
-    cmdList->SetComputeRootDescriptorTable(0, positionBuffer->getSRVGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(0, positionBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(1, cellParticleCountBuffer.getUAVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(2, cellParticleIndicesBuffer.getUAVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(3, blocksBuffer.getUAVGPUDescriptorHandle());
@@ -436,7 +434,7 @@ void FluidScene::computeSurfaceVertexDensity() {
     cmdList->ResourceBarrier(3, barriers);
 
     // Set compute root descriptor table
-    cmdList->SetComputeRootDescriptorTable(0, positionBuffer->getSRVGPUDescriptorHandle());
+    cmdList->SetComputeRootDescriptorTable(0, positionBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(1, cellParticleCountBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(2, cellParticleIndicesBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetComputeRootDescriptorTable(3, surfaceVertexIndicesBuffer.getSRVGPUDescriptorHandle());

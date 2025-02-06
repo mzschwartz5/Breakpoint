@@ -22,12 +22,7 @@ int main() {
     mouse->SetWindow(Window::get().getHWND());
 
     //initialize scene
-    Scene scene{PBMPM, camera.get(), &context};
-
-    PBMPMConstants pbmpmConstants{ {512, 512, 512}, 0.01F, 2.5F, 1.5F, 0.01F,
-        (unsigned int)std::ceil(std::pow(10, 7)),
-        1, 8, 30, 0, 0,  0, 0, 0, 0, 5, 0.9F };
-    PBMPMConstants pbmpmTempConstants = pbmpmConstants;
+    Scene scene{Fluid, camera.get(), &context};
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -80,28 +75,6 @@ int main() {
             camera->rotate();
         }
 
-        if (mState.rightButton) {
-            //enable mouse force
-            pbmpmTempConstants.mouseActivation = 1;
-
-            POINT cursorPos;
-            GetCursorPos(&cursorPos);
-
-            float ndcX = (2.0f * cursorPos.x) / SCREEN_WIDTH - 1.0f;
-            float ndcY = -(2.0f * cursorPos.y) / SCREEN_HEIGHT + 1.0f;
-
-            XMVECTOR screenCursorPos = XMVectorSet(ndcX, ndcY, 0.0f, 1.0f);
-            XMVECTOR worldCursorPos = XMVector4Transform(screenCursorPos, camera->getInvViewProjMat());
-            XMStoreFloat4(&(pbmpmTempConstants.mousePosition), worldCursorPos);
-
-            pbmpmTempConstants.mouseFunction = 0;
-            pbmpmTempConstants.mouseRadius = 1000;
-            scene.updatePBMPMConstants(pbmpmTempConstants);
-        }
-        else {
-            pbmpmTempConstants.mouseActivation = 0;
-        }
-
         //update camera
         camera->updateViewMat();
 
@@ -132,24 +105,6 @@ int main() {
         Window::get().setViewport(vp, renderPipeline->getCommandList());
         scene.draw();
 
-        //set up ImGUI for frame
-        ImGui_ImplDX12_NewFrame();
-        ImGui_ImplWin32_NewFrame();
-        ImGui::NewFrame();
-
-        //draw ImGUI
-        drawImGUIWindow(pbmpmTempConstants, io);
-
-        //render ImGUI
-        ImGui::Render();
-        if (!PBMPMScene::constantsEqual(pbmpmTempConstants, pbmpmConstants)) {
-            scene.updatePBMPMConstants(pbmpmTempConstants);
-            pbmpmConstants = pbmpmTempConstants;
-        }
-
-        renderPipeline->getCommandList()->SetDescriptorHeaps(1, &imguiSRVHeap);
-        ImGui_ImplDX12_RenderDrawData(ImGui::GetDrawData(), renderPipeline->getCommandList());
-
         context.executeCommandList(renderPipeline->getCommandListID());
 
         //end frame
@@ -162,12 +117,6 @@ int main() {
 
     // Scene should release all resources, including their pipelines
     scene.releaseResources();
-
-    ImGui_ImplDX12_Shutdown();
-    ImGui_ImplWin32_Shutdown();
-    ImGui::DestroyContext();
-
-    imguiSRVHeap->Release();
 
     //flush pending buffer operations in swapchain
     context.flush(FRAME_COUNT);

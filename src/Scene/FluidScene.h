@@ -5,11 +5,7 @@
 #include "../D3D/Pipeline/MeshPipeline.h"
 #include "../D3D/StructuredBuffer.h"
 #include "../Shaders/constants.h"
-#include <Alembic/AbcCoreFactory/All.h>
-#include <Alembic/AbcGeom/All.h>
-
-using namespace Alembic::Abc;
-using namespace Alembic::AbcGeom;
+#include "../Support/AlembicLoader.h"
 
 struct GridConstants {
     int numParticles;
@@ -52,10 +48,7 @@ public:
                ComputePipeline* dispatchArgDivideCP,
                MeshPipeline* fluidMeshPipeline);
 
-    void compute(
-        StructuredBuffer* positionsBuffer,
-        int numParticles
-    );
+    void compute();
     void draw(Camera* camera);
     void constructScene();
     void computeBilevelUniformGrid();
@@ -90,7 +83,7 @@ private:
 	ID3D12CommandSignature* commandSignature = nullptr;
     ID3D12CommandSignature* meshCommandSignature = nullptr;
 
-    StructuredBuffer* positionBuffer;
+    StructuredBuffer positionBuffer;
     StructuredBuffer cellParticleCountBuffer;
     StructuredBuffer cellParticleIndicesBuffer;
     StructuredBuffer blocksBuffer;

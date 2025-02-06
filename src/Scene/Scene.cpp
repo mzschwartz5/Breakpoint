@@ -65,11 +65,7 @@ void Scene::setRenderScene(RenderScene renderScene) {
 }
 
 void Scene::compute() {
-	pbmpmScene.compute();
-	fluidScene.compute(
-		pbmpmScene.getPositionBuffer(),
-		pbmpmScene.getParticleCount()
-	);
+	fluidScene.compute();
 }
 
 void Scene::draw() {

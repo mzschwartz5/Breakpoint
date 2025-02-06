@@ -43,6 +43,7 @@
     <ClCompile Include="Scene\Scene.cpp" />
     <ClCompile Include="Support\Shader.cpp" />
     <ClCompile Include="Support\Window.cpp" />
+    <ClCompile Include="Support\AlembicLoader.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="D3D\Pipeline\ComputePipeline.h" />
@@ -83,6 +84,7 @@
     <ClInclude Include="Support\Window.h" />
     <ClInclude Include="Support\WinInclude.h" />
     <ClInclude Include="Shaders\constants.h" />
+    <ClCompile Include="Support\AlembicLoader.h" />
     <None Include="ImGUI\misc\debuggers\imgui.natstepfilter" />
     <None Include="Shaders\FluidSurfaceConstruction\utils.hlsl" />
   </ItemGroup>
