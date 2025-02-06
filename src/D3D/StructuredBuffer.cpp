@@ -148,7 +148,6 @@ void StructuredBuffer::passDataToGPU(DXContext& context, ID3D12GraphicsCommandLi
     D3D12_RESOURCE_DESC uploadDesc = bufferDesc;
     uploadDesc.Flags = D3D12_RESOURCE_FLAG_NONE; // Upload buffer has no flags
 
-    ComPointer<ID3D12Resource> uploadBuffer;
     hr = context.getDevice()->CreateCommittedResource(
         &uploadHeapProps,
         D3D12_HEAP_FLAG_NONE,
@@ -183,6 +182,51 @@ void StructuredBuffer::passDataToGPU(DXContext& context, ID3D12GraphicsCommandLi
     ComPointer<ID3D12Fence> fence;
     UINT64 fenceValue = 1;
     hr = context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
+    if (FAILED(hr)) {
+        throw std::runtime_error("Failed to create fence.");
+    }
+
+    context.executeCommandList(cmdId);
+    context.getCommandQueue()->Signal(fence.Get(), fenceValue);
+
+    // Wait for the fence to reach the signaled value
+    if (fence->GetCompletedValue() < fenceValue) {
+        HANDLE eventHandle = CreateEvent(nullptr, FALSE, FALSE, nullptr);
+        if (eventHandle == nullptr) {
+            throw std::runtime_error("Failed to create event handle.");
+        }
+
+        // Set the event to be triggered when the GPU reaches the fence value
+        fence->SetEventOnCompletion(fenceValue, eventHandle);
+
+        // Wait until the event is triggered, meaning the GPU has finished
+        WaitForSingleObject(eventHandle, INFINITE);
+        CloseHandle(eventHandle);
+    }
+
+    context.resetCommandList(cmdId);
+}
+
+// Assumes same number and size of elements
+void StructuredBuffer::updateDataOnGPU(DXContext& context, ID3D12GraphicsCommandList6* cmdList, CommandListID cmdId, const void* newData) {
+    // THIS FUNCTION WILL RESET THE COMMAND LIST AT THE END OF THE CALL
+    data = newData;
+
+    UINT bufferSize = numElements * elementSize;
+
+    // Step 1: Copy data into the upload buffer
+    void* mappedData = nullptr;
+    uploadBuffer->Map(0, nullptr, &mappedData);
+    memcpy(mappedData, data, bufferSize); // Assume `data` is correctly sized
+    uploadBuffer->Unmap(0, nullptr);
+
+    // Step 2: Copy data from the upload buffer to the GPU buffer
+    cmdList->CopyResource(buffer.Get(), uploadBuffer.Get());
+
+    // Create a fence to wait for the GPU to finish copying data
+    ComPointer<ID3D12Fence> fence;
+    UINT64 fenceValue = 1;
+    HRESULT hr = context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
     if (FAILED(hr)) {
         throw std::runtime_error("Failed to create fence.");
     }

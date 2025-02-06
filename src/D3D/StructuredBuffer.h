@@ -42,6 +42,7 @@ public:
 
 	void passCBVDataToGPU(DXContext& context, DescriptorHeap* dh);
 	void passDataToGPU(DXContext& context, ID3D12GraphicsCommandList6* cmdList, CommandListID id);
+	void updateDataOnGPU(DXContext& context, ID3D12GraphicsCommandList6* cmdList, CommandListID id, const void* data);
 	void createUAV(DXContext& context, DescriptorHeap* dh);
 	void createSRV(DXContext& context, DescriptorHeap* dh);
 
@@ -52,6 +53,7 @@ private:
 
 private:
 	ComPointer<ID3D12Resource1> buffer;
+	ComPointer<ID3D12Resource> uploadBuffer;
 
 	CD3DX12_CPU_DESCRIPTOR_HANDLE UAVcpuHandle;
 	CD3DX12_CPU_DESCRIPTOR_HANDLE SRVcpuHandle;
