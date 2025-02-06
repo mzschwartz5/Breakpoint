@@ -6,12 +6,14 @@ RenderPipeline::RenderPipeline(std::string vertexShaderName, std::string fragSha
 {
 	createPSOD();
 	createPipelineState(context.getDevice());
-    
+    getCommandList()->Close();
+    context.resetCommandList(id);
 }
 
 D3D12_INPUT_ELEMENT_DESC vertexLayout[] =
 {
     { "Position", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 0, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
+    { "Normal", 0, DXGI_FORMAT_R32G32B32_FLOAT, 0, 16, D3D12_INPUT_CLASSIFICATION_PER_VERTEX_DATA, 0 },
 };
 
 void RenderPipeline::createPSOD() {
@@ -51,7 +53,7 @@ void RenderPipeline::createPSOD() {
 
     gfxPsod.NumRenderTargets = 1;
     gfxPsod.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
-    gfxPsod.DSVFormat = DXGI_FORMAT_UNKNOWN;
+    gfxPsod.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     gfxPsod.BlendState.AlphaToCoverageEnable = FALSE;
     gfxPsod.BlendState.IndependentBlendEnable = FALSE;
     gfxPsod.BlendState.RenderTarget[0].LogicOpEnable = FALSE;
@@ -68,7 +70,7 @@ void RenderPipeline::createPSOD() {
     gfxPsod.BlendState.RenderTarget[0].LogicOp = D3D12_LOGIC_OP_NOOP;
     gfxPsod.BlendState.RenderTarget[0].RenderTargetWriteMask = D3D12_COLOR_WRITE_ENABLE_ALL;
     gfxPsod.DepthStencilState.DepthEnable = TRUE;
-    gfxPsod.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_ALWAYS;
+    gfxPsod.DepthStencilState.DepthFunc = D3D12_COMPARISON_FUNC_LESS;
     gfxPsod.DepthStencilState.DepthWriteMask = D3D12_DEPTH_WRITE_MASK_ALL;
     gfxPsod.DepthStencilState.StencilEnable = FALSE;
     gfxPsod.DepthStencilState.StencilReadMask = 0;

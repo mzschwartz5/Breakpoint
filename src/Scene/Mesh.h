@@ -18,12 +18,6 @@
 
 using namespace DirectX;
 
-struct Vertex {
-	XMFLOAT3 pos;
-	XMFLOAT3 nor;
-	XMFLOAT3 col;
-};
-
 class Mesh {
 public:
 	Mesh() = delete;
@@ -41,7 +35,7 @@ public:
 
 private:
 	std::vector<Vertex> vertices;
-	std::vector<XMFLOAT3> vertexPositions;
+	std::vector<XMFLOAT4> vertexPositions;
 	std::vector<unsigned int> indices;
 	UINT numTriangles;
 

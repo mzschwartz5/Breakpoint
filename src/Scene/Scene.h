@@ -16,11 +16,11 @@ public:
 	Scene() = delete;
 	Scene(Camera* camera, DXContext* context);
 
-	RenderPipeline* getRenderPipeline();
+	RenderPipeline* getObjectPipeline();
 	MeshPipeline* getMeshPipeline();
 
 	void compute();
-	void draw();
+	void drawObjects();
 	void drawFluid();
 
 	void releaseResources();

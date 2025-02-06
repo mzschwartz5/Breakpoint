@@ -1,6 +1,6 @@
 #include "VertexBuffer.h"
 
-VertexBuffer::VertexBuffer(std::vector<XMFLOAT3> vertexData, const UINT vertexDataSize, const UINT vertexSize)
+VertexBuffer::VertexBuffer(std::vector<Vertex> vertexData, const UINT vertexDataSize, const UINT vertexSize)
     : vertexData(vertexData), vertexDataSize(vertexDataSize), vertexSize(vertexSize), uploadBuffer(), vertexBuffer()
 {}
 
@@ -30,10 +30,10 @@ D3D12_VERTEX_BUFFER_VIEW VertexBuffer::passVertexDataToGPU(DXContext& context, I
     rd.Layout = D3D12_TEXTURE_LAYOUT_ROW_MAJOR;
     rd.Flags = D3D12_RESOURCE_FLAG_NONE;
 
-	if (FAILED(context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer)))) {
-		throw std::runtime_error("Could not create committed resource for vertex buffer upload buffer");
-	}
-    
+    if (FAILED(context.getDevice()->CreateCommittedResource(&hpUpload, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_GENERIC_READ, nullptr, IID_PPV_ARGS(&uploadBuffer)))) {
+      throw std::runtime_error("Could not create committed resource for vertex buffer upload buffer");
+    }
+      
     if (FAILED(context.getDevice()->CreateCommittedResource(&hpDefault, D3D12_HEAP_FLAG_NONE, &rd, D3D12_RESOURCE_STATE_COMMON, nullptr, IID_PPV_ARGS(&vertexBuffer)))) {
 		throw std::runtime_error("Could not create committed resource for vertex buffer");
     }

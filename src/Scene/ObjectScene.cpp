@@ -11,8 +11,7 @@ void ObjectScene::constructScene()
 	renderPipeline->createPSOD();
 	renderPipeline->createPipelineState(context->getDevice());
 
-	inputStrings.push_back("objs\\wolf.obj");
-    inputStrings.push_back("objs\\saulgoodman.obj");
+	inputStrings.push_back("objs\\Beach.obj");
 
     XMFLOAT4X4 m1;
     XMStoreFloat4x4(&m1, XMMatrixTranslation(0, 0, 0));
@@ -25,9 +24,9 @@ void ObjectScene::constructScene()
     for (int i = 0; i < inputStrings.size(); i++) {
         auto string = inputStrings.at(i);
         auto m = modelMatrices.at(i);
-		/*Mesh newMesh = Mesh((std::filesystem::current_path() / string).string(), context, renderPipeline->getCommandList(), renderPipeline, m);
+		Mesh newMesh = Mesh((std::filesystem::current_path() / string).string(), context, renderPipeline->getCommandList(), renderPipeline, m);
 		meshes.push_back(newMesh);
-		sceneSize += newMesh.getNumTriangles();*/
+		sceneSize += newMesh.getNumTriangles();
 	}
 }
 
@@ -51,10 +50,15 @@ void ObjectScene::draw(Camera* camera) {
 
         auto viewMat = camera->getViewMat();
         auto projMat = camera->getProjMat();
-        cmdList->SetGraphicsRoot32BitConstants(0, 16, &viewMat, 0);
-        cmdList->SetGraphicsRoot32BitConstants(0, 16, &projMat, 16);
-        //model mat for this mesh
-        cmdList->SetGraphicsRoot32BitConstants(0, 16, m.getModelMatrix(), 32);
+        auto modelMat = XMLoadFloat4x4(m.getModelMatrix());
+        XMMATRIX mvpMatrix = XMMatrixMultiply(modelMat, XMMatrixMultiply(viewMat, projMat));
+
+        cmdList->SetGraphicsRoot32BitConstants(0, 16, &mvpMatrix, 0);
+        
+        // Inverse transpose of the model matrix
+        XMMATRIX inverseMatrix = XMMatrixInverse(nullptr, modelMat);
+        XMMATRIX inverseTransposeMatrix = XMMatrixTranspose(inverseMatrix);
+        cmdList->SetGraphicsRoot32BitConstants(0, 16, &inverseTransposeMatrix, 16);
 
         cmdList->DrawIndexedInstanced(m.getNumTriangles() * 3, 1, 0, 0, 0);
     }

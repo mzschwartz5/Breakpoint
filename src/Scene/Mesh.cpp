@@ -2,7 +2,7 @@
 
 Mesh::Mesh(std::string fileLocation, DXContext* context, ID3D12GraphicsCommandList6* cmdList, RenderPipeline* pipeline, XMFLOAT4X4 p_modelMatrix) {
 	loadMesh(fileLocation);
-    vertexBuffer = VertexBuffer(vertexPositions, (UINT)(vertices.size() * sizeof(XMFLOAT3)), (UINT)sizeof(XMFLOAT3));
+    vertexBuffer = VertexBuffer(vertices, (UINT)(vertices.size() * sizeof(Vertex)), (UINT)sizeof(Vertex));
     indexBuffer = IndexBuffer(indices, (UINT)(indices.size() * sizeof(unsigned int)));
 
     modelMatrix = p_modelMatrix;
@@ -38,8 +38,8 @@ void Mesh::loadMesh(std::string fileLocation) {
     }
 
     std::string line;
-    std::vector<XMFLOAT3> normals;
-    std::vector<std::vector<int>> faces; // To store face indices
+    std::vector<XMFLOAT4> normals;
+    std::vector<std::tuple<int, int>> faces; // To store face indices
 
     // Skip the first few lines (header or unnecessary data)
     for (int i = 0; i < 4; ++i) {
@@ -58,8 +58,7 @@ void Mesh::loadMesh(std::string fileLocation) {
                 v.push_back(value);
             }
             Vertex newVert;
-            newVert.pos = XMFLOAT3(v[0], v[1], v[2]);
-            vertexPositions.push_back(XMFLOAT3(v[0], v[1], v[2]));
+            newVert.pos = XMFLOAT4(v[0], v[1], v[2], 1);
             vertices.push_back(newVert);
         }
         else if (line[0] == 'v' && line[1] == 'n') {
@@ -72,35 +71,27 @@ void Mesh::loadMesh(std::string fileLocation) {
             while (ss >> value) {
                 v.push_back(value);
             }
-            normals.push_back(XMFLOAT3(v[0], v[1], v[2]));
+            normals.push_back(XMFLOAT4(v[0], v[1], v[2], 0));
         }
         else if (line[0] == 'f') {
             //line is a face
             std::string temp = line.substr(2); //skip the "f " prefix
             std::stringstream ss(temp);
-            std::vector<int> vertexIndices;
             std::string s;
             int num1, num2, num3;
             char slash1, slash2;
             //man i love string steams :)
             while (ss >> num1 >> slash1 >> num2 >> slash2 >> num3) {
                 //subtract 1 because obj isn't 0 indexed
-                vertexIndices.push_back(num1 - 1);
+                faces.push_back({num1 - 1, num3 - 1});
             }
-
-            faces.push_back(vertexIndices);
         }
-    }
-
-    for (int i = 0; i < vertices.size(); i++) {
-        vertices[i].nor = normals[i];
     }
 
     for (auto face : faces) {
         numTriangles++;
-        indices.push_back(face[0]);
-        indices.push_back(face[1]);
-        indices.push_back(face[2]);
+        indices.push_back(std::get<0>(face));
+        vertices[std::get<0>(face)].nor = normals[std::get<1>(face)];
     }
 
     file.close();

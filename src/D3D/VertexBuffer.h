@@ -7,11 +7,15 @@
 #include "DirectXMath.h"
 
 using namespace DirectX;
+struct Vertex {
+	XMFLOAT4 pos;
+	XMFLOAT4 nor;
+};
 
 class VertexBuffer {
 public:
 	VertexBuffer() = default;
-	VertexBuffer(std::vector<XMFLOAT3> vertexData, UINT vertexDataSize, UINT vertexSize);
+	VertexBuffer(std::vector<Vertex> vertexData, UINT vertexDataSize, UINT vertexSize);
 
 	D3D12_VERTEX_BUFFER_VIEW passVertexDataToGPU(DXContext& context, ID3D12GraphicsCommandList6* cmdList);
 
@@ -26,5 +30,5 @@ private:
 
 	UINT vertexDataSize;
 	UINT vertexSize;
-	std::vector<XMFLOAT3> vertexData;
+	std::vector<Vertex> vertexData;
 };

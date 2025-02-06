@@ -1,21 +1,27 @@
 #include "RootSignature.hlsl"
 
 cbuffer CameraMatrices : register(b0) {
-    float4x4 viewMatrix;        // 16 floats
-    float4x4 projectionMatrix;  // 16 floats
-    float4x4 modelMatrix;
+    float4x4 mvpMatrix;     // 16 floats (model-view-projection matrix)
+    float4x4 normalMatrix;  // 16 floats (inverse transpose of modelMatrix)
 };
 
 struct VSInput
 {
-    float3 Position : POSITION;      // Input position from vertex buffer
-    uint InstanceID : SV_InstanceID; // Instance ID for indexing into model matrices
+    float4 position : POSITION;      // Input position from vertex buffer
+    float4 normal : NORMAL;          // Input normal from vertex buffer
+};
+
+struct VSOutput
+{
+    float4 pos : SV_POSITION;
+    float4 nor : NORMAL;
 };
 
 [RootSignature(ROOTSIG)]
-float4 main(VSInput input) : SV_Position
+VSOutput main(VSInput input)
 {
-    float4 worldPos = mul(modelMatrix, float4(input.Position, 1.0));
-    float4 viewPos = mul(viewMatrix, worldPos);
-    return mul(projectionMatrix, viewPos);
+    VSOutput output;
+    output.pos = mul(mvpMatrix, input.position);
+    output.nor = mul(normalMatrix, input.normal);
+    return output;
 }

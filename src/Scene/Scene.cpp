@@ -29,7 +29,7 @@ Scene::Scene(Camera* p_camera, DXContext* context)
 {
 }
 
-RenderPipeline* Scene::getRenderPipeline() {
+RenderPipeline* Scene::getObjectPipeline() {
 	return &objectRP;
 }
 
@@ -41,7 +41,7 @@ void Scene::compute() {
 	fluidScene.compute();
 }
 
-void Scene::draw() {
+void Scene::drawObjects() {
 	objectScene.draw(camera);
 }
 

@@ -1,7 +1,12 @@
 #include "RootSignature.hlsl"
 
+struct PSInput {
+    float4 position : SV_POSITION;
+    float4 normal : NORMAL;
+};
+
 [RootSignature(ROOTSIG)]
-float4 main() : SV_Target
+float4 main(PSInput input) : SV_Target
 {
-    return float4(0.00, 0.63, 0.98, 1.0f);
+    return input.normal;
 }

@@ -70,6 +70,7 @@ int main() {
         camera->updateViewMat();
 
         auto meshPipeline = scene.getMeshPipeline();
+        auto objectPipeline = scene.getObjectPipeline();
 
         scene.compute();
 
@@ -80,6 +81,11 @@ int main() {
         D3D12_VIEWPORT vp;
         Window::get().createViewport(vp, meshPipeline->getCommandList());
 
+        //object render pass
+        Window::get().setRT(objectPipeline->getCommandList());
+        Window::get().setViewport(vp, objectPipeline->getCommandList());
+        scene.drawObjects();
+
         //mesh render pass
         Window::get().setRT(meshPipeline->getCommandList());
         Window::get().setViewport(vp, meshPipeline->getCommandList());
@@ -88,9 +94,11 @@ int main() {
         //end frame
         Window::get().endFrame(meshPipeline->getCommandList());
         context.executeCommandList(meshPipeline->getCommandListID());
+        context.executeCommandList(objectPipeline->getCommandListID());
 
         Window::get().present();
         context.resetCommandList(meshPipeline->getCommandListID());
+        context.resetCommandList(objectPipeline->getCommandListID());
     }
 
     // Scene should release all resources, including their pipelines
