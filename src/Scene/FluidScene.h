@@ -80,6 +80,10 @@ private:
     UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
 
+    double computeTimeCum = 0.0;
+    double computeTimeAvg = 0.0;
+    int timingFrame = 0;
+
 	ID3D12CommandSignature* commandSignature = nullptr;
     ID3D12CommandSignature* meshCommandSignature = nullptr;
 

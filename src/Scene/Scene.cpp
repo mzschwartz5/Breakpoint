@@ -1,14 +1,10 @@
 #include "Scene.h"
 
-Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context)
-	: scene(p_scene), camera(p_camera),
+Scene::Scene(Camera* p_camera, DXContext* context)
+	: camera(p_camera),
 	objectRP("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", *context, CommandListID::OBJECT_RENDER_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	objectScene(context, &objectRP),
-	pbmpmRP("PBMPMVertexShader.cso", "PixelShader.cso", "PBMPMVertexRootSignature.cso", *context, CommandListID::PBMPM_RENDER_ID,
-		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
-	pbmpmIC(100),
-	pbmpmScene(context, &pbmpmRP, pbmpmIC),
 	fluidRP("VertexShader.cso", "PixelShader.cso", "RootSignature.cso", *context, CommandListID::FLUID_RENDER_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	bilevelUniformGridCP("BilevelUniformGridRootSig.cso", "BilevelUniformGrid.cso", *context, CommandListID::BILEVEL_UNIFORM_GRID_COMPUTE_ID, 
@@ -29,39 +25,16 @@ Scene::Scene(RenderScene p_scene, Camera* p_camera, DXContext* context)
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
 	dispatchArgDivideCP("DispatchArgDivideRootSig.cso", "DispatchArgDivide.cso", *context, CommandListID::FLUID_DISPATCH_ARG_DIVIDE_COMPUTE_ID,
 		D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV, 1, D3D12_DESCRIPTOR_HEAP_FLAG_SHADER_VISIBLE),
-	fluidScene(context, &fluidRP, &bilevelUniformGridCP, &surfaceBlockDetectionCP, &surfaceCellDetectionCP, &surfaceVertexCompactionCP, &surfaceVertexDensityCP, &surfaceVertexNormalCP, &bufferClearCP, &dispatchArgDivideCP, &fluidMeshPipeline),
-	currentRP(),
-	currentCP()
+	fluidScene(context, &fluidRP, &bilevelUniformGridCP, &surfaceBlockDetectionCP, &surfaceCellDetectionCP, &surfaceVertexCompactionCP, &surfaceVertexDensityCP, &surfaceVertexNormalCP, &bufferClearCP, &dispatchArgDivideCP, &fluidMeshPipeline)
 {
-	setRenderScene(p_scene);
 }
 
-
 RenderPipeline* Scene::getRenderPipeline() {
-	return currentRP;
+	return &objectRP;
 }
 
 MeshPipeline* Scene::getMeshPipeline() {
 	return &fluidMeshPipeline;
-}
-
-void Scene::setRenderScene(RenderScene renderScene) {
-	scene = renderScene;
-
-	switch (scene) {
-	case PBMPM:
-		currentRP = &pbmpmRP;
-		//currentCP = &pbmpmCP;
-		break;
-	case Fluid:
-		currentRP = &fluidRP;
-		currentCP = &bilevelUniformGridCP;
-		break;
-	case Object:
-		currentRP = &objectRP;
-		currentCP = nullptr;
-		break;
-	}
 }
 
 void Scene::compute() {
@@ -69,14 +42,7 @@ void Scene::compute() {
 }
 
 void Scene::draw() {
-	switch (scene) {
-	case PBMPM:
-		pbmpmScene.draw(camera);
-		break;
-	case Object:
-		objectScene.draw(camera);
-		break;
-	}
+	objectScene.draw(camera);
 }
 
 void Scene::drawFluid() {
@@ -85,10 +51,5 @@ void Scene::drawFluid() {
 
 void Scene::releaseResources() {
 	objectScene.releaseResources();
-	pbmpmScene.releaseResources();
 	fluidScene.releaseResources();
-}
-
-void Scene::updatePBMPMConstants(PBMPMConstants& newConstants) {
-	pbmpmScene.updateConstants(newConstants);
 }

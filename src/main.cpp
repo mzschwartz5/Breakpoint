@@ -22,7 +22,7 @@ int main() {
     mouse->SetWindow(Window::get().getHWND());
 
     //initialize scene
-    Scene scene{Fluid, camera.get(), &context};
+    Scene scene{camera.get(), &context};
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -54,15 +54,6 @@ int main() {
         if (kState.LeftControl) {
             camera->translate({ 0.f, -1.0f, 0.f });
         }
-        if (kState.D1) {
-            scene.setRenderScene(Object);
-        }
-        if (kState.D2) {
-            scene.setRenderScene(PBMPM);
-        }
-        if (kState.D3) {
-            scene.setRenderScene(Fluid);
-        }
 
         //check mouse state
         auto mState = mouse->GetState();
@@ -78,40 +69,27 @@ int main() {
         //update camera
         camera->updateViewMat();
 
-        //get pipelines
-        auto renderPipeline = scene.getRenderPipeline();
         auto meshPipeline = scene.getMeshPipeline();
-        //whichever pipeline renders first should begin and end the frame
-        auto firstPipeline = meshPipeline;
 
-        //compute pbmpm + mesh shader
         scene.compute();
 
         //begin frame
-        Window::get().beginFrame(firstPipeline->getCommandList());
+        Window::get().beginFrame(meshPipeline->getCommandList());
 
         //create viewport
         D3D12_VIEWPORT vp;
-        Window::get().createViewport(vp, firstPipeline->getCommandList());
+        Window::get().createViewport(vp, meshPipeline->getCommandList());
 
         //mesh render pass
         Window::get().setRT(meshPipeline->getCommandList());
         Window::get().setViewport(vp, meshPipeline->getCommandList());
         scene.drawFluid();
-        context.executeCommandList(meshPipeline->getCommandListID());
-
-        //first render pass
-        Window::get().setRT(renderPipeline->getCommandList());
-        Window::get().setViewport(vp, renderPipeline->getCommandList());
-        scene.draw();
-
-        context.executeCommandList(renderPipeline->getCommandListID());
 
         //end frame
-        Window::get().endFrame(firstPipeline->getCommandList());
+        Window::get().endFrame(meshPipeline->getCommandList());
+        context.executeCommandList(meshPipeline->getCommandListID());
 
         Window::get().present();
-		context.resetCommandList(renderPipeline->getCommandListID());
         context.resetCommandList(meshPipeline->getCommandListID());
     }
 

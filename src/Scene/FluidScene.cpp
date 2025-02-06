@@ -363,6 +363,7 @@ void FluidScene::computeSurfaceCellDetection() {
 
 void FluidScene::compactSurfaceVertices() {
     auto cmdList = surfaceVertexCompactionCP->getCommandList();
+    context->startTimingQuery(cmdList);
 
     cmdList->SetPipelineState(surfaceVertexCompactionCP->getPSO());
     cmdList->SetComputeRootSignature(surfaceVertexCompactionCP->getRootSignature());
@@ -390,6 +391,7 @@ void FluidScene::compactSurfaceVertices() {
     int numVertices = (gridConstants.gridDim.x + 1) * (gridConstants.gridDim.y + 1) * (gridConstants.gridDim.z + 1);
     int numWorkGroups = (numVertices + SURFACE_VERTEX_COMPACTION_THREADS_X - 1) / SURFACE_VERTEX_COMPACTION_THREADS_X;
     cmdList->Dispatch(numWorkGroups, 1, 1);
+    context->endTimingQuery(cmdList);
 
     context->executeCommandList(surfaceVertexCompactionCP->getCommandListID());
     context->signalAndWaitForFence(fence, fenceValue);
@@ -397,6 +399,17 @@ void FluidScene::compactSurfaceVertices() {
     context->resetCommandList(surfaceVertexCompactionCP->getCommandListID());
 
     divNumThreadsByGroupSize(&surfaceVertDensityDispatch, SURFACE_VERTEX_DENSITY_THREADS_X);
+
+    double computeTime = context->readTimingQueryData();
+    computeTimeCum += computeTime;
+    timingFrame++;
+
+    if (timingFrame % 1000 == 0) {
+        computeTimeAvg = computeTimeCum / 1000.0;
+        computeTimeCum = 0.0;
+        timingFrame = 0;
+        printf("Compute Time: %.3f ms\n", computeTimeAvg);
+    } 
 }
 
 void FluidScene::computeSurfaceVertexDensity() {

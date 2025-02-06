@@ -15,8 +15,6 @@
 
 #include "Scene/Camera.h"
 #include "Scene/Scene.h"
-#include "Scene/PBMPMScene.h"
-#include "Scene/PBD.h"
 
 #include "ImGUI/ImGUIHelper.h"
 
@@ -59,36 +57,3 @@ ImGuiIO& initImGUI(DXContext& context) {
 
     return io;
 }
-
-void drawImGUIWindow(PBMPMConstants& pbmpmConstants, ImGuiIO& io) {
-    ImGui::Begin("Parameters");
-
-    // General parameters
-    ImGui::Text("Simulation Parameters");
-
-    // Sliders for float values
-    ImGui::SliderFloat("Gravity Strength", &pbmpmConstants.gravityStrength, 0.0f, 20.0f);
-
-    // Parameters for liquid simulation
-    ImGui::SliderFloat("Liquid Relaxation", &pbmpmConstants.liquidRelaxation, 0.1f, 10.0f);
-    ImGui::SliderFloat("Liquid Viscosity", &pbmpmConstants.liquidViscosity, 0.0f, 10.0f);
-    ImGui::SliderFloat("Friction Angle", &pbmpmConstants.frictionAngle, 0.0f, 90.0f);
-
-    // Input for unsigned integers (e.g., counts and iterations)
-    ImGui::InputInt3("Grid Size", (int*)&pbmpmConstants.gridSize);
-    ImGui::InputInt("Fixed Point Multiplier", (int*)&pbmpmConstants.fixedPointMultiplier);
-    ImGui::InputInt("Particles Per Cell Axis", (int*)&pbmpmConstants.particlesPerCellAxis);
-
-    ImGui::Checkbox("Use Grid Volume for Liquid", (bool*)&pbmpmConstants.useGridVolumeForLiquid);
-
-    ImGui::SliderFloat("Border Friction", &pbmpmConstants.borderFriction, 0.0f, 1.0f);
-
-    // Optional display of FPS and frame info
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-
-    ImGui::End();
-
-    
-}
-
-

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "ObjectScene.h"
-#include "PBMPMScene.h"
 #include "FluidScene.h"
 #include "../D3D/Pipeline/RenderPipeline.h"
 #include "../D3D/Pipeline/ComputePipeline.h"
@@ -9,27 +8,22 @@
 
 enum RenderScene {
 	Object,
-	PBMPM,
-	Physics,
 	Fluid
 };
 
 class Scene {
 public:
 	Scene() = delete;
-	Scene(RenderScene renderScene, Camera* camera, DXContext* context);
+	Scene(Camera* camera, DXContext* context);
 
 	RenderPipeline* getRenderPipeline();
 	MeshPipeline* getMeshPipeline();
 
-	void setRenderScene(RenderScene renderScene);
 	void compute();
 	void draw();
 	void drawFluid();
 
 	void releaseResources();
-
-	void updatePBMPMConstants(PBMPMConstants& newConstants);
 
 private:
 	Camera* camera;
@@ -37,10 +31,6 @@ private:
 	RenderPipeline objectRP;
 	ObjectScene objectScene;
 	
-	RenderPipeline pbmpmRP;
-	unsigned int pbmpmIC;
-	PBMPMScene pbmpmScene;
-
 	RenderPipeline fluidRP;
 	ComputePipeline bilevelUniformGridCP;
 	ComputePipeline surfaceBlockDetectionCP;
@@ -52,9 +42,4 @@ private:
 	ComputePipeline dispatchArgDivideCP;
 	MeshPipeline fluidMeshPipeline;
 	FluidScene fluidScene;
-
-	RenderScene scene;
-
-	RenderPipeline* currentRP;
-	ComputePipeline* currentCP;
 };

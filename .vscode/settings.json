@@ -72,6 +72,7 @@
         "xutility": "cpp",
         "map": "cpp",
         "set": "cpp",
-        "xtree": "cpp"
+        "xtree": "cpp",
+        "complex": "cpp"
     }
 }
