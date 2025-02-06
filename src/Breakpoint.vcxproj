@@ -522,4 +522,12 @@
     </PropertyGroup>
     <Error Condition="!Exists('..\packages\directxtk12_desktop_2019.2024.10.29.1\build\native\directxtk12_desktop_2019.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\directxtk12_desktop_2019.2024.10.29.1\build\native\directxtk12_desktop_2019.targets'))" />
   </Target>
+  <Target Name="CopyDebugFiles" AfterTargets="PostBuildEvent" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+      <Copy SourceFiles="$(ProjectDir)..\third_party\alembic\lib\Debug\Alembic.dll" DestinationFolder="$(OutDir)" />
+      <Copy SourceFiles="$(ProjectDir)..\third_party\imath_x64-windows\Debug\bin\Imath-3_1_d.dll" DestinationFolder="$(OutDir)" />
+  </Target>
+  <Target Name="CopyReleaseFiles" AfterTargets="PostBuildEvent" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+      <Copy SourceFiles="$(ProjectDir)..\third_party\alembic\lib\Release\Alembic.dll" DestinationFolder="$(OutDir)" />
+      <Copy SourceFiles="$(ProjectDir)..\third_party\imath_x64-windows\bin\Imath-3_1.dll" DestinationFolder="$(OutDir)" />
+  </Target>
 </Project>
