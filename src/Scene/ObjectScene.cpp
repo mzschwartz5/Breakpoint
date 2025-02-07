@@ -43,11 +43,6 @@ void ObjectScene::draw(Camera* camera) {
         cmdList->SetPipelineState(renderPipeline->getPSO());
         cmdList->SetGraphicsRootSignature(renderPipeline->getRootSignature());
         // == ROOT ==
-
-        ID3D12DescriptorHeap* descriptorHeaps[] = { renderPipeline->getDescriptorHeap()->GetAddress() };
-        cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
-        cmdList->SetGraphicsRootDescriptorTable(1, renderPipeline->getDescriptorHeap()->GetGPUHandleAt(0)); // Descriptor table slot 1 for CBV
-
         auto viewMat = camera->getViewMat();
         auto projMat = camera->getProjMat();
         auto modelMat = XMLoadFloat4x4(m.getModelMatrix());

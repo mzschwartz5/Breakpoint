@@ -23,6 +23,9 @@ int main() {
 
     //initialize scene
     Scene scene{camera.get(), &context};
+    UINT64 fenceValue = 1;
+	ComPointer<ID3D12Fence> fence;
+    context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
 
     while (!Window::get().getShouldClose()) {
         //update window
@@ -72,33 +75,40 @@ int main() {
         auto meshPipeline = scene.getMeshPipeline();
         auto objectPipeline = scene.getObjectPipeline();
 
-        scene.compute();
-
-        //begin frame
-        Window::get().beginFrame(meshPipeline->getCommandList());
-
         //create viewport
         D3D12_VIEWPORT vp;
-        Window::get().createViewport(vp, meshPipeline->getCommandList());
+        Window::get().createViewport(vp);
 
-        //object render pass
-        Window::get().setRT(objectPipeline->getCommandList());
+        // Object render passes
+        // TODO: combine object passes into one with two render textures
+        // Color
         Window::get().setViewport(vp, objectPipeline->getCommandList());
+        Window::get().setObjectColorRT(objectPipeline->getCommandList());
         scene.drawObjects();
+        Window::get().transitionObjectColorRT(objectPipeline->getCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+        // Position
+        Window::get().setObjectPositionRT(objectPipeline->getCommandList());
+        scene.drawObjects();
+        Window::get().transitionObjectPositionRT(objectPipeline->getCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+
+        context.executeCommandList(objectPipeline->getCommandListID());
+        context.signalAndWaitForFence(fence, fenceValue);
+        context.resetCommandList(objectPipeline->getCommandListID());
+        
+        scene.compute();
 
         //mesh render pass
-        Window::get().setRT(meshPipeline->getCommandList());
         Window::get().setViewport(vp, meshPipeline->getCommandList());
+        Window::get().setFluidRT(meshPipeline->getCommandList());
         scene.drawFluid();
 
         //end frame
-        Window::get().endFrame(meshPipeline->getCommandList());
+        Window::get().transitionSwapChain(meshPipeline->getCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);
         context.executeCommandList(meshPipeline->getCommandListID());
-        context.executeCommandList(objectPipeline->getCommandListID());
+        context.resetCommandList(meshPipeline->getCommandListID());
 
         Window::get().present();
-        context.resetCommandList(meshPipeline->getCommandListID());
-        context.resetCommandList(objectPipeline->getCommandListID());
     }
 
     // Scene should release all resources, including their pipelines

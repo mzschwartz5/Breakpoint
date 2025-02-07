@@ -43,15 +43,18 @@ public:
 	void present();
 	void resize();
 
-	void beginFrame(ID3D12GraphicsCommandList6* cmdList);
-	void setRT(ID3D12GraphicsCommandList6* cmdList);
-	void endFrame(ID3D12GraphicsCommandList6* cmdList);
+	void setFluidRT(ID3D12GraphicsCommandList6* cmdList);
+	void setObjectPositionRT(ID3D12GraphicsCommandList6* cmdList);
+	void setObjectColorRT(ID3D12GraphicsCommandList6* cmdList);
+	void transitionSwapChain(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
+	void transitionObjectColorRT(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
+	void transitionObjectPositionRT(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
 
 	void shutdown();
 
 	void updateTitle(std::wstring text);
 
-	static void createViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList);
+	static void createViewport(D3D12_VIEWPORT& vp);
 	static void setViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList);
 
 private:
@@ -80,6 +83,17 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
     ComPointer<ID3D12Resource> depthStencilBuffer;
 
+	ComPointer<ID3D12DescriptorHeap> srvDescHeap;
+
+	// Members for rendering object scene to frame buffer
+	ComPointer<ID3D12Resource> objectSceneColorTexture;
+	ComPointer<ID3D12Resource> objectScenePositionTexture;
+	D3D12_CPU_DESCRIPTOR_HANDLE objectSceneRTVHandleColor;
+	D3D12_CPU_DESCRIPTOR_HANDLE objectSceneRTVHandlePosition;
+	D3D12_CPU_DESCRIPTOR_HANDLE objectSceneSRVHandleColor;
+	D3D12_CPU_DESCRIPTOR_HANDLE objectSceneSRVHandlePosition;
+
+	bool createObjectSceneRenderTargets();
 	bool getBuffers();
 	void releaseBuffers();
 

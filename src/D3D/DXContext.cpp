@@ -184,6 +184,8 @@ ID3D12GraphicsCommandList6* DXContext::createCommandList(CommandListID id)
         throw std::runtime_error("Could not create command list");
     }
 
+    cmdList->SetName(std::to_wstring(id).c_str());
+
     cmdLists[id] = cmdList;
     return cmdList.Get();
 }
