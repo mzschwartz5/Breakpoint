@@ -89,10 +89,11 @@ void Mesh::loadMesh(std::string fileLocation) {
     }
 
     for (auto face : faces) {
-        numTriangles++;
         indices.push_back(std::get<0>(face));
         vertices[std::get<0>(face)].nor = normals[std::get<1>(face)];
     }
+
+    numTriangles = (UINT)faces.size() / 3;
 
     file.close();
 }
