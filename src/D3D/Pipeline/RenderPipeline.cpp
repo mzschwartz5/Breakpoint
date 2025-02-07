@@ -51,8 +51,9 @@ void RenderPipeline::createPSOD() {
     gfxPsod.StreamOutput.pSODeclaration = nullptr;
     gfxPsod.StreamOutput.RasterizedStream = 0;
 
-    gfxPsod.NumRenderTargets = 1;
+    gfxPsod.NumRenderTargets = 2;
     gfxPsod.RTVFormats[0] = DXGI_FORMAT_R8G8B8A8_UNORM;
+    gfxPsod.RTVFormats[1] = DXGI_FORMAT_R32G32B32A32_FLOAT;
     gfxPsod.DSVFormat = DXGI_FORMAT_D32_FLOAT;
     gfxPsod.BlendState.AlphaToCoverageEnable = FALSE;
     gfxPsod.BlendState.IndependentBlendEnable = FALSE;

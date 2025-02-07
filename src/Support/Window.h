@@ -44,11 +44,9 @@ public:
 	void resize();
 
 	void setFluidRT(ID3D12GraphicsCommandList6* cmdList);
-	void setObjectPositionRT(ID3D12GraphicsCommandList6* cmdList);
-	void setObjectColorRT(ID3D12GraphicsCommandList6* cmdList);
+	void setObjectRTs(ID3D12GraphicsCommandList6* cmdList);
 	void transitionSwapChain(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
-	void transitionObjectColorRT(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
-	void transitionObjectPositionRT(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
+	void transitionObjectRTs(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
 
 	void shutdown();
 

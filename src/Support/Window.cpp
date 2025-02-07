@@ -191,24 +191,16 @@ void Window::setFluidRT(ID3D12GraphicsCommandList6* cmdList) {
     cmdList->OMSetRenderTargets(1, &rtvHandles[currentSwapChainBufferIdx], false, &dsvHandle);
 }
 
-void Window::setObjectColorRT(ID3D12GraphicsCommandList6* cmdList) {
-    transitionObjectColorRT(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
+void Window::setObjectRTs(ID3D12GraphicsCommandList6* cmdList) {
+    transitionObjectRTs(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
     
     float clearColorObject[] = { 0.f, 0.f, 0.f, 1.f };
     cmdList->ClearRenderTargetView(objectSceneRTVHandleColor, clearColorObject, 0, nullptr);
-    cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
-
-    cmdList->OMSetRenderTargets(1, &objectSceneRTVHandleColor, false, &dsvHandle);
-}
-
-void Window::setObjectPositionRT(ID3D12GraphicsCommandList6* cmdList) {
-    transitionObjectPositionRT(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
-    
-    float clearColorObject[] = { 0.f, 0.f, 0.f, 1.f };
     cmdList->ClearRenderTargetView(objectSceneRTVHandlePosition, clearColorObject, 0, nullptr);
     cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
 
-    cmdList->OMSetRenderTargets(1, &objectSceneRTVHandlePosition, false, &dsvHandle);
+    D3D12_CPU_DESCRIPTOR_HANDLE objectSceneRTVHandles[2] = { objectSceneRTVHandleColor, objectSceneRTVHandlePosition };
+    cmdList->OMSetRenderTargets(2, objectSceneRTVHandles, false, &dsvHandle);
 }
 
 void Window::transitionSwapChain(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after) {
@@ -223,23 +215,22 @@ void Window::transitionSwapChain(ID3D12GraphicsCommandList6* cmdList, D3D12_RESO
     cmdList->ResourceBarrier(1, &barrier);
 }
 
-void Window::transitionObjectColorRT(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after) {
-    CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+void Window::transitionObjectRTs(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after) {
+    CD3DX12_RESOURCE_BARRIER colorBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
         objectSceneColorTexture.Get(),
         before,
-        after,
-        D3D12_RESOURCE_BARRIER_ALL_SUBRESOURCES
+        after
     );
-    cmdList->ResourceBarrier(1, &barrier);
-}
 
-void Window::transitionObjectPositionRT(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after) {
-    CD3DX12_RESOURCE_BARRIER barrier = CD3DX12_RESOURCE_BARRIER::Transition(
+    CD3DX12_RESOURCE_BARRIER positionBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
         objectScenePositionTexture.Get(),
         before,
         after
     );
-    cmdList->ResourceBarrier(1, &barrier);
+
+    D3D12_RESOURCE_BARRIER barriers[2] = { colorBarrier, positionBarrier };
+
+    cmdList->ResourceBarrier(1, barriers);
 }
 
 void Window::shutdown() {
@@ -393,7 +384,7 @@ bool Window::createObjectSceneRenderTargets() {
 
     objectSceneColorTexture->SetName(L"Object Scene Color Texture");
 
-    // Create RTV for the off-screen render target for color
+    // Create RTV for the off-screen render target for color 
     D3D12_RENDER_TARGET_VIEW_DESC rtvDesc = {};
     rtvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
     rtvDesc.ViewDimension = D3D12_RTV_DIMENSION_TEXTURE2D;
@@ -415,6 +406,8 @@ bool Window::createObjectSceneRenderTargets() {
     dxContext->getDevice()->CreateShaderResourceView(objectSceneColorTexture.Get(), &srvDesc, objectSceneSRVHandleColor);
 
     // Repeat the above steps for the position render target
+    textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
+    clearValue.Format = DXGI_FORMAT_R32G32B32A32_FLOAT; 
     if (FAILED(dxContext->getDevice()->CreateCommittedResource(
         &heapProperties,
         D3D12_HEAP_FLAG_NONE,
@@ -427,11 +420,12 @@ bool Window::createObjectSceneRenderTargets() {
 
     objectScenePositionTexture->SetName(L"Object Scene Position Texture");
 
+    rtvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
     objectSceneRTVHandlePosition = rtvDescHeap->GetCPUDescriptorHandleForHeapStart();
     objectSceneRTVHandlePosition.ptr += dxContext->getDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_RTV) * (FRAME_COUNT + 1);
     dxContext->getDevice()->CreateRenderTargetView(objectScenePositionTexture.Get(), &rtvDesc, objectSceneRTVHandlePosition);
 
-    srvDesc.Format = DXGI_FORMAT_R8G8B8A8_UNORM;
+    srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
     objectSceneSRVHandlePosition = srvDescHeap->GetCPUDescriptorHandleForHeapStart();
     objectSceneSRVHandlePosition.ptr += dxContext->getDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     dxContext->getDevice()->CreateShaderResourceView(objectScenePositionTexture.Get(), &srvDesc, objectSceneSRVHandlePosition);

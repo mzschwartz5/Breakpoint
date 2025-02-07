@@ -79,18 +79,11 @@ int main() {
         D3D12_VIEWPORT vp;
         Window::get().createViewport(vp);
 
-        // Object render passes
-        // TODO: combine object passes into one with two render textures
-        // Color
+        // Object render pass
         Window::get().setViewport(vp, objectPipeline->getCommandList());
-        Window::get().setObjectColorRT(objectPipeline->getCommandList());
+        Window::get().setObjectRTs(objectPipeline->getCommandList());
         scene.drawObjects();
-        Window::get().transitionObjectColorRT(objectPipeline->getCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
-
-        // Position
-        Window::get().setObjectPositionRT(objectPipeline->getCommandList());
-        scene.drawObjects();
-        Window::get().transitionObjectPositionRT(objectPipeline->getCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        Window::get().transitionObjectRTs(objectPipeline->getCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
 
         context.executeCommandList(objectPipeline->getCommandListID());
         context.signalAndWaitForFence(fence, fenceValue);
