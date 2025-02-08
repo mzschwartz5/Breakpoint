@@ -13,8 +13,8 @@ struct PSInput {
 ConstantBuffer<MeshShadingConstants> cb : register(b0);
 
 // Render textures from the object scene
-Texture2D<float4> posTexture : register(t3);
-Texture2D<float4> colorTexture : register(t4);
+Texture2D<float4> colorTexture : register(t3);
+Texture2D<float4> posTexture : register(t4);
 SamplerState texSampler : register(s0);
 
 float3 radiance(float3 dir)
@@ -46,10 +46,17 @@ float3 getMeshletColor(int index)
     return float3(r, g, b);
 }
 
-// Return the intersection point of a ray with an XZ plane at Y = 0
-float3 planeRayIntersect(float3 origin, float3 direction)
+bool intersectAABB(float3 origin, float3 direction, 
+                   float3 aabbMin, float3 aabbMax,
+                   out float tMin, out float tMax)
 {
-    return origin - direction * (origin.y / direction.y);
+    float3 t1 = (aabbMin - origin) / direction;
+    float3 t2 = (aabbMax - origin) / direction;
+    float3 min1 = min(t1, t2);
+    float3 max1 = max(t1, t2);
+    tMin = max(max(min1.x, min1.y), min1.z);
+    tMax = min(min(max1.x, max1.y), max1.z);
+    return (0 <= tMax) && (tMin <= tMax);
 }
 
 static const float3 baseColor = float3(0.7, 0.9, 1);
@@ -61,10 +68,12 @@ float4 main(PSInput input) : SV_Target
     return float4(getMeshletColor(input.meshletIndex), 1.0);
 #endif
 
-    // refract
     float3 pos = input.worldPos;
     float3 dir = normalize(pos - cb.cameraPos);
 
+    float2 uvs = input.ndcPos.xy / float2(cb.screenWidth, cb.screenHeight);
+    float3 texturePos = posTexture.Sample(texSampler, uvs).xyz;
+    
     float ior = 1.33;
     float eta = 1.0 / ior;
 
@@ -77,10 +86,20 @@ float4 main(PSInput input) : SV_Target
     float3 refractDir = refract(dir, input.normal, eta);
     float3 refraction;
 
-    float3 meshPos = planeRayIntersect(cb.cameraPos, dir);
-    float dist = distance(pos, meshPos);
-    float3 trans = clamp(exp(-remapTo01(dist, 1.0, 45.0)), 0.0, 1.0) * baseColor;
-    refraction = trans * float4(0.7, 0.7, 0.85, 1.0);
+    if (all(texturePos == float3(0, 0, 0))) {
+        float tMin, tMax;
+        // TODO: replace numbers with constants
+        if (intersectAABB(pos, refractDir, float3(-8.0, -8.0, -8.0), float3(8.0, 8.0, 8.0), tMin, tMax)) {
+            float dist = tMax;
+            float3 trans = clamp(exp(-remapTo01(dist, 1.0, 5.0)), 0.0, 1.0) * baseColor;
+            refraction = trans * radiance(reflectDir);
+        }
+    }
+    else {
+        float3 dist = distance(pos, texturePos);
+        float3 trans = clamp(exp(-remapTo01(dist, 1.0, 5.0)), 0.0, 1.0) * baseColor;
+        refraction = trans * colorTexture.Sample(texSampler, uvs).xyz;
+    }
 
     float3 baseColor = refraction * (1.0 - fr) + reflection * fr;
     return float4(gammaCorrect(baseColor), 1.0);

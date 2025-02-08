@@ -29,10 +29,12 @@ FluidScene::FluidScene(DXContext* context,
 void FluidScene::draw(
     Camera* camera,
     D3D12_GPU_DESCRIPTOR_HANDLE objectColorTextureHandle,
-    D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle
+    D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle,
+    int screenWidth,
+    int screenHeight
 ) {
     auto cmdList = fluidMeshPipeline->getCommandList();
-    MeshShadingConstants meshShadingConstants = { camera->getViewProjMat(), gridConstants.gridDim, gridConstants.resolution, gridConstants.minBounds, 0.0, camera->getPosition() };
+    MeshShadingConstants meshShadingConstants = { camera->getViewProjMat(), gridConstants.gridDim, gridConstants.resolution, gridConstants.minBounds, screenWidth, camera->getPosition(), screenHeight };
     cmdList->SetPipelineState(fluidMeshPipeline->getPSO());
     cmdList->SetGraphicsRootSignature(fluidMeshPipeline->getRootSignature());
 
@@ -73,7 +75,7 @@ void FluidScene::draw(
     cmdList->SetGraphicsRootShaderResourceView(5, surfaceHalfBlockDispatch.getGPUVirtualAddress());
     cmdList->SetGraphicsRootUnorderedAccessView(6, surfaceVertDensityDispatch.getGPUVirtualAddress());
     cmdList->SetGraphicsRootDescriptorTable(7, fluidMeshPipeline->getSamplerHandle());
-    cmdList->SetGraphicsRoot32BitConstants(8, 27, &meshShadingConstants, 0);
+    cmdList->SetGraphicsRoot32BitConstants(8, 28, &meshShadingConstants, 0);
 
     // Transition surfaceHalfBlockDispatch to indirect argument buffer
     D3D12_RESOURCE_BARRIER surfaceHalfBlockDispatchBarrier2 = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -116,7 +118,12 @@ void FluidScene::draw(
 
 void FluidScene::constructScene() {
     int blocksPerEdge = 32;
-    gridConstants = { static_cast<int>(AlembicLoader::getInstance().getMaxParticleCount()), {blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE}, {-8.0f, -8.0f, -8.0f}, 0.125f };
+    gridConstants = {
+        static_cast<int>(AlembicLoader::getInstance().getMaxParticleCount()), 
+        {blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE, blocksPerEdge * CELLS_PER_BLOCK_EDGE}, 
+        {-8.0f, -8.0f, -8.0f}, 
+        0.125f 
+    };
 
     // Create cells and blocks buffers
     int numCells = gridConstants.gridDim.x * gridConstants.gridDim.y * gridConstants.gridDim.z;

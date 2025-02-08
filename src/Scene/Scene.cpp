@@ -47,9 +47,11 @@ void Scene::drawObjects() {
 
 void Scene::drawFluid(
 	D3D12_GPU_DESCRIPTOR_HANDLE objectColorTextureHandle,
-	D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle
+	D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle,
+	int screenWidth,
+    int screenHeight
 ) {
-	fluidScene.draw(camera, objectColorTextureHandle, objectPositionTextureHandle);
+	fluidScene.draw(camera, objectColorTextureHandle, objectPositionTextureHandle, screenWidth, screenHeight);
 }
 
 void Scene::releaseResources() {

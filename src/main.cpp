@@ -99,7 +99,9 @@ int main() {
         Window::get().setFluidRT(meshPipeline->getCommandList());
         scene.drawFluid(
             Window::get().getObjectColorTextureHandle(),
-            Window::get().getObjectPositionTextureHandle()
+            Window::get().getObjectPositionTextureHandle(),
+            Window::get().getWidth(),
+            Window::get().getHeight()
         );
 
         //end frame

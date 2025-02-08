@@ -55,6 +55,8 @@ void ObjectScene::draw(Camera* camera) {
         XMMATRIX inverseTransposeMatrix = XMMatrixTranspose(inverseMatrix);
         cmdList->SetGraphicsRoot32BitConstants(0, 16, &inverseTransposeMatrix, 16);
 
+        cmdList->SetGraphicsRoot32BitConstants(0, 16, &modelMat, 32);
+
         cmdList->DrawIndexedInstanced(m.getNumTriangles() * 3, 1, 0, 0, 0);
     }
 }

@@ -3,6 +3,7 @@
 struct PSInput {
     float4 position : SV_POSITION;
     float4 normal : NORMAL;
+    float4 worldPos : TEXCOORD0;
 };
 
 [RootSignature(ROOTSIG)]
@@ -16,5 +17,5 @@ void main(PSInput input, out float4 color : SV_Target0, out float4 position : SV
     float intensity = saturate(dot(normal, lightDir));
     float4 ambientLight = float4(0.2, 0.2, 0.2, 1);
     color =  ambientLight + baseColor * float4(intensity, intensity, intensity, 1);
-    position = input.position;
+    position = input.worldPos;
 }

@@ -46,7 +46,8 @@ struct MeshShadingConstants {
     int3 dimensions;
     float resolution;
     float3 minBounds;
-    float padding;
+    int screenWidth;  // split up for 16-byte alignment
     float3 cameraPos;
+    int screenHeight; // split up for 16-byte alignment
 };
 #endif

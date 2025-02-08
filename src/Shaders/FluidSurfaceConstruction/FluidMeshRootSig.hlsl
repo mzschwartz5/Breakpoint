@@ -7,4 +7,4 @@
 "SRV(t5, space=0), " \
 "UAV(u0, space=0), " \
 "DescriptorTable(Sampler(s0, numDescriptors=1)), " \
-"RootConstants(num32BitConstants=27, b0)"
+"RootConstants(num32BitConstants=28, b0)"

@@ -2,6 +2,7 @@
 
 cbuffer CameraMatrices : register(b0) {
     float4x4 mvpMatrix;     // 16 floats (model-view-projection matrix)
+    float4x4 modelMatrix;   // 16 floats (model matrix)
     float4x4 normalMatrix;  // 16 floats (inverse transpose of modelMatrix)
 };
 
@@ -15,6 +16,7 @@ struct VSOutput
 {
     float4 pos : SV_POSITION;
     float4 nor : NORMAL;
+    float4 worldPos : TEXCOORD0;
 };
 
 [RootSignature(ROOTSIG)]
@@ -23,5 +25,6 @@ VSOutput main(VSInput input)
     VSOutput output;
     output.pos = mul(mvpMatrix, input.position);
     output.nor = mul(normalMatrix, input.normal);
+    output.worldPos = mul(modelMatrix, input.position);
     return output;
 }

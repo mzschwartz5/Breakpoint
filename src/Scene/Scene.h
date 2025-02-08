@@ -23,7 +23,9 @@ public:
 	void drawObjects();
 	void drawFluid(
 		D3D12_GPU_DESCRIPTOR_HANDLE objectColorTextureHandle,
-		D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle
+		D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle,
+		int screenWidth,
+    	int screenHeight
 	);
 
 	DescriptorHeap* getSRVHeap() {

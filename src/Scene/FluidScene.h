@@ -20,8 +20,9 @@ struct MeshShadingConstants {
     XMINT3 dimensions;
     float resolution;
     XMFLOAT3 minBounds;
-    float padding;
+    int screenWidth; // split up into two floats to match the 16 byte alignment
     XMFLOAT3 cameraPos;
+    int screenHeight;  // split up into two floats to match the 16 byte alignment
 };
 
 struct Cell {
@@ -52,7 +53,9 @@ public:
     void draw(
         Camera* camera,
         D3D12_GPU_DESCRIPTOR_HANDLE objectColorTextureHandle,
-        D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle
+        D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle,
+        int screenWidth,
+        int screenHeight
     );
     void constructScene();
     void computeBilevelUniformGrid();
