@@ -18,7 +18,7 @@
   </tr>
 </table>
 
-*Breakpoint* is a GPU-optimized fluid surface reconstruction implementation, based on the [mesh-shading algorithm authored by Nishidate et al.](https://dl.acm.org/doi/10.1145/3651285). I adapted their algorithm to run in a DirectX engine, and modified the implmentation significantly to improve performance by almost a factor of 4x compared to [Nishidate's original implementation](https://github.com/yknishidate/mesh_shader_surface_reconstruction).
+*Breakpoint* is a GPU-optimized fluid surface reconstruction implementation, based on the [mesh-shading algorithm authored by Nishidate et al.](https://dl.acm.org/doi/10.1145/3651285). I adapted their algorithm to run in a DirectX engine, and modified the implementation significantly to improve performance by almost a factor of 4x compared to [Nishidate's original implementation](https://github.com/yknishidate/mesh_shader_surface_reconstruction).
 
 This work was originally a component of a project for CIS 5650 GPU Programming at the University of Pennsylvania. [Daniel Gerhardt](https://www.danieljgerhardt.com/), [Dineth Meegoda](https://dinethmeegoda.com/), and [Zixiao Wang](https://www.linkedin.com/in/zixiao-wang-826a5a255/) built the DirectX 12 engine and implemented a GPU-based PBMPM particle simulation (developed by EA), which served as the input data to this novel fluid surface shading technique. See that project in its entirety [here](https://github.com/dgerh/Breakpoint). Since then, I've continued to work on and improved the performance of the fluid surface reconstruction technique, in this fork.
 
