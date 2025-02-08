@@ -37,12 +37,21 @@ public:
 		return height;
 	}
 
+	D3D12_GPU_DESCRIPTOR_HANDLE getObjectColorTextureHandle() {
+		return objectSceneSRVHandleColor;
+	}
+
+	D3D12_GPU_DESCRIPTOR_HANDLE getObjectPositionTextureHandle() {
+		return objectSceneSRVHandlePosition;
+	}
+
 	bool init(DXContext* context, int w, int h);
 	void update();
 
 	void present();
 	void resize();
 
+	bool createObjectSceneRenderTargets(DescriptorHeap* srvDescHeap);
 	void setFluidRT(ID3D12GraphicsCommandList6* cmdList);
 	void setObjectRTs(ID3D12GraphicsCommandList6* cmdList);
 	void transitionSwapChain(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
@@ -81,17 +90,14 @@ private:
 	D3D12_CPU_DESCRIPTOR_HANDLE dsvHandle;
     ComPointer<ID3D12Resource> depthStencilBuffer;
 
-	ComPointer<ID3D12DescriptorHeap> srvDescHeap;
-
 	// Members for rendering object scene to frame buffer
 	ComPointer<ID3D12Resource> objectSceneColorTexture;
 	ComPointer<ID3D12Resource> objectScenePositionTexture;
 	D3D12_CPU_DESCRIPTOR_HANDLE objectSceneRTVHandleColor;
 	D3D12_CPU_DESCRIPTOR_HANDLE objectSceneRTVHandlePosition;
-	D3D12_CPU_DESCRIPTOR_HANDLE objectSceneSRVHandleColor;
-	D3D12_CPU_DESCRIPTOR_HANDLE objectSceneSRVHandlePosition;
+	D3D12_GPU_DESCRIPTOR_HANDLE objectSceneSRVHandleColor;
+	D3D12_GPU_DESCRIPTOR_HANDLE objectSceneSRVHandlePosition;
 
-	bool createObjectSceneRenderTargets();
 	bool getBuffers();
 	void releaseBuffers();
 

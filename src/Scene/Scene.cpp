@@ -45,8 +45,11 @@ void Scene::drawObjects() {
 	objectScene.draw(camera);
 }
 
-void Scene::drawFluid() {
-	fluidScene.draw(camera);
+void Scene::drawFluid(
+	D3D12_GPU_DESCRIPTOR_HANDLE objectColorTextureHandle,
+	D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle
+) {
+	fluidScene.draw(camera, objectColorTextureHandle, objectPositionTextureHandle);
 }
 
 void Scene::releaseResources() {

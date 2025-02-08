@@ -12,6 +12,11 @@ struct PSInput {
 
 ConstantBuffer<MeshShadingConstants> cb : register(b0);
 
+// Render textures from the object scene
+Texture2D<float4> posTexture : register(t3);
+Texture2D<float4> colorTexture : register(t4);
+SamplerState texSampler : register(s0);
+
 float3 radiance(float3 dir)
 {
     // Paper uses a sky model for the radiance

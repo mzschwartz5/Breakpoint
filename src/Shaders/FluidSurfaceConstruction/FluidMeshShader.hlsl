@@ -11,7 +11,7 @@ StructuredBuffer<float> vertexDensities : register(t1);
 // SRV for vertex normals
 StructuredBuffer<float3> vertexNormals : register(t2);
 // SRV for dispatch parameters
-StructuredBuffer<int3> surfaceHalfBlockDispatch : register(t3);
+StructuredBuffer<int3> surfaceHalfBlockDispatch : register(t5);
 // Root constants
 ConstantBuffer<MeshShadingConstants> cb : register(b0);
 // UAV

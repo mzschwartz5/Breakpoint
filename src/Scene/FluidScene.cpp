@@ -26,14 +26,18 @@ FluidScene::FluidScene(DXContext* context,
 }
 
 // In this pipeline, drawing is done via a mesh shader
-void FluidScene::draw(Camera* camera) {
+void FluidScene::draw(
+    Camera* camera,
+    D3D12_GPU_DESCRIPTOR_HANDLE objectColorTextureHandle,
+    D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle
+) {
     auto cmdList = fluidMeshPipeline->getCommandList();
     MeshShadingConstants meshShadingConstants = { camera->getViewProjMat(), gridConstants.gridDim, gridConstants.resolution, gridConstants.minBounds, 0.0, camera->getPosition() };
     cmdList->SetPipelineState(fluidMeshPipeline->getPSO());
     cmdList->SetGraphicsRootSignature(fluidMeshPipeline->getRootSignature());
 
     // Set descriptor heap
-    ID3D12DescriptorHeap* descriptorHeaps[] = { bilevelUniformGridCP->getDescriptorHeap()->Get() };
+    ID3D12DescriptorHeap* descriptorHeaps[] = { bilevelUniformGridCP->getDescriptorHeap()->Get(), fluidMeshPipeline->getSamplerHeap()->Get() };
     cmdList->SetDescriptorHeaps(_countof(descriptorHeaps), descriptorHeaps);
 
     // Transition surfaceHalfBlockDispatch to an SRV
@@ -64,9 +68,12 @@ void FluidScene::draw(Camera* camera) {
     cmdList->SetGraphicsRootDescriptorTable(0, surfaceBlockIndicesBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetGraphicsRootDescriptorTable(1, surfaceVertDensityBuffer.getSRVGPUDescriptorHandle());
     cmdList->SetGraphicsRootDescriptorTable(2, surfaceVertexNormalBuffer.getSRVGPUDescriptorHandle());
-    cmdList->SetGraphicsRootShaderResourceView(3, surfaceHalfBlockDispatch.getGPUVirtualAddress());
-    cmdList->SetGraphicsRootUnorderedAccessView(4, surfaceVertDensityDispatch.getGPUVirtualAddress());
-    cmdList->SetGraphicsRoot32BitConstants(5, 27, &meshShadingConstants, 0);
+    cmdList->SetGraphicsRootDescriptorTable(3, objectColorTextureHandle);
+    cmdList->SetGraphicsRootDescriptorTable(4, objectPositionTextureHandle);
+    cmdList->SetGraphicsRootShaderResourceView(5, surfaceHalfBlockDispatch.getGPUVirtualAddress());
+    cmdList->SetGraphicsRootUnorderedAccessView(6, surfaceVertDensityDispatch.getGPUVirtualAddress());
+    cmdList->SetGraphicsRootDescriptorTable(7, fluidMeshPipeline->getSamplerHandle());
+    cmdList->SetGraphicsRoot32BitConstants(8, 27, &meshShadingConstants, 0);
 
     // Transition surfaceHalfBlockDispatch to indirect argument buffer
     D3D12_RESOURCE_BARRIER surfaceHalfBlockDispatchBarrier2 = CD3DX12_RESOURCE_BARRIER::Transition(

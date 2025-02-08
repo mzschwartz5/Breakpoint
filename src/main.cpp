@@ -23,6 +23,9 @@ int main() {
 
     //initialize scene
     Scene scene{camera.get(), &context};
+    // Render target SRVs need to be in the scene SRV heap to be accessible by the shaders alongside the other resources (can only bind one SRV heap to a shader)
+    Window::get().createObjectSceneRenderTargets(scene.getSRVHeap());
+
     UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
     context.getDevice()->CreateFence(0, D3D12_FENCE_FLAG_NONE, IID_PPV_ARGS(&fence));
@@ -83,7 +86,7 @@ int main() {
         Window::get().setViewport(vp, objectPipeline->getCommandList());
         Window::get().setObjectRTs(objectPipeline->getCommandList());
         scene.drawObjects();
-        Window::get().transitionObjectRTs(objectPipeline->getCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE);
+        Window::get().transitionObjectRTs(objectPipeline->getCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
         context.executeCommandList(objectPipeline->getCommandListID());
         context.signalAndWaitForFence(fence, fenceValue);
@@ -91,10 +94,13 @@ int main() {
         
         scene.compute();
 
-        //mesh render pass
+        //mesh render pass (uses object color and position textures)
         Window::get().setViewport(vp, meshPipeline->getCommandList());
         Window::get().setFluidRT(meshPipeline->getCommandList());
-        scene.drawFluid();
+        scene.drawFluid(
+            Window::get().getObjectColorTextureHandle(),
+            Window::get().getObjectPositionTextureHandle()
+        );
 
         //end frame
         Window::get().transitionSwapChain(meshPipeline->getCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PRESENT);

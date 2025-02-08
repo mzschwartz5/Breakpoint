@@ -49,7 +49,11 @@ public:
                MeshPipeline* fluidMeshPipeline);
 
     void compute();
-    void draw(Camera* camera);
+    void draw(
+        Camera* camera,
+        D3D12_GPU_DESCRIPTOR_HANDLE objectColorTextureHandle,
+        D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle
+    );
     void constructScene();
     void computeBilevelUniformGrid();
     void computeSurfaceBlockDetection();
@@ -58,6 +62,9 @@ public:
     void computeSurfaceVertexDensity();
     void computeSurfaceVertexNormal();
     void releaseResources();
+    DescriptorHeap* getSRVHeapForRenderTextures() {
+        return bilevelUniformGridCP->getDescriptorHeap();
+    }
 
 private:
     void transitionBuffers(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES beforeState, D3D12_RESOURCE_STATES afterState);

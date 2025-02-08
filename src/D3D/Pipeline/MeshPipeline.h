@@ -13,8 +13,16 @@ public:
 
 	void createPipelineState(ComPointer<ID3D12Device6> device) override;
 
+
+	D3D12_GPU_DESCRIPTOR_HANDLE getSamplerHandle() { return samplerHandle; }
+	DescriptorHeap* getSamplerHeap() { return &samplerHeap; }
+
 private: 
 	Shader meshShader, fragShader;
 
+	DescriptorHeap samplerHeap;
+	D3D12_GPU_DESCRIPTOR_HANDLE samplerHandle;
+
 	D3DX12_MESH_SHADER_PIPELINE_STATE_DESC psod{};
+	void createSampler(ComPointer<ID3D12Device6> device);
 };

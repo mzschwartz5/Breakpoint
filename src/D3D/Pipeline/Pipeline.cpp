@@ -5,6 +5,7 @@ Pipeline::Pipeline(std::string rootSignatureShaderName, DXContext& context, Comm
 	: rootSignatureShader(rootSignatureShaderName), descriptorHeap(context, type, numberOfDescriptors, flags), cmdID(cmdID),
 	cmdList(context.createCommandList(cmdID))
 {
+	descriptorHeap.Get()->SetName(std::wstring(rootSignatureShaderName.begin(), rootSignatureShaderName.end()).c_str());
 	context.resetCommandList(cmdID);
 	context.getDevice()->CreateRootSignature(0, rootSignatureShader.getBuffer(), rootSignatureShader.getSize(), IID_PPV_ARGS(&rootSignature));
 }

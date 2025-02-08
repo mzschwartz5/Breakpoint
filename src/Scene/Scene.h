@@ -21,7 +21,14 @@ public:
 
 	void compute();
 	void drawObjects();
-	void drawFluid();
+	void drawFluid(
+		D3D12_GPU_DESCRIPTOR_HANDLE objectColorTextureHandle,
+		D3D12_GPU_DESCRIPTOR_HANDLE objectPositionTextureHandle
+	);
+
+	DescriptorHeap* getSRVHeap() {
+		return fluidScene.getSRVHeapForRenderTextures();
+	}
 
 	void releaseResources();
 
