@@ -52,8 +52,9 @@ public:
 	void resize();
 
 	bool createObjectSceneRenderTargets(DescriptorHeap* srvDescHeap);
-	void setFluidRT(ID3D12GraphicsCommandList6* cmdList);
-	void setObjectRTs(ID3D12GraphicsCommandList6* cmdList);
+	void beginFrame(ID3D12GraphicsCommandList6* cmdList);
+	void setMainRT(ID3D12GraphicsCommandList6* cmdList);
+	void setTextureRTs(ID3D12GraphicsCommandList6* cmdList);
 	void transitionSwapChain(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
 	void transitionObjectRTs(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after);
 

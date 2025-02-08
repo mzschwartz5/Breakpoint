@@ -96,11 +96,11 @@ float4 main(PSInput input) : SV_Target
         }
     }
     else {
-        float3 dist = distance(pos, texturePos);
+        float dist = distance(pos, texturePos);
         float3 trans = clamp(exp(-remapTo01(dist, 1.0, 5.0)), 0.0, 1.0) * baseColor;
         refraction = trans * colorTexture.Sample(texSampler, uvs).xyz;
     }
 
-    float3 baseColor = refraction * (1.0 - fr) + reflection * fr;
-    return float4(gammaCorrect(baseColor), 1.0);
+    float3 color = refraction * (1.0 - fr) + reflection * fr;
+    return float4(gammaCorrect(color), 1.0);
 }

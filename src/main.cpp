@@ -78,13 +78,15 @@ int main() {
         auto meshPipeline = scene.getMeshPipeline();
         auto objectPipeline = scene.getObjectPipeline();
 
+        Window::get().beginFrame(objectPipeline->getCommandList());
+
         //create viewport
         D3D12_VIEWPORT vp;
         Window::get().createViewport(vp);
 
         // Object render pass
         Window::get().setViewport(vp, objectPipeline->getCommandList());
-        Window::get().setObjectRTs(objectPipeline->getCommandList());
+        Window::get().setTextureRTs(objectPipeline->getCommandList());
         scene.drawObjects();
         Window::get().transitionObjectRTs(objectPipeline->getCommandList(), D3D12_RESOURCE_STATE_RENDER_TARGET, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE);
 
@@ -96,7 +98,7 @@ int main() {
 
         //mesh render pass (uses object color and position textures)
         Window::get().setViewport(vp, meshPipeline->getCommandList());
-        Window::get().setFluidRT(meshPipeline->getCommandList());
+        Window::get().setMainRT(meshPipeline->getCommandList());
         scene.drawFluid(
             Window::get().getObjectColorTextureHandle(),
             Window::get().getObjectPositionTextureHandle(),

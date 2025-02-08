@@ -166,28 +166,31 @@ void Window::resize() {
     getBuffers();
 }
 
-void Window::setFluidRT(ID3D12GraphicsCommandList6* cmdList) {
+void Window::beginFrame(ID3D12GraphicsCommandList6* cmdList) {
     currentSwapChainBufferIdx = swapChain->GetCurrentBackBufferIndex();
     transitionSwapChain(cmdList, D3D12_RESOURCE_STATE_PRESENT, D3D12_RESOURCE_STATE_RENDER_TARGET);
 
     float clearColor[] = { 0.9f, 0.9f, 0.9f, 1.f };
     cmdList->ClearRenderTargetView(rtvHandles[currentSwapChainBufferIdx], clearColor, 0, nullptr);
     cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
-    cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
 
-    cmdList->OMSetRenderTargets(1, &rtvHandles[currentSwapChainBufferIdx], false, &dsvHandle);
-}
-
-void Window::setObjectRTs(ID3D12GraphicsCommandList6* cmdList) {
     transitionObjectRTs(cmdList, D3D12_RESOURCE_STATE_PIXEL_SHADER_RESOURCE | D3D12_RESOURCE_STATE_NON_PIXEL_SHADER_RESOURCE, D3D12_RESOURCE_STATE_RENDER_TARGET);
     
     float clearColorObject[] = { 0.f, 0.f, 0.f, 1.f };
     cmdList->ClearRenderTargetView(objectSceneRTVHandleColor, clearColorObject, 0, nullptr);
     cmdList->ClearRenderTargetView(objectSceneRTVHandlePosition, clearColorObject, 0, nullptr);
     cmdList->ClearDepthStencilView(dsvHandle, D3D12_CLEAR_FLAG_DEPTH, 1.f, 0, 0, nullptr);
+}
 
-    D3D12_CPU_DESCRIPTOR_HANDLE objectSceneRTVHandles[2] = { objectSceneRTVHandleColor, objectSceneRTVHandlePosition };
-    cmdList->OMSetRenderTargets(2, objectSceneRTVHandles, false, &dsvHandle);
+void Window::setMainRT(ID3D12GraphicsCommandList6* cmdList) {
+    cmdList->OMSetRenderTargets(1, &rtvHandles[currentSwapChainBufferIdx], false, &dsvHandle);
+}
+
+void Window::setTextureRTs(ID3D12GraphicsCommandList6* cmdList) {
+    // Sets 2 render targets for storing the object scene's color and position,
+    // and the main render target for the window.
+    D3D12_CPU_DESCRIPTOR_HANDLE renderTargetHandles[3] = { objectSceneRTVHandleColor, objectSceneRTVHandlePosition, rtvHandles[currentSwapChainBufferIdx] };
+    cmdList->OMSetRenderTargets(3, renderTargetHandles, false, &dsvHandle);
 }
 
 void Window::transitionSwapChain(ID3D12GraphicsCommandList6* cmdList, D3D12_RESOURCE_STATES before, D3D12_RESOURCE_STATES after) {
