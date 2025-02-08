@@ -5,6 +5,8 @@ static const float PI = 3.1415926f;
 /* ================== Constants for the mesh shading pipeline ================== */ 
 
 static const int MAX_PARTICLES_PER_CELL = 16;
+static const int BLOCKS_PER_EDGE = 32;
+static const float CELL_RESOLUTION = 0.125;
 // This really should not be changed. Mesh shaders have very hard limits on how many verts and primitives they can output.
 // If this is made any bigger, the mesh shader will have vertex overflow.
 static const int CELLS_PER_BLOCK_EDGE = 4; // each block has 4x4x4 cells

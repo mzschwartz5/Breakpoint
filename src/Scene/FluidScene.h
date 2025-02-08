@@ -9,9 +9,9 @@
 
 struct GridConstants {
     int numParticles;
-    XMINT3 gridDim;
-    XMFLOAT3 minBounds;
-    float resolution;
+    XMINT3 gridDim; // length / width / height in # of grid cells
+    XMFLOAT3 minBounds; // origin of the grid area
+    float resolution; // size of each grid cell
 };
 
 // TODO: can just combine this with grid constants
@@ -89,10 +89,6 @@ private:
     
     UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
-
-    double computeTimeCum = 0.0;
-    double computeTimeAvg = 0.0;
-    int timingFrame = 0;
 
 	ID3D12CommandSignature* commandSignature = nullptr;
     ID3D12CommandSignature* meshCommandSignature = nullptr;

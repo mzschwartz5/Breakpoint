@@ -88,8 +88,7 @@ float4 main(PSInput input) : SV_Target
 
     if (all(texturePos == float3(0, 0, 0))) {
         float tMin, tMax;
-        // TODO: replace numbers with constants
-        if (intersectAABB(pos, refractDir, float3(-8.0, -8.0, -8.0), float3(8.0, 8.0, 8.0), tMin, tMax)) {
+        if (intersectAABB(pos, refractDir, cb.minBounds, cb.minBounds + cb.resolution * float3(cb.dimensions), tMin, tMax)) {
             float dist = tMax;
             float3 trans = clamp(exp(-remapTo01(dist, 1.0, 5.0)), 0.0, 1.0) * baseColor;
             refraction = trans * radiance(reflectDir);
