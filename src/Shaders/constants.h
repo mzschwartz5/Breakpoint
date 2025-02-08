@@ -1,6 +1,7 @@
 #pragma once
 
 static const float PI = 3.1415926f;
+#define OUTPUT_MESHLETS 1 // set to 1 to output meshlets, 0 to shade normally 
 
 /* ================== Constants for the mesh shading pipeline ================== */ 
 
