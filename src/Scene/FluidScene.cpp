@@ -33,7 +33,10 @@ void FluidScene::draw(
     int screenWidth,
     int screenHeight
 ) {
+    timingFrame++;
     auto cmdList = fluidMeshPipeline->getCommandList();
+    context->startTimingQuery(cmdList); // start timer
+
     MeshShadingConstants meshShadingConstants = { 
         camera->getViewProjMat(), 
         gridConstants.gridDim, 
@@ -96,6 +99,7 @@ void FluidScene::draw(
 
     // Draws
     cmdList->ExecuteIndirect(meshCommandSignature, 1, surfaceHalfBlockDispatch.getBuffer(), 0, nullptr, 0);
+    context->endTimingQuery(cmdList); // stop timer
 
     // TODO Temporary: just so these two buffers can be transitioned along with everything else
     D3D12_RESOURCE_BARRIER surfaceHalfBlockDispatchBarrier3 = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -122,6 +126,8 @@ void FluidScene::draw(
     context->resetCommandList(fluidMeshPipeline->getCommandListID());
     
     resetBuffers();
+    
+    meshShadingCumulativeTime += context->readTimingQueryData();
 }
 
 void FluidScene::constructScene() {
@@ -253,10 +259,47 @@ void FluidScene::compute() {
     compactSurfaceVertices();
     computeSurfaceVertexDensity();
     computeSurfaceVertexNormal();
+
+    printTimings();
+}
+
+void FluidScene::printTimings() {
+    if (timingFrame % 1000 != 0) return;
+
+    double computeTimeAvg;
+
+    computeTimeAvg = bilevelGridCumulativeTime / 1000.0;
+    bilevelGridCumulativeTime = 0.0;
+    printf("BilevelUniformGrid Time: %.3f ms\n", computeTimeAvg);
+
+    computeTimeAvg = blockDetectionCumulativeTime / 1000.0;
+    blockDetectionCumulativeTime = 0.0;
+    printf("SurfaceBlockDetection Time: %.3f ms\n", computeTimeAvg);
+
+    computeTimeAvg = cellDetectionCumulativeTime / 1000.0;
+    cellDetectionCumulativeTime = 0.0;
+    printf("SurfaceCellDetection Time: %.3f ms\n", computeTimeAvg);
+    
+    computeTimeAvg = compactSurfVertsCumulativeTime / 1000.0;
+    compactSurfVertsCumulativeTime = 0.0;
+    printf("CompactSurfaceVerts Time: %.3f ms\n", computeTimeAvg);
+
+    computeTimeAvg = surfVertDensityCumulativeTime / 1000.0;
+    surfVertDensityCumulativeTime = 0.0;
+    printf("SurfaceVertexDensity Time: %.3f ms\n", computeTimeAvg);
+
+    computeTimeAvg = surfVertNormalCumulativeTime / 1000.0;
+    surfVertNormalCumulativeTime = 0.0;
+    printf("SurfaceVertexNormal Time: %.3f ms\n", computeTimeAvg);
+
+    computeTimeAvg = meshShadingCumulativeTime / 1000.0;
+    meshShadingCumulativeTime = 0.0;
+    printf("MeshShading Time: %.3f ms\n", computeTimeAvg);
 }
 
 void FluidScene::computeBilevelUniformGrid() {
     auto cmdList = bilevelUniformGridCP->getCommandList();
+    context->startTimingQuery(cmdList); // start timer
 
     cmdList->SetPipelineState(bilevelUniformGridCP->getPSO());
     cmdList->SetComputeRootSignature(bilevelUniformGridCP->getRootSignature());
@@ -275,6 +318,7 @@ void FluidScene::computeBilevelUniformGrid() {
     // Dispatch
     int numWorkGroups = (gridConstants.numParticles + BILEVEL_UNIFORM_GRID_THREADS_X - 1) / BILEVEL_UNIFORM_GRID_THREADS_X;
     cmdList->Dispatch(numWorkGroups, 1, 1);
+    context->endTimingQuery(cmdList); // stop timer
 
     // Transition blocksBuffer from UAV to SRV for the next pass
     D3D12_RESOURCE_BARRIER blocksBufferBarrier = CD3DX12_RESOURCE_BARRIER::Transition(
@@ -291,10 +335,12 @@ void FluidScene::computeBilevelUniformGrid() {
 
     // Reinitialize command list
     context->resetCommandList(bilevelUniformGridCP->getCommandListID());
+    bilevelGridCumulativeTime += context->readTimingQueryData();
 }
 
 void FluidScene::computeSurfaceBlockDetection() {
     auto cmdList = surfaceBlockDetectionCP->getCommandList();
+    context->startTimingQuery(cmdList); // start timer
 
     cmdList->SetPipelineState(surfaceBlockDetectionCP->getPSO());
     cmdList->SetComputeRootSignature(surfaceBlockDetectionCP->getRootSignature());
@@ -315,15 +361,18 @@ void FluidScene::computeSurfaceBlockDetection() {
     // Dispatch
     int numWorkGroups = (numBlocks + SURFACE_BLOCK_DETECTION_THREADS_X - 1) / SURFACE_BLOCK_DETECTION_THREADS_X;
     cmdList->Dispatch(numWorkGroups, 1, 1);
+    context->endTimingQuery(cmdList); // stop timer
 
     context->executeCommandList(surfaceBlockDetectionCP->getCommandListID());
     context->signalAndWaitForFence(fence, fenceValue);
 
     context->resetCommandList(surfaceBlockDetectionCP->getCommandListID());
+    blockDetectionCumulativeTime += context->readTimingQueryData();
 }
 
 void FluidScene::computeSurfaceCellDetection() {
     auto cmdList = surfaceCellDetectionCP->getCommandList();
+    context->startTimingQuery(cmdList); // start timer
 
     cmdList->SetPipelineState(surfaceCellDetectionCP->getPSO());
     cmdList->SetComputeRootSignature(surfaceCellDetectionCP->getRootSignature());
@@ -375,15 +424,19 @@ void FluidScene::computeSurfaceCellDetection() {
 
     // Dispatch
     cmdList->ExecuteIndirect(commandSignature, 1, surfaceBlockDispatch.getBuffer(), 0, nullptr, 0);
+    context->endTimingQuery(cmdList); // stop timer
 
     context->executeCommandList(surfaceCellDetectionCP->getCommandListID());
     context->signalAndWaitForFence(fence, fenceValue);
 
     context->resetCommandList(surfaceCellDetectionCP->getCommandListID());
+
+    cellDetectionCumulativeTime += context->readTimingQueryData();
 }
 
 void FluidScene::compactSurfaceVertices() {
     auto cmdList = surfaceVertexCompactionCP->getCommandList();
+    context->startTimingQuery(cmdList); // start timer
 
     cmdList->SetPipelineState(surfaceVertexCompactionCP->getPSO());
     cmdList->SetComputeRootSignature(surfaceVertexCompactionCP->getRootSignature());
@@ -411,6 +464,7 @@ void FluidScene::compactSurfaceVertices() {
     int numVertices = (gridConstants.gridDim.x + 1) * (gridConstants.gridDim.y + 1) * (gridConstants.gridDim.z + 1);
     int numWorkGroups = (numVertices + SURFACE_VERTEX_COMPACTION_THREADS_X - 1) / SURFACE_VERTEX_COMPACTION_THREADS_X;
     cmdList->Dispatch(numWorkGroups, 1, 1);
+    context->endTimingQuery(cmdList); // stop timer
 
     context->executeCommandList(surfaceVertexCompactionCP->getCommandListID());
     context->signalAndWaitForFence(fence, fenceValue);
@@ -418,10 +472,13 @@ void FluidScene::compactSurfaceVertices() {
     context->resetCommandList(surfaceVertexCompactionCP->getCommandListID());
 
     divNumThreadsByGroupSize(&surfaceVertDensityDispatch, SURFACE_VERTEX_DENSITY_THREADS_X);
+
+    compactSurfVertsCumulativeTime += context->readTimingQueryData();
 }
 
 void FluidScene::computeSurfaceVertexDensity() {
     auto cmdList = surfaceVertexDensityCP->getCommandList();
+    context->startTimingQuery(cmdList); // start timer
 
     cmdList->SetPipelineState(surfaceVertexDensityCP->getPSO());
     cmdList->SetComputeRootSignature(surfaceVertexDensityCP->getRootSignature());
@@ -475,15 +532,18 @@ void FluidScene::computeSurfaceVertexDensity() {
 
     // Dispatch
     cmdList->ExecuteIndirect(commandSignature, 1, surfaceVertDensityDispatch.getBuffer(), 0, nullptr, 0);
+    context->endTimingQuery(cmdList); // stop timer
 
     context->executeCommandList(surfaceVertexDensityCP->getCommandListID());
     context->signalAndWaitForFence(fence, fenceValue);
 
     context->resetCommandList(surfaceVertexDensityCP->getCommandListID());
+    surfVertDensityCumulativeTime += context->readTimingQueryData();
 }
 
 void FluidScene::computeSurfaceVertexNormal() {
     auto cmdList = surfaceVertexNormalCP->getCommandList();
+    context->startTimingQuery(cmdList); // start timer
 
     cmdList->SetPipelineState(surfaceVertexNormalCP->getPSO());
     cmdList->SetComputeRootSignature(surfaceVertexNormalCP->getRootSignature());
@@ -527,11 +587,13 @@ void FluidScene::computeSurfaceVertexNormal() {
 
     // Dispatch
     cmdList->ExecuteIndirect(commandSignature, 1, surfaceVertDensityDispatch.getBuffer(), 0, nullptr, 0);
+    context->endTimingQuery(cmdList); // stop timer
 
     context->executeCommandList(surfaceVertexNormalCP->getCommandListID());
     context->signalAndWaitForFence(fence, fenceValue);
 
     context->resetCommandList(surfaceVertexNormalCP->getCommandListID());
+    surfVertNormalCumulativeTime += context->readTimingQueryData();
 }
 
 void FluidScene::releaseResources() {

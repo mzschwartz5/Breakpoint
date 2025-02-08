@@ -65,6 +65,7 @@ public:
     void computeSurfaceVertexDensity();
     void computeSurfaceVertexNormal();
     void releaseResources();
+    void printTimings();
     DescriptorHeap* getSRVHeapForRenderTextures() {
         return bilevelUniformGridCP->getDescriptorHeap();
     }
@@ -89,6 +90,16 @@ private:
     
     UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
+
+    // Timing trackers
+    int timingFrame = 0;
+    double bilevelGridCumulativeTime = 0.0;
+    double blockDetectionCumulativeTime = 0.0;
+    double cellDetectionCumulativeTime = 0.0;
+    double compactSurfVertsCumulativeTime = 0.0;
+    double surfVertDensityCumulativeTime = 0.0;
+    double surfVertNormalCumulativeTime = 0.0;
+    double meshShadingCumulativeTime = 0.0;
 
 	ID3D12CommandSignature* commandSignature = nullptr;
     ID3D12CommandSignature* meshCommandSignature = nullptr;
