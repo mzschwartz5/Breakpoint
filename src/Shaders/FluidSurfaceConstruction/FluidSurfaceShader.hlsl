@@ -5,7 +5,7 @@ struct PSInput {
     float4 ndcPos: SV_Position;
     float3 normal: NORMAL0;
     float3 worldPos: POSITION1;
-#ifdef OUTPUT_MESHLETS
+#if OUTPUT_MESHLETS
     int meshletIndex: COLOR0;
 #endif
 };
@@ -64,7 +64,7 @@ static const float3 baseColor = float3(0.7, 0.9, 1);
 [RootSignature(ROOTSIG)]
 float4 main(PSInput input) : SV_Target
 {
-#ifdef OUTPUT_MESHLETS
+#if OUTPUT_MESHLETS
     return float4(getMeshletColor(input.meshletIndex), 1.0);
 #endif
 

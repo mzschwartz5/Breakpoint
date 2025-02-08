@@ -34,7 +34,7 @@ struct VertexOutput
     float4 clipPos : SV_POSITION;
     float3 normal : NORMAL0;
     float3 worldPos : POSITION1;
-#ifdef OUTPUT_MESHLETS
+#if OUTPUT_MESHLETS
     int meshletIndex : COLOR0;
 #endif
 };
@@ -237,7 +237,7 @@ void main(
             verts[outputVertexIndex].clipPos = vertexClipPositions[outputVertexIndex];
             verts[outputVertexIndex].normal = vertexNormalsShared[outputVertexIndex];
             verts[outputVertexIndex].worldPos = vertexWorldPositions[outputVertexIndex];
-#ifdef OUTPUT_MESHLETS
+#if OUTPUT_MESHLETS
             verts[outputVertexIndex].meshletIndex = blockIdx1d; // technically, this isn't the meshlet index. But it's a close visualization. The actual meshlet index changes every frame, so it manifests as flickering colors.
 #endif
         }
