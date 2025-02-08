@@ -20,7 +20,7 @@
 
 *Breakpoint* is a GPU-optimized fluid surface reconstruction implementation, based on the [mesh-shading algorithm authored by Nishidate et al.](https://dl.acm.org/doi/10.1145/3651285). I adapted their algorithm to run in a DirectX engine, and modified the implementation significantly to improve performance by almost a factor of 4x compared to [Nishidate's original implementation](https://github.com/yknishidate/mesh_shader_surface_reconstruction).
 
-This work was originally a component of a project for CIS 5650 GPU Programming at the University of Pennsylvania. [Daniel Gerhardt](https://www.danieljgerhardt.com/), [Dineth Meegoda](https://dinethmeegoda.com/), and [Zixiao Wang](https://www.linkedin.com/in/zixiao-wang-826a5a255/) built the DirectX 12 engine and implemented a GPU-based PBMPM particle simulation (developed by EA), which served as the input data to this novel fluid surface shading technique. See that project in its entirety [here](https://github.com/dgerh/Breakpoint). Since then, I've continued to work on and improved the performance of the fluid surface reconstruction technique, in this fork.
+This work was originally a component of a project for CIS 5650 GPU Programming at the University of Pennsylvania. [Daniel Gerhardt](https://www.danieljgerhardt.com/), [Dineth Meegoda](https://dinethmeegoda.com/), and [Zixiao Wang](https://www.linkedin.com/in/zixiao-wang-826a5a255/) built the DirectX 12 engine and implemented a GPU-based PBMPM particle simulation (developed by EA), which served as the input data to this novel fluid surface shading technique. See that project in its entirety [here](https://github.com/dgerh/Breakpoint). Since then, I've continued to work on and improve the performance of the fluid surface reconstruction technique, in this fork.
 
 ## Contents
 
@@ -67,9 +67,9 @@ The above stages manifest as 6 compute passes and a mesh shading pass, which can
 6. Computing the normals at each surface vertex
 7. (Mesh shading) Using marching cubes to triangulate the particle density field, then fragment shading (which uses the normals derived in step 6).
 
-In the course of implementing these passes, I found many opportunities for significant performance improvements based on the core concepts taught in CIS 5650. To illustrate this, compare the average compute time (in milliseconds, averaged over 1,000 frames) for each step listed above between our implementation and the original:
+In the course of implementing these passes, I found many opportunities for significant performance improvements based on the core concepts taught in CIS 5650. To illustrate this, compare the average compute time (in milliseconds, averaged over 1,000 frames) for each step listed above between my implementation and the original:
 
-| Algorithm step              | Nishidate et al. | Ours  |
+| Algorithm step              | Nishidate et al. | Mine  |
 |-----------------------------|------------------|-------|
 | Construct bilevel grid      | 0.297            | 0.107 |
 | Detect surface blocks       | 0.099            | 0.006 |
@@ -142,7 +142,7 @@ The solution - stream compaction! Stream compaction is widely used to do precise
 
 With [parallel prefix scan](https://developer.nvidia.com/gpugems/gpugems3/part-vi-gpu-computing/chapter-39-parallel-prefix-sum-scan-cuda), 0 atomic operations are necessary. However, given DirectX's lack of a library like Thrust, implementing a prefix scan in the timeframe of this project was out of scope. Instead, I opted for a simpler, yet highly effective, wave-intrinsic approach, [based on this article](https://interplayoflight.wordpress.com/2022/12/25/stream-compaction-using-wave-intrinsics/). The gist is, each wave coordinates via intrinsics to get unique write-indices into the output array, needing only 1 atomic operation per-wave to sync with the other waves. With 32 threads per wave, this is a 32x reduction in atomic usage! The effect may be superlinear, however, since there's much less chance of resource contention with such a reduction in atomic usage.
 
-As such, it's no surprise that our implementation of this stage was over 16x faster than the original!
+As such, it's no surprise that my implementation of this stage was over 16x faster than the original!
 
 ### Detect Surface Cells
 
@@ -163,7 +163,7 @@ And, once again, looking at the performance results above, we see a **massive** 
 
 ### Compact Surface Vertices
 
-This is exactly the same idea as the wave intrinsic optimization done in detecting surface blocks, but with the surface vertices! Because there are so many more vertices than surface blocks, the contention with atomic usage is exacerbated, and the performance gains after alleviating atomic usage are even greater: 20x with our approach!
+This is exactly the same idea as the wave intrinsic optimization done in detecting surface blocks, but with the surface vertices! Because there are so many more vertices than surface blocks, the contention with atomic usage is exacerbated, and the performance gains after alleviating atomic usage are even greater: 20x with my approach!
 
 ### The rest
 
