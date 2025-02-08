@@ -4,6 +4,7 @@
 #include "../Support/ComPointer.h"
 #include "../D3D/DescriptorHeap.h"
 #include "../D3D/DXContext.h"
+#include <limits.h>
 
 #define FRAME_COUNT 2
 
@@ -51,7 +52,8 @@ public:
 	void present();
 	void resize();
 
-	bool createObjectSceneRenderTargets(DescriptorHeap* srvDescHeap);
+	void setSRVHeap(DescriptorHeap* srvDescHeap) { this->srvDescHeap = srvDescHeap; }
+	bool createObjectSceneRenderTargets();
 	void beginFrame(ID3D12GraphicsCommandList6* cmdList);
 	void setMainRT(ID3D12GraphicsCommandList6* cmdList);
 	void setTextureRTs(ID3D12GraphicsCommandList6* cmdList);
@@ -92,12 +94,18 @@ private:
     ComPointer<ID3D12Resource> depthStencilBuffer;
 
 	// Members for rendering object scene to frame buffer
+	DescriptorHeap* srvDescHeap; // reference to FluidScene's SRV heap (object textures need to be on the same heap they're used on)
 	ComPointer<ID3D12Resource> objectSceneColorTexture;
 	ComPointer<ID3D12Resource> objectScenePositionTexture;
 	D3D12_CPU_DESCRIPTOR_HANDLE objectSceneRTVHandleColor;
 	D3D12_CPU_DESCRIPTOR_HANDLE objectSceneRTVHandlePosition;
 	D3D12_GPU_DESCRIPTOR_HANDLE objectSceneSRVHandleColor;
 	D3D12_GPU_DESCRIPTOR_HANDLE objectSceneSRVHandlePosition;
+
+	// The DescriptorHeap class doesn't release resources well (TODO),
+	// so we track the resource indices manually to be able to resize them.
+	unsigned int objectSceneColorSRVIndex = UINT_MAX;
+	unsigned int objectScenePositionSRVIndex = UINT_MAX;
 
 	bool getBuffers();
 	void releaseBuffers();

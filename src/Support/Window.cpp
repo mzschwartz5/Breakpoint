@@ -99,36 +99,6 @@ bool Window::init(DXContext* contextPtr, int w, int h) {
     if (FAILED(dxContext->getDevice()->CreateDescriptorHeap(&dsvHeapDesc, IID_PPV_ARGS(&dsvDescHeap)))) {
         return false;
     }
-
-    // Create handles to view
-    dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
-
-    // Create the depth stencil view
-    D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
-    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
-    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
-    depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
-
-    D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
-    depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
-    depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
-    depthOptimizedClearValue.DepthStencil.Stencil = 0;
- 
-    const CD3DX12_HEAP_PROPERTIES depthStencilHeapProps(D3D12_HEAP_TYPE_DEFAULT);
-    const CD3DX12_RESOURCE_DESC depthStencilTextureDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
-
-    if (FAILED(dxContext->getDevice()->CreateCommittedResource(
-        &depthStencilHeapProps,
-        D3D12_HEAP_FLAG_NONE,
-        &depthStencilTextureDesc,
-        D3D12_RESOURCE_STATE_DEPTH_WRITE,
-        &depthOptimizedClearValue,
-        IID_PPV_ARGS(&depthStencilBuffer)
-    ))) {
-        return false;
-    }
-
-    dxContext->getDevice()->CreateDepthStencilView(depthStencilBuffer, &depthStencilDesc, dsvHandle);
     
     //get buffers
     if (!getBuffers()) {
@@ -164,6 +134,7 @@ void Window::resize() {
     }
 
     getBuffers();
+    createObjectSceneRenderTargets();
 }
 
 void Window::beginFrame(ID3D12GraphicsCommandList6* cmdList) {
@@ -255,6 +226,38 @@ bool Window::getBuffers() {
         rtv.Texture2D.PlaneSlice = 0;
         dxContext->getDevice()->CreateRenderTargetView(swapChainBuffers[i], &rtv, rtvHandles[i]);
     }
+
+    // Depth stencil buffer
+    // Create handles to view
+    dsvHandle = dsvDescHeap->GetCPUDescriptorHandleForHeapStart();
+
+    // Create the depth stencil view
+    D3D12_DEPTH_STENCIL_VIEW_DESC depthStencilDesc = {};
+    depthStencilDesc.Format = DXGI_FORMAT_D32_FLOAT;
+    depthStencilDesc.ViewDimension = D3D12_DSV_DIMENSION_TEXTURE2D;
+    depthStencilDesc.Flags = D3D12_DSV_FLAG_NONE;
+
+    D3D12_CLEAR_VALUE depthOptimizedClearValue = {};
+    depthOptimizedClearValue.Format = DXGI_FORMAT_D32_FLOAT;
+    depthOptimizedClearValue.DepthStencil.Depth = 1.0f;
+    depthOptimizedClearValue.DepthStencil.Stencil = 0;
+ 
+    const CD3DX12_HEAP_PROPERTIES depthStencilHeapProps(D3D12_HEAP_TYPE_DEFAULT);
+    const CD3DX12_RESOURCE_DESC depthStencilTextureDesc = CD3DX12_RESOURCE_DESC::Tex2D(DXGI_FORMAT_D32_FLOAT, width, height, 1, 0, 1, 0, D3D12_RESOURCE_FLAG_ALLOW_DEPTH_STENCIL);
+
+    if (FAILED(dxContext->getDevice()->CreateCommittedResource(
+        &depthStencilHeapProps,
+        D3D12_HEAP_FLAG_NONE,
+        &depthStencilTextureDesc,
+        D3D12_RESOURCE_STATE_DEPTH_WRITE,
+        &depthOptimizedClearValue,
+        IID_PPV_ARGS(&depthStencilBuffer)
+    ))) {
+        return false;
+    }
+
+    dxContext->getDevice()->CreateDepthStencilView(depthStencilBuffer, &depthStencilDesc, dsvHandle);
+
     return true;
 }
 
@@ -262,6 +265,13 @@ void Window::releaseBuffers() {
     for (size_t i = 0; i < FRAME_COUNT; i++) {
         swapChainBuffers[i].Release();
     }
+
+    // Release object scene render buffers
+    objectSceneColorTexture.Release();
+    objectScenePositionTexture.Release();
+
+    // Release depth stencil buffer
+    depthStencilBuffer.Release();
 }
 
 // Forward declare message handler from imgui_impl_win32.cpp
@@ -340,7 +350,7 @@ void Window::setViewport(D3D12_VIEWPORT& vp, ID3D12GraphicsCommandList5* cmdList
     cmdList->RSSetScissorRects(1, &scRect);
 }
 
-bool Window::createObjectSceneRenderTargets(DescriptorHeap* srvDescHeap) {
+bool Window::createObjectSceneRenderTargets() {
     // Describe the off-screen render target texture for color
     D3D12_RESOURCE_DESC textureDesc = {};
     textureDesc.Dimension = D3D12_RESOURCE_DIMENSION_TEXTURE2D;
@@ -392,10 +402,12 @@ bool Window::createObjectSceneRenderTargets(DescriptorHeap* srvDescHeap) {
     srvDesc.Texture2D.ResourceMinLODClamp = 0.0f;
     srvDesc.Shader4ComponentMapping = D3D12_DEFAULT_SHADER_4_COMPONENT_MAPPING;
 
-    unsigned int nextSrvIndex = srvDescHeap->GetNextAvailableIndex();
-    D3D12_CPU_DESCRIPTOR_HANDLE objectSceneSRVCPUColor = srvDescHeap->GetCPUHandleAt(nextSrvIndex);
+    if (objectSceneColorSRVIndex == UINT_MAX) {
+        objectSceneColorSRVIndex = srvDescHeap->GetNextAvailableIndex();
+    }
+    D3D12_CPU_DESCRIPTOR_HANDLE objectSceneSRVCPUColor = srvDescHeap->GetCPUHandleAt(objectSceneColorSRVIndex);
     dxContext->getDevice()->CreateShaderResourceView(objectSceneColorTexture.Get(), &srvDesc, objectSceneSRVCPUColor);
-    objectSceneSRVHandleColor = srvDescHeap->GetGPUHandleAt(nextSrvIndex);
+    objectSceneSRVHandleColor = srvDescHeap->GetGPUHandleAt(objectSceneColorSRVIndex);
 
     // Repeat the above steps for the position render target
     textureDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
@@ -418,11 +430,15 @@ bool Window::createObjectSceneRenderTargets(DescriptorHeap* srvDescHeap) {
     dxContext->getDevice()->CreateRenderTargetView(objectScenePositionTexture.Get(), &rtvDesc, objectSceneRTVHandlePosition);
 
     srvDesc.Format = DXGI_FORMAT_R32G32B32A32_FLOAT;
-    nextSrvIndex = srvDescHeap->GetNextAvailableIndex();
-    D3D12_CPU_DESCRIPTOR_HANDLE objectSceneSRVCPUPos = srvDescHeap->GetCPUHandleAt(nextSrvIndex);
+
+    if (objectScenePositionSRVIndex == UINT_MAX) {
+        objectScenePositionSRVIndex = srvDescHeap->GetNextAvailableIndex();
+    }
+    objectScenePositionSRVIndex = srvDescHeap->GetNextAvailableIndex();
+    D3D12_CPU_DESCRIPTOR_HANDLE objectSceneSRVCPUPos = srvDescHeap->GetCPUHandleAt(objectScenePositionSRVIndex);
     objectSceneSRVCPUPos.ptr += dxContext->getDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
     dxContext->getDevice()->CreateShaderResourceView(objectScenePositionTexture.Get(), &srvDesc, objectSceneSRVCPUPos);
-    objectSceneSRVHandlePosition = srvDescHeap->GetGPUHandleAt(nextSrvIndex);
+    objectSceneSRVHandlePosition = srvDescHeap->GetGPUHandleAt(objectScenePositionSRVIndex);
     objectSceneSRVHandlePosition.ptr += dxContext->getDevice()->GetDescriptorHandleIncrementSize(D3D12_DESCRIPTOR_HEAP_TYPE_CBV_SRV_UAV);
 
     return true;

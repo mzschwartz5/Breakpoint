@@ -24,7 +24,8 @@ int main() {
     //initialize scene
     Scene scene{camera.get(), &context};
     // Render target SRVs need to be in the scene SRV heap to be accessible by the shaders alongside the other resources (can only bind one SRV heap to a shader)
-    Window::get().createObjectSceneRenderTargets(scene.getSRVHeap());
+    Window::get().setSRVHeap(scene.getSRVHeap());
+    Window::get().createObjectSceneRenderTargets();
 
     UINT64 fenceValue = 1;
 	ComPointer<ID3D12Fence> fence;
